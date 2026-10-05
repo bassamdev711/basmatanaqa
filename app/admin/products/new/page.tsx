@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Info, ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-react'
 import { createProduct } from '../actions'
 import { getCollections } from '../../collections/actions'
+import { getSuppliers } from '../../suppliers/actions'
 import ImageUpload from '../ImageUpload'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
@@ -17,6 +18,7 @@ export default function NewProductPage() {
   const [slug, setSlug] = useState('')
   const [sku, setSku] = useState('')
   const [collections, setCollections] = useState<CollectionOption[]>([])
+  const [suppliers, setSuppliers] = useState<CollectionOption[]>([])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [seoPhrases, setSeoPhrases] = useState<string[]>([])
@@ -40,6 +42,7 @@ export default function NewProductPage() {
   useEffect(() => {
     startTransition(() => {
       void getCollections().then(data => setCollections(data))
+      void getSuppliers().then(data => setSuppliers(data.filter(s => s.isActive).map(s => ({ id: s.id, name: s.name }))))
       // Auto-generate initial SKU
       generateSKU()
     })
@@ -92,6 +95,21 @@ export default function NewProductPage() {
                   <option key={col.id} value={col.id}>{col.name}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">المورد</label>
+              <select name="supplierId" className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
+                <option value="">بدون مورد</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">سعر التكلفة (من المورد)</label>
+              <input type="number" name="costPrice" step="0.01" min="0" dir="ltr"
+                className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+              <p className="text-xs text-gray-500 mt-1">لا يظهر للعميل — لحساب الربح فقط</p>
             </div>
           </div>
           <div>

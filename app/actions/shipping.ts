@@ -5,23 +5,12 @@ import { verifyAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 const MAX_SHIPPING_FEE = 1_000_000
-const DEFAULT_SHIPPING_CITY_NAME = 'إب'
-
 /**
- * Creates the only initial delivery city when the store has not been configured yet.
- * Existing admin-managed cities are never overwritten or removed.
+ * Delivery areas are fully managed by the admin; nothing is auto-seeded.
+ * Kept as a no-op for backwards compatibility with existing callers.
  */
 export async function ensureDefaultShippingCity() {
-  const cityCount = await prisma.shippingCity.count()
-  if (cityCount > 0) return
-
-  return prisma.shippingCity.create({
-    data: {
-      name: DEFAULT_SHIPPING_CITY_NAME,
-      shippingFee: 0,
-      isActive: true,
-    },
-  })
+  return
 }
 
 function validateCityName(value: unknown): string | null {
@@ -47,7 +36,7 @@ export async function getShippingCities() {
     return { success: true, data: cities }
   } catch (error) {
     console.error('Error fetching shipping cities:', error)
-    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء جلب مدن الشحن' }
+    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء جلب مناطق التوصيل' }
   }
 }
 
@@ -58,12 +47,12 @@ export async function addShippingCity(data: { name: string; shippingFee: number;
     const shippingFee = validateFee(data?.shippingFee)
 
     if (!name || shippingFee === null || (data.isActive !== undefined && typeof data.isActive !== 'boolean')) {
-      return { success: false, error: 'بيانات المدينة أو رسوم الشحن غير صالحة' }
+      return { success: false, error: 'بيانات المنطقة أو رسوم الشحن غير صالحة' }
     }
 
     const existing = await prisma.shippingCity.findUnique({ where: { name } })
     if (existing) {
-      return { success: false, error: 'هذه المدينة موجودة مسبقاً' }
+      return { success: false, error: 'هذه المنطقة موجودة مسبقاً' }
     }
 
     const city = await prisma.shippingCity.create({
@@ -75,7 +64,7 @@ export async function addShippingCity(data: { name: string; shippingFee: number;
     return { success: true, data: city }
   } catch (error) {
     console.error('Error adding shipping city:', error)
-    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء إضافة المدينة' }
+    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء إضافة المنطقة' }
   }
 }
 
@@ -83,13 +72,13 @@ export async function updateShippingCity(id: string, data: { name?: string; ship
   try {
     await verifyAdmin()
     if (typeof id !== 'string' || id.length < 1 || id.length > 100) {
-      return { success: false, error: 'معرف المدينة غير صالح' }
+      return { success: false, error: 'معرف المنطقة غير صالح' }
     }
 
     const updateData: { name?: string; shippingFee?: number; isActive?: boolean } = {}
     if (data.name !== undefined) {
       const name = validateCityName(data.name)
-      if (!name) return { success: false, error: 'اسم المدينة غير صالح' }
+      if (!name) return { success: false, error: 'اسم المنطقة غير صالح' }
       updateData.name = name
     }
     if (data.shippingFee !== undefined) {
@@ -98,7 +87,7 @@ export async function updateShippingCity(id: string, data: { name?: string; ship
       updateData.shippingFee = shippingFee
     }
     if (data.isActive !== undefined) {
-      if (typeof data.isActive !== 'boolean') return { success: false, error: 'حالة المدينة غير صالحة' }
+      if (typeof data.isActive !== 'boolean') return { success: false, error: 'حالة المنطقة غير صالحة' }
       updateData.isActive = data.isActive
     }
 
@@ -112,7 +101,7 @@ export async function updateShippingCity(id: string, data: { name?: string; ship
     return { success: true, data: city }
   } catch (error) {
     console.error('Error updating shipping city:', error)
-    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء تحديث المدينة' }
+    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء تحديث المنطقة' }
   }
 }
 
@@ -120,7 +109,7 @@ export async function deleteShippingCity(id: string) {
   try {
     await verifyAdmin()
     if (typeof id !== 'string' || id.length < 1 || id.length > 100) {
-      return { success: false, error: 'معرف المدينة غير صالح' }
+      return { success: false, error: 'معرف المنطقة غير صالح' }
     }
 
     await prisma.shippingCity.delete({ where: { id } })
@@ -129,6 +118,6 @@ export async function deleteShippingCity(id: string) {
     return { success: true }
   } catch (error) {
     console.error('Error deleting shipping city:', error)
-    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء حذف المدينة' }
+    return { success: false, error: 'غير مصرح أو حدث خطأ أثناء حذف المنطقة' }
   }
 }

@@ -9,6 +9,11 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   if (!product) notFound()
   
   const collections = await prisma.collection.findMany({ orderBy: { createdAt: 'desc' } })
+  const suppliers = await prisma.supplier.findMany({
+    where: { OR: [{ isActive: true }, { id: product.supplierId ?? '' }] },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
 
   return (
     <EditProductClient
@@ -16,8 +21,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         ...product,
         price: Number(product.price),
         compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+        costPrice: product.costPrice != null ? Number(product.costPrice) : null,
       }}
       collections={collections}
+      suppliers={suppliers}
     />
   )
 }

@@ -94,7 +94,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
     setIsAddingCity(true)
 
     if (!newCityName.trim()) {
-      setCityError('الرجاء إدخال اسم المدينة')
+      setCityError('الرجاء إدخال اسم المنطقة')
       setIsAddingCity(false)
       return
     }
@@ -111,7 +111,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
       setCities([...cities, { id: res.data.id, name: res.data.name, shippingFee: Number(res.data.shippingFee), isActive: res.data.isActive }])
       setNewCityName('')
       setNewCityFee('')
-      setSuccess('تم إضافة المدينة بنجاح')
+      setSuccess('تم إضافة المنطقة بنجاح')
       setTimeout(() => setSuccess(''), 3000)
     } else {
       setCityError(res.error || 'حدث خطأ')
@@ -120,7 +120,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
   }
 
   const handleDeleteCity = async (id: string) => {
-    if (!(await confirm({ message: 'هل أنت متأكد من حذف هذه المدينة؟', danger: true }))) return
+    if (!(await confirm({ message: 'هل أنت متأكد من حذف هذه المنطقة؟', danger: true }))) return
     
     const res = await deleteShippingCity(id)
     if (res.success) {
@@ -135,7 +135,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
     if (res.success) {
       setCities(cities.map(c => c.id === id ? { ...c, isActive: !currentStatus } : c))
     } else {
-      setCityError(res.error || 'حدث خطأ أثناء تحديث حالة المدينة')
+      setCityError(res.error || 'حدث خطأ أثناء تحديث حالة المنطقة')
     }
   }
 
@@ -156,7 +156,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
     const name = editCityName.trim()
     const fee = parseFloat(editCityFee)
     if (name.length < 2) {
-      setCityError('الرجاء إدخال اسم مدينة صحيح')
+      setCityError('الرجاء إدخال اسم منطقة صحيح')
       return
     }
     if (isNaN(fee) || fee < 0) {
@@ -172,11 +172,11 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
         ? { ...city, name: res.data!.name, shippingFee: Number(res.data!.shippingFee) }
         : city
       ))
-      setSuccess('تم تحديث المدينة بنجاح')
+      setSuccess('تم تحديث المنطقة بنجاح')
       cancelEditingCity()
       setTimeout(() => setSuccess(''), 3000)
     } else {
-      setCityError(res.error || 'حدث خطأ أثناء تحديث المدينة')
+      setCityError(res.error || 'حدث خطأ أثناء تحديث المنطقة')
     }
     setIsSavingCity(false)
   }
@@ -248,24 +248,24 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
                 <MapPin size={20} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-deep-green">المدن المدعومة وتكلفة الشحن</h2>
-                <p className="text-sm text-deep-green/60 mt-1">أضف المدن التي توصل إليها لكي يختار العميل منها في صفحة الدفع، مع تحديد سعر خاص لكل مدينة.</p>
+                <h2 className="text-xl font-bold text-deep-green">مناطق التوصيل وتكلفة الشحن</h2>
+                <p className="text-sm text-deep-green/60 mt-1">أضف المناطق التي توصل إليها ليختار العميل منها في صفحة الدفع، مع تحديد سعر توصيل لكل منطقة.</p>
               </div>
             </div>
 
             <form onSubmit={handleAddCity} className="flex flex-col md:flex-row gap-4 items-end mb-6 bg-[#F9F7F2]/50 p-4 rounded-lg border border-black/5">
               <div className="flex-1 w-full">
-                <label className="block text-sm font-bold text-deep-green mb-2">اسم المدينة</label>
+                <label className="block text-sm font-bold text-deep-green mb-2">اسم المنطقة</label>
                 <input
                   type="text"
                   value={newCityName}
                   onChange={(e) => setNewCityName(e.target.value)}
                   className="w-full border border-black/10 rounded-lg px-4 py-2.5 focus:outline-none focus:border-emerald/50"
-                  placeholder="اسم المدينة..."
+                  placeholder="اسم المنطقة..."
                 />
               </div>
               <div className="flex-1 w-full">
-                <label className="block text-sm font-bold text-deep-green mb-2">تكلفة الشحن لهذه المدينة</label>
+                <label className="block text-sm font-bold text-deep-green mb-2">تكلفة الشحن لهذه المنطقة</label>
                 <input
                   type="number"
                   min="0"
@@ -282,7 +282,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
                 className="w-full md:w-auto bg-emerald text-white font-bold py-2.5 px-6 rounded-lg hover:bg-deep-green transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
               >
                 <Plus size={18} />
-                {isAddingCity ? 'جاري الإضافة...' : 'إضافة مدينة'}
+                {isAddingCity ? 'جاري الإضافة...' : 'إضافة منطقة'}
               </button>
             </form>
 
@@ -297,7 +297,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
               <table className="w-full text-right">
                 <thead className="bg-[#F9F7F2] text-deep-green/70 text-sm">
                   <tr>
-                    <th className="py-3 px-4 font-bold">المدينة</th>
+                    <th className="py-3 px-4 font-bold">المنطقة</th>
                     <th className="py-3 px-4 font-bold">تكلفة الشحن</th>
                     <th className="py-3 px-4 font-bold">الحالة</th>
                     <th className="py-3 px-4 font-bold">إجراءات</th>
@@ -306,7 +306,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
                 <tbody className="divide-y divide-black/5">
                   {cities.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-deep-green/50">لا توجد مدن مضافة بعد. ستتم تهيئة محافظة إب تلقائياً كمدينة افتراضية، ويمكنك إضافة أو تعديل المدن من هنا.</td>
+                      <td colSpan={4} className="py-8 text-center text-deep-green/50">لا توجد مناطق توصيل بعد. أضف أول منطقة من الأعلى ليتمكن العملاء من إتمام الطلب.</td>
                     </tr>
                   ) : (
                     cities.map(city => (
@@ -318,7 +318,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
                                 value={editCityName}
                                 onChange={(e) => setEditCityName(e.target.value)}
                                 className="w-full min-w-32 border border-black/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald/50"
-                                aria-label="اسم المدينة"
+                                aria-label="اسم المنطقة"
                               />
                             </td>
                             <td className="py-3 px-4">
@@ -359,7 +359,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
                                   onClick={() => handleSaveCity(city.id)}
                                   disabled={isSavingCity}
                                   className="text-emerald hover:text-deep-green transition-colors p-1 disabled:opacity-50"
-                                  aria-label="حفظ تعديلات المدينة"
+                                  aria-label="حفظ تعديلات المنطقة"
                                 >
                                   <Save size={16} />
                                 </button>
@@ -368,7 +368,7 @@ export default function ShippingSettingsClient({ initialSettings, initialCities 
                                   onClick={cancelEditingCity}
                                   disabled={isSavingCity}
                                   className="text-deep-green/60 hover:text-deep-green transition-colors p-1 disabled:opacity-50"
-                                  aria-label="إلغاء تعديل المدينة"
+                                  aria-label="إلغاء تعديل المنطقة"
                                 >
                                   <X size={16} />
                                 </button>

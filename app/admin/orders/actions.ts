@@ -149,9 +149,10 @@ export async function updateOrderStatus(orderId: string, status: string) {
       const transaction = await awardOrderPoints(orderId)
       if (transaction) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_EARNED', title: 'تمت إضافة نقاط', message: `أضيفت ${transaction.points} نقطة لإكمال طلبك.`, dedupeKey: transaction.referenceKey })
     }
-    if (status === 'REFUNDED' && currentOrder.status !== 'REFUNDED') {
+    if ((status === 'REFUNDED' || status === 'CANCELLED') && currentOrder.status !== status) {
       const transaction = await reverseOrderPoints(orderId)
-      if (transaction) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_REVERSED', title: 'تم عكس نقاط الطلب', message: `تم عكس ${Math.abs(transaction.points)} نقطة بسبب الاسترجاع.`, dedupeKey: transaction.referenceKey })
+      const reason = status === 'CANCELLED' ? 'الإلغاء' : 'الاسترجاع'
+      if (transaction) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_REVERSED', title: 'تم عكس نقاط الطلب', message: `تم عكس ${Math.abs(transaction.points)} نقطة بسبب ${reason}.`, dedupeKey: transaction.referenceKey })
     }
     revalidatePath('/admin/orders')
     return { success: true }

@@ -26,6 +26,8 @@ interface Product {
   gender: string | null
   category: string | null
   collectionId: string | null
+  supplierId: string | null
+  costPrice: number | null
   stock: number
   featured: boolean
   bestseller: boolean
@@ -36,7 +38,7 @@ interface Product {
   seoScore: number | null
 }
 
-export default function EditProductClient({ product, collections = [] }: { product: Product, collections?: CollectionOption[] }) {
+export default function EditProductClient({ product, collections = [], suppliers = [] }: { product: Product, collections?: CollectionOption[], suppliers?: CollectionOption[] }) {
   const [mainImage, setMainImage] = useState(product.imageUrl || '')
   const [extraImages, setExtraImages] = useState<string[]>(product.images || [])
   const [name, setName] = useState(product.name || '')
@@ -104,6 +106,21 @@ export default function EditProductClient({ product, collections = [] }: { produ
                   <option key={col.id} value={col.id}>{col.name}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">المورد</label>
+              <select name="supplierId" defaultValue={product.supplierId || ''} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
+                <option value="">بدون مورد</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">سعر التكلفة (من المورد)</label>
+              <input type="number" name="costPrice" step="0.01" min="0" dir="ltr" defaultValue={product.costPrice ?? ''}
+                className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+              <p className="text-xs text-gray-500 mt-1">لا يظهر للعميل — لحساب الربح فقط</p>
             </div>
           </div>
           <div>

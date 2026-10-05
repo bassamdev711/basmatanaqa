@@ -112,7 +112,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 <a href={`tel:${order.customerPhone}`} className="text-brand hover:underline" dir="ltr">{order.customerPhone}</a>
               </p>
               <p><span className="font-bold text-gray-900">المحافظة:</span> {order.governorate}</p>
-              <p><span className="font-bold text-gray-900">المدينة:</span> {order.city}</p>
+              <p><span className="font-bold text-gray-900">المنطقة:</span> {order.city}</p>
               <p><span className="font-bold text-gray-900">العنوان:</span> {order.address}</p>
               
               <WhatsAppActionsClient 

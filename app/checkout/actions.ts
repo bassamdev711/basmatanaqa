@@ -10,7 +10,6 @@ import { validateCouponCode } from '@/app/admin/marketing/coupons/actions'
 import { createAdminNotification } from '@/lib/admin-notifications'
 import { createOrderUploadToken, verifyOrderUploadToken } from '@/lib/order-upload-token'
 import { createOrderTrackingToken } from '@/lib/order-tracking-token'
-import { ensureDefaultShippingCity } from '@/app/actions/shipping'
 import { requireCurrentUser } from '@/lib/user-auth'
 import { createUserNotification } from '@/lib/notifications/service'
 
@@ -34,16 +33,14 @@ function getOrderPrefix(value: string | null | undefined): string {
 function isValidCheckoutData(data: CheckoutData): boolean {
   const fullName = normalizeText(data.fullName, 120)
   const phone = normalizeText(data.phone, 32)
-  const governorate = normalizeText(data.governorate, 100)
-  const city = normalizeText(data.city, 100)
+  const area = normalizeText(data.city, 120)
   const address = normalizeText(data.address, 500)
 
   return (
     fullName.length >= 2 &&
     phone.length >= 7 &&
     /^[+\d\s().-]+$/.test(phone) &&
-    governorate === 'إب' &&
-    city.length >= 2 &&
+    area.length >= 2 &&
     address.length >= 5 &&
     PAYMENT_METHODS.has(data.paymentMethod)
   )
@@ -150,18 +147,15 @@ export async function createOrder(
     }
 
     const storeSettings = await prisma.storeSettings.findUnique({ where: { id: 'singleton' } })
-    await ensureDefaultShippingCity()
-    const activeCities = await prisma.shippingCity.findMany({ where: { isActive: true } })
-    let shippingFee = storeSettings ? Number(storeSettings.shippingFee) : 0
-
-    if (!Number.isFinite(shippingFee) || shippingFee < 0) shippingFee = 0
-    if (activeCities.length > 0) {
-      const selectedCity = activeCities.find((city) => city.name === checkoutData.city)
-      if (!selectedCity) return { success: false, error: 'المدينة المحددة غير مدعومة للشحن.' }
-      shippingFee = Number(selectedCity.shippingFee)
-      if (!Number.isFinite(shippingFee) || shippingFee < 0) {
-        return { success: false, error: 'رسوم الشحن غير صالحة.' }
-      }
+    const activeAreas = await prisma.shippingCity.findMany({ where: { isActive: true } })
+    if (activeAreas.length === 0) {
+      return { success: false, error: 'لا توجد مناطق توصيل متاحة حالياً.' }
+    }
+    const selectedArea = activeAreas.find((area) => area.name === normalizeText(checkoutData.city, 120))
+    if (!selectedArea) return { success: false, error: 'منطقة التوصيل المحددة غير مدعومة.' }
+    let shippingFee = Number(selectedArea.shippingFee)
+    if (!Number.isFinite(shippingFee) || shippingFee < 0) {
+      return { success: false, error: 'رسوم الشحن غير صالحة.' }
     }
 
     let discountAmount = 0
@@ -226,8 +220,8 @@ export async function createOrder(
           idempotencyKey: requestKey,
           customerName: normalizeText(checkoutData.fullName, 120),
           customerPhone: normalizeText(checkoutData.phone, 32),
-          governorate: normalizeText(checkoutData.governorate, 100),
-          city: normalizeText(checkoutData.city, 100),
+          governorate: selectedArea.name,
+          city: selectedArea.name,
           address: normalizeText(checkoutData.address, 500),
           paymentMethod: checkoutData.paymentMethod,
           shippingFee,
@@ -379,8 +373,6 @@ export async function getPaymentMethods() {
     where: { isActive: true },
     orderBy: { createdAt: 'desc' },
   })
-  await ensureDefaultShippingCity()
-
   const shippingCities = await prisma.shippingCity.findMany({
     where: { isActive: true },
     orderBy: { name: 'asc' },

@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import {
   Download, ShoppingBag, Clock,
   PackageOpen, Truck, Search,
-  Eye,
+  Eye, SplitSquareHorizontal,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
@@ -149,7 +149,7 @@ export default function OrdersClient({ orders: initialOrders, stats }: { orders:
           <table className="w-full text-right border-collapse">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {['رقم الطلب', 'العميل', 'التاريخ', 'الإجمالي', 'حالة الدفع', 'حالة الطلب', 'عرض'].map(h => (
+                {['رقم الطلب', 'العميل', 'التاريخ', 'الإجمالي', 'حالة الدفع', 'حالة الطلب', 'إجراءات'].map(h => (
                   <th key={h} className="py-3 px-4 text-xs font-bold text-gray-500">{h}</th>
                 ))}
               </tr>
@@ -165,9 +165,14 @@ export default function OrdersClient({ orders: initialOrders, stats }: { orders:
                     <td className="py-3 px-4"><PaymentBadge status={order.paymentStatus} /></td>
                     <td className="py-3 px-4"><OrderBadge status={order.status} /></td>
                     <td className="py-3 px-4">
-                      <Link href={`/admin/orders/${order.id}`} className="btn btn-primary btn-sm gap-1.5">
-                        <Eye size={13} /> عرض
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/admin/orders/${order.id}`} className="btn btn-primary btn-sm gap-1.5">
+                          <Eye size={13} /> عرض
+                        </Link>
+                        <Link href={`/admin/orders/${order.id}/suppliers`} className="btn btn-secondary btn-sm gap-1.5" title="تفكيك الطلب حسب الموردين">
+                          <SplitSquareHorizontal size={13} /> موردون
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 </React.Fragment>

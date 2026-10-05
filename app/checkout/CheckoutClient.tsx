@@ -76,10 +76,7 @@ export default function CheckoutClient() {
 
         return {
           ...prev,
-          governorate: 'إب',
-          city: data.shippingCities.find((city) => city.name === prev.city)?.name
-            || data.shippingCities[0]?.name
-            || '',
+          city: data.shippingCities.find((city) => city.name === prev.city)?.name || '',
           paymentMethod: availableMethods.includes(prev.paymentMethod) ? prev.paymentMethod : (availableMethods[0] || ''),
         }
       })
@@ -90,7 +87,7 @@ export default function CheckoutClient() {
       setPaymentSettings({
         settings: { codEnabled: false, bankTransferEnabled: false, walletsEnabled: false, codFee: 0 },
         storeSettings: { shippingFee: 0, freeShippingThreshold: 0 },
-        shippingCities: [{ id: 'default-ibb', name: 'إب', shippingFee: 0 }],
+        shippingCities: [],
         bankAccounts: [],
         digitalWallets: []
       });
@@ -177,7 +174,7 @@ export default function CheckoutClient() {
     if (isSubmitting) return
 
     if (!hasAvailableCity) {
-      setError('لا توجد مدينة توصيل متاحة حالياً. يرجى التواصل مع المتجر أو المحاولة لاحقاً.')
+      setError('لا توجد منطقة توصيل متاحة حالياً. يرجى التواصل مع المتجر أو المحاولة لاحقاً.')
       return
     }
     if (!hasAvailablePaymentMethod) {
@@ -311,21 +308,9 @@ export default function CheckoutClient() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="governorate" className="text-sm font-bold text-foreground/70 mb-2">المحافظة</label>
-                    <select 
-                      name="governorate"
-                      value={formData.governorate}
-                      onChange={handleChange}
-                      required
-                      className="bg-transparent border-b border-black/20 pb-3 outline-none focus:border-brand transition-colors appearance-none"
-                    >
-                      <option value="إب">إب</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col">
-                    <label className="text-sm font-bold text-foreground/70 mb-2">المدينة</label>
+                    <label htmlFor="city" className="text-sm font-bold text-foreground/70 mb-2">منطقة التوصيل</label>
                     <select
+                      id="city"
                       name="city"
                       value={formData.city}
                       onChange={handleChange}
@@ -333,9 +318,11 @@ export default function CheckoutClient() {
                       disabled={shippingCities.length === 0}
                       className="bg-transparent border-b border-black/20 pb-3 outline-none focus:border-brand transition-colors appearance-none disabled:opacity-60"
                     >
-                      <option value="" disabled>اختر المدينة</option>
+                      <option value="" disabled>اختر منطقة التوصيل</option>
                       {shippingCities.map((city: ShippingCity) => (
-                        <option key={city.id} value={city.name}>{city.name}</option>
+                        <option key={city.id} value={city.name}>
+                          {city.name}{city.shippingFee > 0 ? ` — ${city.shippingFee}` : ' — توصيل مجاني'}
+                        </option>
                       ))}
                     </select>
                   </div>
