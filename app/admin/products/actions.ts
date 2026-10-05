@@ -5,9 +5,10 @@ import prisma from '@/lib/prisma';
 import { putTrackedBlob } from '@/lib/usage';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { isRedirectError } from 'next/dist/client/components/redirect';
 
 import { verifyAdmin } from '@/lib/auth';
+
+const isNextRedirectError = (err: any) => err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_REDIRECT');
 
 /**
  * Server Action to create a new product.
@@ -17,57 +18,57 @@ import { verifyAdmin } from '@/lib/auth';
  */
 export async function createProduct(formData: FormData) {
   await verifyAdmin();
-  // Extract fields
-  const name = formData.get('name') as string;
-  const slug = formData.get('slug') as string;
-  const brand = formData.get('brand') as string | null;
-  const collectionId = formData.get('collectionId') as string | null;
-  const supplierId = formData.get('supplierId') as string | null;
-  const costPrice = formData.get('costPrice') ? Number(formData.get('costPrice')) : null;
-  const gender = formData.get('gender') as string | null;
-  const size = formData.get('size') as string | null;
-  const description = formData.get('description') as string | null;
-  const price = Number(formData.get('price'));
-  const compareAtPrice = formData.get('compareAtPrice')
-    ? Number(formData.get('compareAtPrice'))
-    : null;
-  const sku = formData.get('sku') as string | null;
-  const stock = Number(formData.get('stock'));
-  const isActive = formData.get('isActive') === 'on';
-  const featured = formData.get('featured') === 'on';
-  const bestseller = formData.get('bestseller') === 'on';
-  const imageUrl = formData.get('imageUrl') as string | null;
-  const extraImages = JSON.parse((formData.get('images') as string) || '[]');
-  const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
-  const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
-
-  // Upload main image to Vercel Blob if a URL is provided (client may have already uploaded)
-
-
-  let storedImageUrl = imageUrl;
-  if (imageUrl && !imageUrl.startsWith('https://')) {
-    const file = await fetch(imageUrl).then((r) => r.blob());
-    const filename = `products/${Date.now()}-main-${Math.random().toString(36).slice(2)}.webp`;
-    const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
-    storedImageUrl = url;
-  }
-
-  // Upload additional images (array of data URLs)
-  const storedExtraImages: string[] = [];
-  for (const img of extraImages) {
-    if (img && typeof img === 'string') {
-      if (img.startsWith('https://')) {
-        storedExtraImages.push(img);
-      } else {
-        const file = await fetch(img).then((r) => r.blob());
-        const filename = `products/${Date.now()}-extra-${Math.random().toString(36).slice(2)}.webp`;
-        const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
-        storedExtraImages.push(url);
-      }
-    }
-  }
 
   try {
+    // Extract fields
+    const name = formData.get('name') as string;
+    let slug = (formData.get('slug') as string)?.trim();
+    if (!slug) slug = `product-${Date.now()}`;
+    const brand = formData.get('brand') as string | null;
+    const collectionId = formData.get('collectionId') as string | null;
+    const supplierId = formData.get('supplierId') as string | null;
+    const costPrice = formData.get('costPrice') ? Number(formData.get('costPrice')) : null;
+    const gender = formData.get('gender') as string | null;
+    const size = formData.get('size') as string | null;
+    const description = formData.get('description') as string | null;
+    const price = Number(formData.get('price'));
+    const compareAtPrice = formData.get('compareAtPrice')
+      ? Number(formData.get('compareAtPrice'))
+      : null;
+    const sku = formData.get('sku') as string | null;
+    const stock = Number(formData.get('stock'));
+    const isActive = formData.get('isActive') === 'on';
+    const featured = formData.get('featured') === 'on';
+    const bestseller = formData.get('bestseller') === 'on';
+    const imageUrl = formData.get('imageUrl') as string | null;
+    const extraImages = JSON.parse((formData.get('images') as string) || '[]');
+    const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
+    const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
+
+    // Upload main image to Vercel Blob if a URL is provided
+    let storedImageUrl = imageUrl;
+    if (imageUrl && !imageUrl.startsWith('https://')) {
+      const file = await fetch(imageUrl).then((r) => r.blob());
+      const filename = `products/${Date.now()}-main-${Math.random().toString(36).slice(2)}.webp`;
+      const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
+      storedImageUrl = url;
+    }
+
+    // Upload additional images
+    const storedExtraImages: string[] = [];
+    for (const img of extraImages) {
+      if (img && typeof img === 'string') {
+        if (img.startsWith('https://')) {
+          storedExtraImages.push(img);
+        } else {
+          const file = await fetch(img).then((r) => r.blob());
+          const filename = `products/${Date.now()}-extra-${Math.random().toString(36).slice(2)}.webp`;
+          const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
+          storedExtraImages.push(url);
+        }
+      }
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -92,28 +93,31 @@ export async function createProduct(formData: FormData) {
         seoScore,
       },
     });
+    
     revalidatePath('/admin/products');
     revalidatePath(`/products/${product.slug}`);
+    
+    redirect('/admin/products');
   } catch (err: any) {
-    if (isRedirectError(err)) throw err;
+    if (isNextRedirectError(err)) throw err;
     if (err.code === 'P2002') {
       redirect('/admin/products/new?error=duplicate_slug');
     }
     console.error(err);
     redirect('/admin/products/new?error=unknown');
   }
-
-  redirect('/admin/products');
 }
 
-/**
- * Server Action to delete a product.
- */
 export async function deleteProduct(productId: string) {
   await verifyAdmin();
-  await prisma.product.delete({ where: { id: productId } });
-  revalidatePath('/admin/products');
-  return { success: true };
+  try {
+    await prisma.product.delete({ where: { id: productId } });
+    revalidatePath('/admin/products');
+    return { success: true };
+  } catch (err) {
+    console.error('Delete product error:', err);
+    return { success: false, error: 'تعذر حذف المنتج. قد يكون مرتبطاً بطلبات حالية.' };
+  }
 }
 
 /**
@@ -121,55 +125,55 @@ export async function deleteProduct(productId: string) {
  */
 export async function updateProduct(formData: FormData) {
   await verifyAdmin();
-  const id = formData.get('id') as string;
-  const name = formData.get('name') as string;
-  const slug = formData.get('slug') as string;
-  const brand = formData.get('brand') as string | null;
-  const collectionId = formData.get('collectionId') as string | null;
-  const supplierId = formData.get('supplierId') as string | null;
-  const costPrice = formData.get('costPrice') ? Number(formData.get('costPrice')) : null;
-  const gender = formData.get('gender') as string | null;
-  const size = formData.get('size') as string | null;
-  const description = formData.get('description') as string | null;
-  const price = Number(formData.get('price'));
-  const compareAtPrice = formData.get('compareAtPrice')
-    ? Number(formData.get('compareAtPrice'))
-    : null;
-  const sku = formData.get('sku') as string | null;
-  const stock = Number(formData.get('stock'));
-  const isActive = formData.get('isActive') === 'on';
-  const featured = formData.get('featured') === 'on';
-  const bestseller = formData.get('bestseller') === 'on';
-  const imageUrl = formData.get('imageUrl') as string | null;
-  const extraImages = JSON.parse((formData.get('images') as string) || '[]');
-  const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
-  const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
-
-
-
-  let storedImageUrl = imageUrl;
-  if (imageUrl && !imageUrl.startsWith('https://')) {
-    const file = await fetch(imageUrl).then((r) => r.blob());
-    const filename = `products/${Date.now()}-main-${Math.random().toString(36).slice(2)}.webp`;
-    const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
-    storedImageUrl = url;
-  }
-
-  const storedExtraImages: string[] = [];
-  for (const img of extraImages) {
-    if (img && typeof img === 'string') {
-      if (img.startsWith('https://')) {
-        storedExtraImages.push(img);
-      } else {
-        const file = await fetch(img).then((r) => r.blob());
-        const filename = `products/${Date.now()}-extra-${Math.random().toString(36).slice(2)}.webp`;
-        const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
-        storedExtraImages.push(url);
-      }
-    }
-  }
 
   try {
+    const id = formData.get('id') as string;
+    const name = formData.get('name') as string;
+    let slug = (formData.get('slug') as string)?.trim();
+    if (!slug) slug = `product-${Date.now()}`;
+    const brand = formData.get('brand') as string | null;
+    const collectionId = formData.get('collectionId') as string | null;
+    const supplierId = formData.get('supplierId') as string | null;
+    const costPrice = formData.get('costPrice') ? Number(formData.get('costPrice')) : null;
+    const gender = formData.get('gender') as string | null;
+    const size = formData.get('size') as string | null;
+    const description = formData.get('description') as string | null;
+    const price = Number(formData.get('price'));
+    const compareAtPrice = formData.get('compareAtPrice')
+      ? Number(formData.get('compareAtPrice'))
+      : null;
+    const sku = formData.get('sku') as string | null;
+    const stock = Number(formData.get('stock'));
+    const isActive = formData.get('isActive') === 'on';
+    const featured = formData.get('featured') === 'on';
+    const bestseller = formData.get('bestseller') === 'on';
+    const imageUrl = formData.get('imageUrl') as string | null;
+    const extraImages = JSON.parse((formData.get('images') as string) || '[]');
+    const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
+    const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
+
+    let storedImageUrl = imageUrl;
+    if (imageUrl && !imageUrl.startsWith('https://')) {
+      const file = await fetch(imageUrl).then((r) => r.blob());
+      const filename = `products/${Date.now()}-main-${Math.random().toString(36).slice(2)}.webp`;
+      const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
+      storedImageUrl = url;
+    }
+
+    const storedExtraImages: string[] = [];
+    for (const img of extraImages) {
+      if (img && typeof img === 'string') {
+        if (img.startsWith('https://')) {
+          storedExtraImages.push(img);
+        } else {
+          const file = await fetch(img).then((r) => r.blob());
+          const filename = `products/${Date.now()}-extra-${Math.random().toString(36).slice(2)}.webp`;
+          const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
+          storedExtraImages.push(url);
+        }
+      }
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: {
@@ -195,15 +199,19 @@ export async function updateProduct(formData: FormData) {
         seoScore,
       },
     });
+
     revalidatePath('/admin/products');
     revalidatePath(`/products/${product.slug}`);
+
+    redirect('/admin/products');
   } catch (err: any) {
-    if (isRedirectError(err)) throw err;
+    if (isNextRedirectError(err)) throw err;
+    // We don't have id available outside the try, wait, let's keep id extract outside or move it above.
+    const id = formData.get('id') as string;
     if (err.code === 'P2002') {
       redirect(`/admin/products/${id}/edit?error=duplicate_slug`);
     }
     console.error(err);
     redirect(`/admin/products/${id}/edit?error=unknown`);
   }
-  redirect('/admin/products');
 }

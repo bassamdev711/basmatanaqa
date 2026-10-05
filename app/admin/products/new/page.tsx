@@ -8,10 +8,20 @@ import { getCollections } from '../../collections/actions'
 import { getSuppliers } from '../../suppliers/actions'
 import ImageUpload from '../ImageUpload'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
+import { useFormStatus } from 'react-dom'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
 import { toast } from 'react-hot-toast'
 
 type CollectionOption = { id: string; name: string }
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button type="submit" disabled={pending} className="btn btn-primary btn-lg disabled:opacity-50">
+      {pending ? 'جاري الحفظ...' : 'حفظ وإضافة المنتج'}
+    </button>
+  )
+}
 
 export default function NewProductPage() {
   const [mainImage, setMainImage] = useState('')
@@ -27,12 +37,16 @@ export default function NewProductPage() {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[\u0600-\u06FF]/g, '') // remove arabic chars
-      .replace(/[^a-z0-9\s-]/g, '')
+    let generated = name
       .trim()
       .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9\u0600-\u06FF-]/g, '')
+      .toLowerCase()
+    
+    if (!generated) {
+      generated = `product-${Math.random().toString(36).substring(2, 8)}`
+    }
+    return generated
   }
 
   const generateSKU = () => {
@@ -264,9 +278,7 @@ export default function NewProductPage() {
           <Link href="/admin/products" className="btn btn-outline">
             إلغاء
           </Link>
-          <button type="submit" className="btn btn-primary btn-lg">
-            حفظ وإضافة المنتج
-          </button>
+          <SubmitButton />
         </div>
       </form>
     </div>
