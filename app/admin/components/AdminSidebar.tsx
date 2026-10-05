@@ -41,6 +41,7 @@ export default function AdminSidebar({
     { href: '/admin', icon: LayoutDashboard, label: 'نظرة عامة', exact: true },
     { href: '/admin/analytics', icon: Activity, label: 'الإحصائيات' },
     { href: '/admin/products', icon: Package, label: 'إدارة المنتجات' },
+    { href: '/admin/suppliers', icon: Layers, label: 'إدارة الموردين' },
     { href: '/admin/collections', icon: Layers, label: 'التصنيفات' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'الطلبات' },
     { href: '/admin/payment-settings', icon: CreditCard, label: 'إعدادات الدفع' },

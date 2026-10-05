@@ -41,8 +41,14 @@ export default function NewProductPage() {
 
   useEffect(() => {
     startTransition(() => {
-      void getCollections().then(data => setCollections(data))
-      void getSuppliers().then(data => setSuppliers(data.filter(s => s.isActive).map(s => ({ id: s.id, name: s.name }))))
+      getCollections().then(data => {
+        if (Array.isArray(data)) setCollections(data)
+      }).catch(console.error)
+      getSuppliers().then(data => {
+        if (Array.isArray(data)) {
+          setSuppliers(data.filter(s => s.isActive).map(s => ({ id: s.id, name: s.name })))
+        }
+      }).catch(console.error)
       // Auto-generate initial SKU
       generateSKU()
     })
