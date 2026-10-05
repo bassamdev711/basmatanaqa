@@ -666,9 +666,6 @@ export default function CheckoutClient() {
                   <span>الإجمالي</span>
                   <span className="text-brand">{finalTotal.toLocaleString('ar-SA')} {currency}</span>
                 </div>
-                <div className="text-xs text-center text-foreground/50 mt-2">
-                  الأسعار شاملة ضريبة القيمة المضافة
-                </div>
               </div>
             </div>
           </aside>
