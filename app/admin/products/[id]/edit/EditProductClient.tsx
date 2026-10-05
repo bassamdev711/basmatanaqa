@@ -7,6 +7,8 @@ import { updateProduct } from '../../actions'
 import ImageUpload from '../../ImageUpload'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
+import { toast } from 'react-hot-toast'
+import { useEffect } from 'react'
 
 interface CollectionOption {
   id: string
@@ -48,6 +50,18 @@ export default function EditProductClient({ product, collections = [], suppliers
   const [seoPhrases, setSeoPhrases] = useState<string[]>(product.seoSearchPhrases || [])
   const [seoScore, setSeoScore] = useState<number>(product.seoScore || 0)
   const [showAdvanced, setShowAdvanced] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get('error')
+      if (error === 'duplicate_slug') {
+        toast.error('عفواً، اسم المنتج أو الرابط مستخدم لمنتج آخر. يرجى تغييره وحاول مرة أخرى.', { duration: 5000 })
+      } else if (error) {
+        toast.error('حدث خطأ غير متوقع أثناء الحفظ.')
+      }
+    }
+  }, [])
 
   const generateSlug = (name: string) => {
     return name

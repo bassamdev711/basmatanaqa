@@ -9,6 +9,7 @@ import { getSuppliers } from '../../suppliers/actions'
 import ImageUpload from '../ImageUpload'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
+import { toast } from 'react-hot-toast'
 
 type CollectionOption = { id: string; name: string }
 
@@ -52,6 +53,16 @@ export default function NewProductPage() {
       // Auto-generate initial SKU
       generateSKU()
     })
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get('error')
+      if (error === 'duplicate_slug') {
+        toast.error('عفواً، اسم المنتج أو الرابط مستخدم لمنتج آخر. يرجى تغييره وحاول مرة أخرى.', { duration: 5000 })
+      } else if (error) {
+        toast.error('حدث خطأ غير متوقع أثناء الحفظ.')
+      }
+    }
   }, [])
 
   return (

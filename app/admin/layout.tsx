@@ -5,6 +5,7 @@ import AdminSidebar from './components/AdminSidebar'
 import SetupRedirect from './components/SetupRedirect'
 import prisma from '@/lib/prisma'
 import { getStoreConfig } from '@/lib/store-config'
+import { Toaster } from 'react-hot-toast'
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -48,6 +49,7 @@ export default async function AdminLayout({
 
   return (
     <AdminSidebar profile={profile} store={store}>
+      <Toaster position="bottom-left" />
       <SetupRedirect isSetupComplete={profile.isSetupComplete} />
       <div className="max-w-6xl mx-auto md:px-10 mt-8">
         <div className="px-4 md:px-0">
