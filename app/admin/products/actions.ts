@@ -41,14 +41,13 @@ export async function createProduct(formData: FormData) {
   const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
 
   // Upload main image to Vercel Blob if a URL is provided (client may have already uploaded)
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!blobToken) throw new Error('BLOB_READ_WRITE_TOKEN is not configured');
+
 
   let storedImageUrl = imageUrl;
   if (imageUrl && !imageUrl.startsWith('https://')) {
     const file = await fetch(imageUrl).then((r) => r.blob());
     const filename = `products/${Date.now()}-main-${Math.random().toString(36).slice(2)}.webp`;
-    const { url } = await putTrackedBlob(filename, file, { access: 'public', token: blobToken }, 'product', file.size);
+    const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
     storedImageUrl = url;
   }
 
@@ -61,7 +60,7 @@ export async function createProduct(formData: FormData) {
       } else {
         const file = await fetch(img).then((r) => r.blob());
         const filename = `products/${Date.now()}-extra-${Math.random().toString(36).slice(2)}.webp`;
-        const { url } = await putTrackedBlob(filename, file, { access: 'public', token: blobToken }, 'product', file.size);
+        const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
         storedExtraImages.push(url);
       }
     }
@@ -139,14 +138,13 @@ export async function updateProduct(formData: FormData) {
   const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
   const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
 
-  const blobToken2 = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!blobToken2) throw new Error('BLOB_READ_WRITE_TOKEN is not configured');
+
 
   let storedImageUrl = imageUrl;
   if (imageUrl && !imageUrl.startsWith('https://')) {
     const file = await fetch(imageUrl).then((r) => r.blob());
     const filename = `products/${Date.now()}-main-${Math.random().toString(36).slice(2)}.webp`;
-    const { url } = await putTrackedBlob(filename, file, { access: 'public', token: blobToken2 }, 'product', file.size);
+    const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
     storedImageUrl = url;
   }
 
@@ -158,7 +156,7 @@ export async function updateProduct(formData: FormData) {
       } else {
         const file = await fetch(img).then((r) => r.blob());
         const filename = `products/${Date.now()}-extra-${Math.random().toString(36).slice(2)}.webp`;
-        const { url } = await putTrackedBlob(filename, file, { access: 'public', token: blobToken2 }, 'product', file.size);
+        const { url } = await putTrackedBlob(filename, file, { access: 'public' }, 'product', file.size);
         storedExtraImages.push(url);
       }
     }
