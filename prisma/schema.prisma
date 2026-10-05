@@ -21,7 +21,10 @@ model Product {
   category         String?
   collectionId     String?
   collection       Collection?      @relation(fields: [collectionId], references: [id])
+  supplierId       String?
+  supplier         Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   stock            Int              @default(0)
+  costPrice        Decimal?         @db.Decimal(10, 2) // سعر التكلفة من المورد
   featured         Boolean          @default(false)
   bestseller       Boolean          @default(false)
   isActive         Boolean          @default(true)
@@ -42,7 +45,28 @@ model Product {
   @@index([isActive, featured])
   @@index([isActive, bestseller])
   @@index([isActive, createdAt])
+  @@index([supplierId])
 }
+
+// ─── نظام الموردين ───────────────────────────────────────────
+
+model Supplier {
+  id          String    @id @default(cuid())
+  name        String    // اسم المورد
+  phone       String?   // هاتف التواصل
+  whatsapp    String?   // واتساب
+  email       String?   // بريد إلكتروني
+  address     String?   // العنوان
+  notes       String?   @db.Text // ملاحظات
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@index([isActive])
+}
+
+
 
 model DailyStats {
   id            String   @id @default(cuid())
