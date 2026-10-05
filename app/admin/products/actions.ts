@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { putTrackedBlob } from '@/lib/usage';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect';
 
 import { verifyAdmin } from '@/lib/auth';
 
@@ -66,35 +67,41 @@ export async function createProduct(formData: FormData) {
     }
   }
 
-  // Create product in DB
-  const product = await prisma.product.create({
-    data: {
-      name,
-      slug,
-      brand: brand ?? undefined,
-      collectionId: collectionId || undefined,
-      supplierId: supplierId || undefined,
-      costPrice: costPrice ?? undefined,
-      gender: gender || undefined,
-      size: size || undefined,
-      description: description ?? undefined,
-      price,
-      compareAtPrice: compareAtPrice ?? undefined,
-      sku: sku ?? undefined,
-      stock,
-      isActive,
-      featured,
-      bestseller,
-      imageUrl: storedImageUrl ?? undefined,
-      images: storedExtraImages,
-      seoSearchPhrases,
-      seoScore,
-    },
-  });
-
-  // Revalidate the product list and product page
-  revalidatePath('/admin/products');
-  revalidatePath(`/products/${product.slug}`);
+  try {
+    const product = await prisma.product.create({
+      data: {
+        name,
+        slug,
+        brand: brand ?? undefined,
+        collectionId: collectionId || undefined,
+        supplierId: supplierId || undefined,
+        costPrice: costPrice ?? undefined,
+        gender: gender || undefined,
+        size: size || undefined,
+        description: description ?? undefined,
+        price,
+        compareAtPrice: compareAtPrice ?? undefined,
+        sku: sku ?? undefined,
+        stock,
+        isActive,
+        featured,
+        bestseller,
+        imageUrl: storedImageUrl ?? undefined,
+        images: storedExtraImages,
+        seoSearchPhrases,
+        seoScore,
+      },
+    });
+    revalidatePath('/admin/products');
+    revalidatePath(`/products/${product.slug}`);
+  } catch (err: any) {
+    if (isRedirectError(err)) throw err;
+    if (err.code === 'P2002') {
+      redirect('/admin/products/new?error=duplicate_slug');
+    }
+    console.error(err);
+    redirect('/admin/products/new?error=unknown');
+  }
 
   redirect('/admin/products');
 }
@@ -162,33 +169,41 @@ export async function updateProduct(formData: FormData) {
     }
   }
 
-  const product = await prisma.product.update({
-    where: { id },
-    data: {
-      name,
-      slug,
-      brand: brand ?? undefined,
-      collectionId: collectionId || undefined,
-      supplierId: supplierId || null,
-      costPrice: costPrice != null && Number.isFinite(costPrice) && costPrice >= 0 ? costPrice : null,
-      gender: gender || undefined,
-      size: size || undefined,
-      description: description ?? undefined,
-      price,
-      compareAtPrice: compareAtPrice ?? undefined,
-      sku: sku ?? undefined,
-      stock,
-      isActive,
-      featured,
-      bestseller,
-      imageUrl: storedImageUrl ?? undefined,
-      images: storedExtraImages,
-      seoSearchPhrases,
-      seoScore,
-    },
-  });
-
-  revalidatePath('/admin/products');
-  revalidatePath(`/products/${product.slug}`);
+  try {
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        name,
+        slug,
+        brand: brand ?? undefined,
+        collectionId: collectionId || undefined,
+        supplierId: supplierId || null,
+        costPrice: costPrice != null && Number.isFinite(costPrice) && costPrice >= 0 ? costPrice : null,
+        gender: gender || undefined,
+        size: size || undefined,
+        description: description ?? undefined,
+        price,
+        compareAtPrice: compareAtPrice ?? undefined,
+        sku: sku ?? undefined,
+        stock,
+        isActive,
+        featured,
+        bestseller,
+        imageUrl: storedImageUrl ?? undefined,
+        images: storedExtraImages,
+        seoSearchPhrases,
+        seoScore,
+      },
+    });
+    revalidatePath('/admin/products');
+    revalidatePath(`/products/${product.slug}`);
+  } catch (err: any) {
+    if (isRedirectError(err)) throw err;
+    if (err.code === 'P2002') {
+      redirect(`/admin/products/${id}/edit?error=duplicate_slug`);
+    }
+    console.error(err);
+    redirect(`/admin/products/${id}/edit?error=unknown`);
+  }
   redirect('/admin/products');
 }
