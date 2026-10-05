@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, Clock } from "lucide-react";
 import { submitContactMessage } from "@/app/actions/contact";
 import { useToast } from "@/components/ToastProvider";
 
@@ -93,17 +93,17 @@ export default function ContactClient({ contactData }: { contactData?: ContactDa
                 </div>
               )}
 
-              {showAddress && (
-                <div className="flex items-start gap-6 group">
-                  <div className="w-14 h-14 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-surface transition-colors">
-                    <MapPin className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-foreground font-bold mb-2">المقر الرئيسي</h4>
-                    <p className="text-foreground/60 font-light">{address}</p>
-                  </div>
+              <div className="flex items-start gap-6 group">
+                <div className="w-14 h-14 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-surface transition-colors">
+                  <Clock className="w-6 h-6" />
                 </div>
-              )}
+                <div>
+                  <h4 className="text-foreground font-bold mb-2">أوقات العمل</h4>
+                  <p className="text-foreground/60 font-light leading-relaxed">
+                    فريق خدمة العملاء متاح للرد على استفساراتكم على مدار الساعة. نضمن لكم الرد في مدة أقصاها 12 ساعة.
+                  </p>
+                </div>
+              </div>
             </div>
           </motion.div>
 
