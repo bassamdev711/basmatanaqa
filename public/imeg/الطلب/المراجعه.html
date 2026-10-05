@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Confirmation - LUXE AROMA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Source+Sans+3:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#1c1d1b",
+                      "on-secondary-container": "#745c00",
+                      "on-primary-fixed-variant": "#204f3c",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#414944",
+                      "secondary-fixed": "#ffe088",
+                      "on-primary-fixed": "#002114",
+                      "primary-fixed": "#bbeed3",
+                      "background": "#fcf9f8",
+                      "on-secondary-fixed-variant": "#574500",
+                      "inverse-primary": "#a0d1b8",
+                      "on-tertiary-fixed": "#1b1c1a",
+                      "on-primary-container": "#73a48c",
+                      "surface-bright": "#fcf9f8",
+                      "secondary": "#735c00",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-on-surface": "#f3f0ef",
+                      "secondary-fixed-dim": "#e9c349",
+                      "surface-container-high": "#eae7e7",
+                      "on-secondary-fixed": "#241a00",
+                      "inverse-surface": "#313030",
+                      "on-tertiary-container": "#999a96",
+                      "outline-variant": "#c0c9c2",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed-variant": "#464744",
+                      "outline": "#717973",
+                      "tertiary-container": "#31322f",
+                      "on-secondary": "#ffffff",
+                      "on-surface": "#1c1b1b",
+                      "surface-container": "#f0eded",
+                      "tertiary-fixed-dim": "#c7c7c3",
+                      "on-background": "#1c1b1b",
+                      "surface-container-highest": "#e5e2e1",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e5e2e1",
+                      "surface": "#fcf9f8",
+                      "primary": "#002215",
+                      "primary-fixed-dim": "#a0d1b8",
+                      "on-error-container": "#93000a",
+                      "secondary-container": "#fed65b",
+                      "primary-container": "#043927",
+                      "on-tertiary": "#ffffff",
+                      "surface-dim": "#dcd9d9",
+                      "surface-container-low": "#f6f3f2",
+                      "surface-tint": "#396752",
+                      "tertiary-fixed": "#e3e2df",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "section-gap": "120px",
+                      "container-max": "1280px",
+                      "gutter": "24px",
+                      "unit": "8px",
+                      "margin-desktop": "80px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "\"Source Sans 3\""
+                      ],
+                      "headline-md": [
+                              "Playfair Display"
+                      ],
+                      "label-caps": [
+                              "\"Source Sans 3\""
+                      ],
+                      "display-lg": [
+                              "Playfair Display"
+                      ],
+                      "body-lg": [
+                              "\"Source Sans 3\""
+                      ],
+                      "display-lg-mobile": [
+                              "Playfair Display"
+                      ],
+                      "headline-sm": [
+                              "Playfair Display"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-lg": [
+                              "64px",
+                              {
+                                      "lineHeight": "72px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        /* Pulse Animation for Processing Icon */
+        @keyframes gentle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(0.95); }
+        }
+        .animate-gentle-pulse {
+            animation: gentle-pulse 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col antialiased">
+<!-- Top Navigation (Suppressed on this transactional screen as per guidelines, but retaining the brand anchor) -->
+<header class="w-full top-0 sticky bg-background border-b border-outline-variant z-50">
+<div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg tracking-tighter text-primary">
+                LUXE AROMA
+            </div>
+<!-- Navigation links and icons hidden as this is a linear/transactional intent screen -->
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex items-center justify-center py-20 px-margin-mobile md:px-margin-desktop relative overflow-hidden">
+<!-- Subtle Background Accent (Abstract representation of air/scent) -->
+<div class="absolute inset-0 pointer-events-none opacity-20" style="background: radial-gradient(circle at 50% 30%, #bbeed3 0%, transparent 60%);"></div>
+<div class="max-w-xl w-full bg-surface-container-lowest border border-[#E0E6E3] p-12 shadow-[0_40px_80px_-20px_rgba(0,34,21,0.04)] relative z-10 text-center">
+<!-- Processing Icon -->
+<div class="mb-10 inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary-fixed/20 text-primary-container animate-gentle-pulse mx-auto">
+<span class="material-symbols-outlined text-5xl" style="font-variation-settings: 'FILL' 0, 'wght' 200;">
+                    hourglass_top
+                </span>
+</div>
+<!-- Confirmation Text -->
+<h1 class="font-headline-md text-headline-md text-on-surface mb-6">
+                شكراً لطلبكم! طلبكم رقم #10294 قيد المراجعة
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-12 max-w-md mx-auto">
+                بانتظار تأكيد الدفع. سنقوم بإشعاركم فور التحقق من عملية التحويل.
+            </p>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-gutter justify-center items-center">
+<!-- Primary Button -->
+<button class="w-full sm:w-auto bg-primary text-[#D4AF37] font-label-caps text-label-caps px-8 py-4 transition-colors duration-300 hover:bg-primary-container">
+                    تتبع الطلب
+                </button>
+<!-- Secondary Button -->
+<button class="w-full sm:w-auto bg-transparent border border-[#D4AF37] text-on-background font-label-caps text-label-caps px-8 py-4 transition-colors duration-300 hover:bg-[#D4AF37]/10">
+                    مواصلة التسوق
+                </button>
+</div>
+<!-- Order Details summary snippet (Optional luxury touch) -->
+<div class="mt-16 pt-8 border-t border-outline-variant text-right">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">ملخص الطلب</h3>
+<div class="flex justify-between items-center py-2 font-body-md text-body-md text-on-surface-variant">
+<span>رقم الطلب</span>
+<span class="font-label-caps text-label-caps">#10294</span>
+</div>
+<div class="flex justify-between items-center py-2 font-body-md text-body-md text-on-surface-variant">
+<span>التاريخ</span>
+<span>24 أكتوبر 2024</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-section-gap bg-surface-container-lowest border-t border-outline-variant">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-mobile md:px-margin-desktop py-16 max-w-container-max mx-auto text-center md:text-right">
+<div class="md:col-span-1 mb-8 md:mb-0 flex flex-col items-center md:items-start">
+<span class="font-headline-sm text-headline-sm text-primary mb-4 block">LUXE AROMA</span>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    © 2024 LUXE AROMA. ALL RIGHTS RESERVED.
+                 </p>
+</div>
+<div class="flex flex-col gap-4 font-label-caps text-label-caps text-on-surface-variant">
+<a class="opacity-100 hover:text-secondary hover:opacity-80 transition-all duration-300" href="#">Newsletter</a>
+<a class="opacity-100 hover:text-secondary hover:opacity-80 transition-all duration-300" href="#">Instagram</a>
+</div>
+<div class="flex flex-col gap-4 font-label-caps text-label-caps text-on-surface-variant">
+<a class="opacity-100 hover:text-secondary hover:opacity-80 transition-all duration-300" href="#">Customer Service</a>
+<a class="opacity-100 hover:text-secondary hover:opacity-80 transition-all duration-300" href="#">Shipping &amp; Returns</a>
+</div>
+<div class="flex flex-col gap-4 font-label-caps text-label-caps text-on-surface-variant">
+<a class="opacity-100 hover:text-secondary hover:opacity-80 transition-all duration-300" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>التصنيفات - LUXE AROMA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Source+Sans+3:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "surface-tint": "#396752",
+                      "primary": "#002215",
+                      "secondary-fixed-dim": "#e9c349",
+                      "surface-container": "#f0eded",
+                      "on-secondary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "on-surface-variant": "#414944",
+                      "surface-dim": "#dcd9d9",
+                      "on-error-container": "#93000a",
+                      "inverse-primary": "#a0d1b8",
+                      "primary-fixed": "#bbeed3",
+                      "background": "#fcf9f8",
+                      "surface": "#fcf9f8",
+                      "on-secondary-container": "#745c00",
+                      "primary-container": "#043927",
+                      "on-secondary-fixed-variant": "#574500",
+                      "secondary-container": "#fed65b",
+                      "secondary": "#735c00",
+                      "surface-container-highest": "#e5e2e1",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed": "#e3e2df",
+                      "tertiary-fixed-dim": "#c7c7c3",
+                      "outline-variant": "#c0c9c2",
+                      "on-primary": "#ffffff",
+                      "on-surface": "#1c1b1b",
+                      "on-tertiary-fixed-variant": "#464744",
+                      "tertiary": "#1c1d1b",
+                      "surface-container-low": "#f6f3f2",
+                      "surface-variant": "#e5e2e1",
+                      "on-primary-container": "#73a48c",
+                      "secondary-fixed": "#ffe088",
+                      "primary-fixed-dim": "#a0d1b8",
+                      "error-container": "#ffdad6",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-container": "#999a96",
+                      "on-primary-fixed-variant": "#204f3c",
+                      "on-tertiary-fixed": "#1b1c1a",
+                      "surface-container-high": "#eae7e7",
+                      "inverse-on-surface": "#f3f0ef",
+                      "tertiary-container": "#31322f",
+                      "on-background": "#1c1b1b",
+                      "on-secondary-fixed": "#241a00",
+                      "surface-bright": "#fcf9f8",
+                      "on-primary-fixed": "#002114",
+                      "outline": "#717973",
+                      "inverse-surface": "#313030"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "8px",
+                      "container-max": "1280px",
+                      "margin-desktop": "80px",
+                      "section-gap": "120px",
+                      "margin-mobile": "20px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-sm": [
+                              "Playfair Display"
+                      ],
+                      "label-caps": [
+                              "\"Source Sans 3\""
+                      ],
+                      "display-lg-mobile": [
+                              "Playfair Display"
+                      ],
+                      "body-lg": [
+                              "\"Source Sans 3\""
+                      ],
+                      "headline-md": [
+                              "Playfair Display"
+                      ],
+                      "display-lg": [
+                              "Playfair Display"
+                      ],
+                      "body-md": [
+                              "\"Source Sans 3\""
+                      ]
+              },
+              "fontSize": {
+                      "headline-sm": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "64px",
+                              {
+                                      "lineHeight": "72px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+      </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased font-body-md overflow-x-hidden">
+<!-- Top Navigation Bar (Mobile Variant) -->
+<header class="w-full top-0 sticky z-50 bg-background border-b border-outline-variant">
+<div class="flex justify-between items-center h-[72px] px-margin-mobile">
+<!-- Menu Icon (Mobile) -->
+<button class="text-primary p-2">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<!-- Brand Logo -->
+<div class="font-headline-sm text-headline-sm text-primary tracking-tighter">
+                LUXE AROMA
+            </div>
+<!-- Trailing Icons -->
+<div class="flex gap-4 text-primary">
+<button class="hover:text-secondary transition-colors duration-300">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="hover:text-secondary transition-colors duration-300">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</button>
+</div>
+</div>
+</header>
+<main class="w-full relative pb-[100px]">
+<!-- Header Section -->
+<section class="px-margin-mobile pt-10 pb-6 text-center">
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-primary mb-4">التصنيفات</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-[300px] mx-auto">
+                اكتشف تشكيلاتنا الحصرية من العطور الفاخرة.
+            </p>
+</section>
+<!-- Quick Filter Chips (Horizontal Scroll) -->
+<section class="pl-margin-mobile pr-4 pb-8 overflow-x-auto no-scrollbar">
+<div class="flex gap-3 whitespace-nowrap rtl:pr-margin-mobile rtl:pl-4">
+<button class="px-5 py-2 bg-primary-container text-on-primary-container font-label-caps text-label-caps rounded-full border border-primary-container transition-all">الكل</button>
+<button class="px-5 py-2 bg-transparent text-primary font-label-caps text-label-caps rounded-full border border-outline-variant opacity-70 hover:opacity-100 transition-all">شرقي</button>
+<button class="px-5 py-2 bg-transparent text-primary font-label-caps text-label-caps rounded-full border border-outline-variant opacity-70 hover:opacity-100 transition-all">زهري</button>
+<button class="px-5 py-2 bg-transparent text-primary font-label-caps text-label-caps rounded-full border border-outline-variant opacity-70 hover:opacity-100 transition-all">عود</button>
+<button class="px-5 py-2 bg-transparent text-primary font-label-caps text-label-caps rounded-full border border-outline-variant opacity-70 hover:opacity-100 transition-all">خشبي</button>
+</div>
+</section>
+<!-- Product Grid (2 Columns Mobile) -->
+<section class="px-margin-mobile grid grid-cols-2 gap-4 gap-y-10">
+<!-- Product Card 1 -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-[4/5] bg-surface-container-low relative mb-4 overflow-hidden" data-alt="A macro shot of a sleek, minimalist glass perfume bottle with a dark emerald cap, resting on a smooth marble surface. Soft, high-key white lighting creates ethereal reflections. Subtle gold accents catch the light. The setting is a bright, luxurious boutique display. The mood is serene and exclusive." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDmSn52-w2SvjnlNkAirBSvTTcCLF7BUUG37mAKFl14a0B2e4K8l2S0P1POIUE3HN5qfyrz-MFDj9p4XYJad3Mb8Ik2YrG5IAOwShFAJ98txkY_LvCD08p_2UGXqNGJxOcfFki-hU1UgaAJ9FaeJuxpPmnEfnpW-m_41xTJMqleWx_wh2ibw7dmNBHqDZ6H3g9xnn5DMc6Fqk6AVixuCEnKTyUvOhv-lWWOBY2hg4DXPWK9oAOn_00Ckw')"></div>
+<div class="font-label-caps text-label-caps text-secondary tracking-widest mb-2 uppercase">Luxe Aroma</div>
+<h3 class="font-headline-sm text-headline-sm text-primary text-center mb-1 leading-tight text-lg">العود الملكي</h3>
+<div class="font-body-md text-body-md text-on-surface-variant">950 ر.س</div>
+</div>
+<!-- Product Card 2 -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-[4/5] bg-surface-container-low relative mb-4 overflow-hidden" data-alt="A delicate, minimalist perfume bottle filled with pale amber liquid, sitting on a pristine white pedestal. A single soft shadow stretches across the background. Ambient, diffused light highlights the bottle's elegant curves. The environment feels airy and clean. The mood is gentle and refined." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCKIv3__TdpuA1Fg24Ak9spRvtZ9Yg1LtDaXOiw6OHGoUR58JE6j2wYSHa_sIpb61JTo7byQgl1u-O1Pprp1rloFtlZHgB5dOkYF9gKklFDpj-v_Oe9p1srMV1u-IwI0Age7ARXWLlt3GnR6c4SQpMsNkAf5tlX8U3PQPg9Bziu55lh5CVnGh6O_Lhquxu77Ed6upCBplChKRSMnK6qgcSjRUY1yxMICTluaeA1VrJ90cvLFQaiW76-RA')"></div>
+<div class="font-label-caps text-label-caps text-secondary tracking-widest mb-2 uppercase">Luxe Aroma</div>
+<h3 class="font-headline-sm text-headline-sm text-primary text-center mb-1 leading-tight text-lg">زهرة الصحراء</h3>
+<div class="font-body-md text-body-md text-on-surface-variant">720 ر.س</div>
+</div>
+<!-- Product Card 3 -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-[4/5] bg-surface-container-low relative mb-4 overflow-hidden" data-alt="A striking, dark glass perfume bottle with minimalist gold typography, placed against a soft grey-white background. Crisp, directional light creates a dramatic but refined contrast. The bottle sits perfectly centered, exuding power and mystery. The overall aesthetic is modern, high-end luxury." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCAiHmJox2shdXrxUXAKqfc6AmSoTwEcKVqBRhccGb2z5QvvnEhb2jd21Jvmde6fRaWLn60r1zJ_E1PKLn0Y8OLtfGzGtN58lM_CAqkrMxlih2AgP5MUhLGO2Z4ey76X9XgAYNeSpiBq3nAbnprnB5mXiAovdMvEha0B1W7_kYmfdK0Y9ed6FucTTIkU9d8qdLvEBhMElnaup9w7RwtKjUBfZRgdaOdVgfWPyZsdzSswMxcVmL1Dz8X7w')"></div>
+<div class="font-label-caps text-label-caps text-secondary tracking-widest mb-2 uppercase">Luxe Aroma</div>
+<h3 class="font-headline-sm text-headline-sm text-primary text-center mb-1 leading-tight text-lg">ليالي نجد</h3>
+<div class="font-body-md text-body-md text-on-surface-variant">880 ر.س</div>
+</div>
+<!-- Product Card 4 -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-[4/5] bg-surface-container-low relative mb-4 overflow-hidden" data-alt="A slender, elegant perfume bottle emitting a subtle golden glow, resting on a textured linen cloth. The lighting is soft and ethereal, capturing the feeling of early morning light. The composition is highly minimalist, with generous white space around the bottle. The mood is peaceful and luxurious." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlczPY0y13zrRi3LWp2hMkWYgV5SvMxk-F_7VAbwQPE6nJVfC63LSfR9_FfqBH78rOkE8FwqFLVhZxF4OiR-Xcj9gRTyiNknwYfFFM9exUeL33LXiuBhxAEgIDKY8EpOoPM78RAvaGF-pil5D6O8jnzQrrCYkxoEN02784n9r2Vzu2bWZCb3As27y_mFrvN_QzXiIBXVBXP_Q5sph9HDRIjDHj4gaWdBzCxQ95S2YgTt1rEwch6YFPBw')"></div>
+<div class="font-label-caps text-label-caps text-secondary tracking-widest mb-2 uppercase">Luxe Aroma</div>
+<h3 class="font-headline-sm text-headline-sm text-primary text-center mb-1 leading-tight text-lg">مسك خالص</h3>
+<div class="font-body-md text-body-md text-on-surface-variant">1,100 ر.س</div>
+</div>
+<!-- Product Card 5 -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-[4/5] bg-surface-container-low relative mb-4 overflow-hidden" data-alt="A heavy, geometric crystal perfume bottle reflecting warm ambient light in a stark white space. The glass facets scatter soft prisms of light across the surface. The design is stark and contemporary, focusing entirely on form and texture. The mood is sophisticated and avant-garde." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA_L68Y5c6un4CgSV8UfIGhcYdN9wbAv7_MH_Nk58F9GoALYLHHtXnABnwhboIx5GV2eOJR-NTGs2rSxU51RdOSpBDRStC_JglXNzhKHUmxcAgvl7MIsoy8j5pzhpemmApvTvb9E6xYepU8HbSIwKfTV0cyiHrPaFmsbofOhJaU27uIyGmm7UWX-NisBiqAF1pyCRN7OjwC7FD0M8SD9UKA-OuCs-bWJnrHLcGXhVTHOfwrzQfWL3_PTQ')"></div>
+<div class="font-label-caps text-label-caps text-secondary tracking-widest mb-2 uppercase">Luxe Aroma</div>
+<h3 class="font-headline-sm text-headline-sm text-primary text-center mb-1 leading-tight text-lg">خشب الصندل</h3>
+<div class="font-body-md text-body-md text-on-surface-variant">650 ر.س</div>
+</div>
+<!-- Product Card 6 -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-[4/5] bg-surface-container-low relative mb-4 overflow-hidden" data-alt="An impossibly smooth, matte black perfume bottle with a single thin gold line, standing isolated in an airy, brightly lit room. The contrast between the dark bottle and the high-key white environment emphasizes its exclusivity. The aesthetic is ultra-minimalist and modern luxury." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCJMbvEVpkqFIdZPKfRCCZjMj94P5cw0DmgvSubkI6zXr5XEDMywzjYFW3KnRXuoRJqdQSun82wPTdeXQXsaVVRMzxf-UPPFd9UYpdvExp7X4nVix2DAVSlrVCFMuZ8prJNPOndwChVctvxuo-pRkG1VKbseCh1IA91ZQyTSXVW1NfCEX0cc2MxjiQfWrnz1OjUkaK4gaxLFslBs824VD5oXPL6UBJKHA61OFax4Yo_4V2cbxKtGWz3XQ')"></div>
+<div class="font-label-caps text-label-caps text-secondary tracking-widest mb-2 uppercase">Luxe Aroma</div>
+<h3 class="font-headline-sm text-headline-sm text-primary text-center mb-1 leading-tight text-lg">عنبر أصيل</h3>
+<div class="font-body-md text-body-md text-on-surface-variant">1,250 ر.س</div>
+</div>
+</section>
+<!-- Floating Filter Button -->
+<div class="fixed bottom-6 left-0 right-0 px-margin-mobile flex justify-center z-40 pointer-events-none">
+<button class="pointer-events-auto bg-primary text-on-primary font-label-caps text-label-caps py-4 px-8 w-[200px] flex items-center justify-center gap-2 shadow-[0_4px_40px_rgba(0,34,21,0.2)] active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="tune">tune</span>
+                تصفية النتائج
+            </button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-section-gap bg-surface-container-lowest border-t border-outline-variant">
+<div class="grid grid-cols-1 gap-8 px-margin-mobile py-16">
+<div class="font-headline-sm text-headline-sm text-primary mb-4 text-center">
+                LUXE AROMA
+            </div>
+<nav class="flex flex-col items-center gap-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant opacity-100 hover:text-secondary transition-colors duration-300" href="#">Newsletter</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant opacity-100 hover:text-secondary transition-colors duration-300" href="#">Instagram</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant opacity-100 hover:text-secondary transition-colors duration-300" href="#">Customer Service</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant opacity-100 hover:text-secondary transition-colors duration-300" href="#">Shipping &amp; Returns</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant opacity-100 hover:text-secondary transition-colors duration-300" href="#">Privacy Policy</a>
+</nav>
+<div class="font-body-md text-body-md text-on-surface-variant text-center mt-8 text-sm">
+                © 2024 LUXE AROMA. ALL RIGHTS RESERVED.
+            </div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUXE AROMA - إثبات الدفع</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#1c1d1b",
+                      "on-secondary-container": "#745c00",
+                      "on-primary-fixed-variant": "#204f3c",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#414944",
+                      "secondary-fixed": "#ffe088",
+                      "on-primary-fixed": "#002114",
+                      "primary-fixed": "#bbeed3",
+                      "background": "#fcf9f8",
+                      "on-secondary-fixed-variant": "#574500",
+                      "inverse-primary": "#a0d1b8",
+                      "on-tertiary-fixed": "#1b1c1a",
+                      "on-primary-container": "#73a48c",
+                      "surface-bright": "#fcf9f8",
+                      "secondary": "#735c00",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-on-surface": "#f3f0ef",
+                      "secondary-fixed-dim": "#e9c349",
+                      "surface-container-high": "#eae7e7",
+                      "on-secondary-fixed": "#241a00",
+                      "inverse-surface": "#313030",
+                      "on-tertiary-container": "#999a96",
+                      "outline-variant": "#c0c9c2",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed-variant": "#464744",
+                      "outline": "#717973",
+                      "tertiary-container": "#31322f",
+                      "on-secondary": "#ffffff",
+                      "on-surface": "#1c1b1b",
+                      "surface-container": "#f0eded",
+                      "tertiary-fixed-dim": "#c7c7c3",
+                      "on-background": "#1c1b1b",
+                      "surface-container-highest": "#e5e2e1",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e5e2e1",
+                      "surface": "#fcf9f8",
+                      "primary": "#002215",
+                      "primary-fixed-dim": "#a0d1b8",
+                      "on-error-container": "#93000a",
+                      "secondary-container": "#fed65b",
+                      "primary-container": "#043927",
+                      "on-tertiary": "#ffffff",
+                      "surface-dim": "#dcd9d9",
+                      "surface-container-low": "#f6f3f2",
+                      "surface-tint": "#396752",
+                      "tertiary-fixed": "#e3e2df",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "section-gap": "120px",
+                      "container-max": "1280px",
+                      "gutter": "24px",
+                      "unit": "8px",
+                      "margin-desktop": "80px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "\"Source Sans 3\""
+                      ],
+                      "headline-md": [
+                              "Playfair Display"
+                      ],
+                      "label-caps": [
+                              "\"Source Sans 3\""
+                      ],
+                      "display-lg": [
+                              "Playfair Display"
+                      ],
+                      "body-lg": [
+                              "\"Source Sans 3\""
+                      ],
+                      "display-lg-mobile": [
+                              "Playfair Display"
+                      ],
+                      "headline-sm": [
+                              "Playfair Display"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-lg": [
+                              "64px",
+                              {
+                                      "lineHeight": "72px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
+<!-- TopNavBar -->
+<nav class="bg-background dark:bg-background w-full top-0 sticky border-b border-outline-variant dark:border-outline z-50">
+<div class="flex justify-between items-center h-20 px-margin-desktop max-w-container-max mx-auto">
+<div class="flex items-center gap-8 hidden md:flex">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-label-caps text-label-caps cursor-pointer transition-all active:opacity-70" href="#">Collections</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-label-caps text-label-caps cursor-pointer transition-all active:opacity-70" href="#">Fragrance Finder</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-label-caps text-label-caps cursor-pointer transition-all active:opacity-70" href="#">Brand Story</a>
+</div>
+<div class="font-display-lg text-display-lg tracking-tighter text-primary dark:text-primary-fixed">
+                LUXE AROMA
+            </div>
+<div class="flex items-center gap-6">
+<button class="text-primary dark:text-primary-fixed cursor-pointer transition-all active:opacity-70 hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="text-primary dark:text-primary-fixed cursor-pointer transition-all active:opacity-70 hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-section-gap flex justify-center items-start">
+<div class="w-full max-w-[640px] bg-surface-container-lowest shadow-[0_40px_80px_rgba(0,34,21,0.04)] p-8 md:p-12 border border-outline-variant/30 rounded-none">
+<header class="mb-12 text-center">
+<h1 class="font-headline-md text-headline-md text-primary mb-4">إثبات الدفع</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">الرجاء تحويل المبلغ إلى الحساب التالي وإرفاق صورة إشعار التحويل.</p>
+</header>
+<!-- Bank Details Card -->
+<div class="bg-surface-container-low border border-outline-variant/50 p-6 mb-10 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-1 h-full bg-secondary"></div>
+<h3 class="font-label-caps text-label-caps text-secondary mb-6">تفاصيل الحساب البنكي</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center border-b border-outline-variant/30 pb-4">
+<span class="font-body-md text-body-md text-on-surface-variant">اسم الحساب</span>
+<span class="font-body-md text-body-md font-bold text-primary">LUXE AROMA TRADING</span>
+</div>
+<div class="flex justify-between items-center border-b border-outline-variant/30 pb-4">
+<span class="font-body-md text-body-md text-on-surface-variant">البنك</span>
+<span class="font-body-md text-body-md font-bold text-primary">البنك الأهلي السعودي</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface-variant">رقم الحساب (IBAN)</span>
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-bold text-primary tracking-widest" dir="ltr">SA45 1000 0000 1234 5678 90</span>
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="نسخ">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<form class="space-y-10">
+<!-- Upload Area -->
+<div>
+<label class="block font-label-caps text-label-caps text-primary mb-4">صورة إشعار التحويل</label>
+<div class="border-2 border-dashed border-outline-variant/70 hover:border-secondary bg-surface-bright p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group">
+<span class="material-symbols-outlined text-[48px] text-outline-variant group-hover:text-secondary mb-4 transition-colors duration-300" data-icon="cloud_upload">cloud_upload</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-center mb-2">اسحب وأفلت الصورة هنا، أو <span class="text-secondary font-bold">استعرض</span></p>
+<p class="font-label-caps text-label-caps text-outline-variant">JPG, PNG، أقصى حجم 5MB</p>
+<input accept="image/*" class="hidden" type="file"/>
+</div>
+</div>
+<!-- Transaction ID -->
+<div class="relative pt-6">
+<label class="absolute top-0 right-0 font-label-caps text-label-caps text-primary" for="transaction_id">رقم العملية (اختياري)</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-secondary focus:ring-0 px-0 py-3 font-body-md text-body-md text-primary placeholder:text-outline-variant transition-colors" id="transaction_id" placeholder="أدخل رقم العملية المرجعي" type="text"/>
+</div>
+<!-- Submit Action -->
+<button class="w-full bg-primary text-secondary-fixed font-label-caps text-label-caps py-5 flex justify-center items-center gap-3 hover:bg-primary-container transition-colors duration-300 uppercase tracking-widest" type="submit">
+<span>إرسال الإثبات</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest dark:bg-tertiary-container w-full mt-section-gap border-t border-outline-variant dark:border-outline">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-desktop py-16 max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-1 mb-8 md:mb-0">
+<div class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed mb-4">LUXE AROMA</div>
+<p class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-tertiary-fixed-variant">© 2024 LUXE AROMA. ALL RIGHTS RESERVED.</p>
+</div>
+<div class="flex flex-col gap-4">
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-tertiary-fixed-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 opacity-100 hover:opacity-80 transition-opacity" href="#">Newsletter</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-tertiary-fixed-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 opacity-100 hover:opacity-80 transition-opacity" href="#">Instagram</a>
+</div>
+<div class="flex flex-col gap-4">
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-tertiary-fixed-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 opacity-100 hover:opacity-80 transition-opacity" href="#">Customer Service</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-tertiary-fixed-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 opacity-100 hover:opacity-80 transition-opacity" href="#">Shipping &amp; Returns</a>
+</div>
+<div class="flex flex-col gap-4">
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-tertiary-fixed-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 opacity-100 hover:opacity-80 transition-opacity" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+</body></html>

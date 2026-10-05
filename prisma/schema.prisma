@@ -1,0 +1,554 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  brand            String?
+  description      String?
+  price            Decimal          @db.Decimal(10, 2)
+  compareAtPrice   Decimal?         @db.Decimal(10, 2)
+  sku              String?
+  size             String?
+  gender           String?
+  category         String?
+  collectionId     String?
+  collection       Collection?      @relation(fields: [collectionId], references: [id])
+  stock            Int              @default(0)
+  featured         Boolean          @default(false)
+  bestseller       Boolean          @default(false)
+  isActive         Boolean          @default(true)
+  imageUrl         String?
+  images           String[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  orderItems       OrderItem[]
+  seoSearchPhrases String[]
+  seoScore         Int?
+  variants         ProductVariant[]
+  campaigns        Campaign[]
+  viewsCount       Int              @default(0)
+  addToCartCount   Int              @default(0)
+  salesCount       Int              @default(0)
+  reviews          Review[]
+
+  @@index([isActive, featured])
+  @@index([isActive, bestseller])
+  @@index([isActive, createdAt])
+}
+
+model DailyStats {
+  id            String   @id @default(cuid())
+  date          DateTime @unique
+  visitorsCount Int      @default(0)
+  pageViews     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ProductVariant {
+  id             String      @id @default(cuid())
+  productId      String
+  product        Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size           String
+  price          Decimal     @db.Decimal(10, 2)
+  compareAtPrice Decimal?    @db.Decimal(10, 2)
+  stock          Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  orderItems     OrderItem[]
+}
+
+model Order {
+  id                  String               @id @default(cuid())
+  orderNumber         String?              @unique
+  userId              String
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  customerName        String
+  customerPhone       String
+  governorate         String
+  city                String
+  address             String
+  paymentMethod       String
+  paymentStatus       String               @default("PENDING") // PENDING, AWAITING_CONFIRMATION, PAID, FAILED
+  status              String               @default("NEW") // NEW, PROCESSING, SHIPPED, COMPLETED, CANCELLED
+  totalAmount         Decimal              @db.Decimal(10, 2)
+  shippingFee         Decimal              @default(0) @db.Decimal(10, 2)
+  paymentProofUrl     String?
+  transactionId       String?
+  couponId            String?
+  coupon              Coupon?              @relation(fields: [couponId], references: [id])
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  idempotencyKey      String?              @unique
+  items               OrderItem[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@index([status, createdAt])
+  @@index([paymentStatus, createdAt])
+  @@index([customerPhone, createdAt])
+  @@index([userId, createdAt])
+}
+
+model OrderItem {
+  id        String          @id @default(cuid())
+  orderId   String
+  productId String?
+  variantId String?
+  quantity  Int
+  price     Decimal         @db.Decimal(10, 2)
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String
+  phone               String               @unique
+  email               String?              @unique
+  passwordHash        String
+  avatarUrl           String?
+  isActive            Boolean              @default(true)
+  emailVerifiedAt     DateTime?
+  phoneVerifiedAt     DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  sessions            UserSession[]
+  orders              Order[]
+  loyaltyAccount      LoyaltyAccount?
+  loyaltyTransactions LoyaltyTransaction[]
+  notifications       Notification[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@index([isActive, createdAt])
+  @@index([lastLoginAt])
+}
+
+model UserSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  ipAddress  String?
+  userAgent  String?   @db.Text
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId, revokedAt, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model LoyaltyAccount {
+  id               String               @id @default(cuid())
+  userId           String               @unique
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance          Int                  @default(0)
+  lifetimeEarned   Int                  @default(0)
+  lifetimeRedeemed Int                  @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  transactions     LoyaltyTransaction[]
+}
+
+model LoyaltySettings {
+  id                 String   @id @default("singleton")
+  isEnabled          Boolean  @default(false)
+  pointsPerUnit      Decimal  @default(100) @db.Decimal(10, 2)
+  minimumOrderAmount Decimal  @default(0) @db.Decimal(10, 2)
+  redeemEnabled      Boolean  @default(false)
+  pointsValue        Decimal  @default(1) @db.Decimal(10, 2)
+  welcomeBonus       Int      @default(0)
+  expiryEnabled      Boolean  @default(false)
+  pointsExpiryDays   Int?
+  updatedAt          DateTime @updatedAt
+}
+
+model LoyaltyTransaction {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  accountId    String
+  account      LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  type         String
+  points       Int
+  balanceAfter Int
+  orderId      String?
+  order        Order?         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  referenceKey String         @unique
+  description  String?
+  adminUserId  String?
+  createdAt    DateTime       @default(now())
+
+  @@index([userId, createdAt])
+  @@index([orderId])
+  @@index([type, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String    @db.Text
+  dataJson  String?   @db.Text
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+model PaymentSettings {
+  id                       String   @id @default("singleton")
+  bankTransferEnabled      Boolean  @default(true)
+  bankTransferInstructions String?
+  walletsEnabled           Boolean  @default(true)
+  walletsInstructions      String?
+  codEnabled               Boolean  @default(false)
+  codFee                   Decimal  @default(0) @db.Decimal(10, 2)
+  codInstructions          String?
+  currency                 String   @default("ر.ي")
+  updatedAt                DateTime @updatedAt
+}
+
+model BankAccount {
+  id            String   @id @default(cuid())
+  bankName      String
+  accountName   String
+  accountNumber String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DigitalWallet {
+  id            String   @id @default(cuid())
+  walletName    String
+  accountNumber String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Collection {
+  id               String    @id @default(cuid())
+  name             String
+  slug             String    @unique
+  description      String?
+  imageUrl         String?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  products         Product[]
+  seoSearchPhrases String[]
+}
+
+model StoreSettings {
+  id                    String   @id @default("singleton")
+  shippingFee           Decimal  @default(0) @db.Decimal(10, 2)
+  freeShippingThreshold Decimal  @default(0) @db.Decimal(10, 2)
+  storeName             String?
+  storeNameLatin        String?
+  storeDescription      String?
+  storeTagline          String?
+  logoUrl               String?
+  seoSearchPhrases      String[]
+  locale                String   @default("ar")
+  currencyCode          String   @default("USD")
+  showShippingInFooter  Boolean  @default(false)
+  showReturnInFooter    Boolean  @default(false)
+  shippingPolicyContent String?  @db.Text
+  returnPolicyContent   String?  @db.Text
+  ogImageUrl            String? // صورة المشاركة (Open Graph)
+  faviconUrl            String? // أيقونة المتصفح (Favicon)
+  storeUrl              String? // رابط المتجر لتوليد QR Code
+  updatedAt             DateTime @updatedAt
+}
+
+model LegalPage {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  content          String   @db.Text
+  isActive         Boolean  @default(true)
+  seoTopic         String?
+  seoSearchPhrases String[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ─── نظام التسويق ───────────────────────────────────────────
+
+model Coupon {
+  id             String    @id @default(cuid())
+  code           String    @unique // كود الكوبون (مثل: SUMMER20)
+  description    String? // وصف اختياري للمدير
+  type           String // PERCENTAGE | FIXED
+  value          Decimal   @db.Decimal(10, 2) // قيمة الخصم
+  minOrderAmount Decimal?  @db.Decimal(10, 2) // حد أدنى للطلب
+  maxUses        Int? // حد أقصى للاستخدام (null = غير محدود)
+  usedCount      Int       @default(0) // عدد مرات الاستخدام الفعلية
+  expiresAt      DateTime? // تاريخ الانتهاء (null = لا ينتهي)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  orders         Order[]
+}
+
+model Campaign {
+  id                 String    @id @default(cuid())
+  slug               String?   @unique // رابط خاص بالحملة
+  title              String // عنوان الحملة
+  description        String? // وصف/رسالة الحملة
+  imageUrl           String? // صورة البانر (اختيارية)
+  couponCode         String? // كود كوبون مرتبط بالحملة
+  discountPercentage Int? // نسبة الخصم التلقائية المطبقة
+  startDate          DateTime // تاريخ البداية
+  endDate            DateTime // تاريخ الانتهاء
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  products           Product[] // المنتجات المرتبطة بالحملة
+}
+
+model AnnouncementBar {
+  id        String   @id @default("singleton")
+  message   String // نص الإعلان
+  linkText  String? // نص الرابط (اختياري)
+  linkUrl   String? // الرابط (اختياري)
+  bgColor   String   @default("#1a544a") // لون الخلفية
+  textColor String   @default("#ffffff") // لون النص
+  isActive  Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+model ContactSettings {
+  id String @id @default("singleton")
+
+  phoneNumber     String?
+  showPhoneNumber Boolean @default(true)
+
+  whatsappNumber     String?
+  showWhatsappNumber Boolean @default(true)
+
+  emailAddress     String?
+  showEmailAddress Boolean @default(true)
+
+  address     String?
+  showAddress Boolean @default(true)
+
+  instagramUrl  String?
+  showInstagram Boolean @default(true)
+
+  facebookUrl  String?
+  showFacebook Boolean @default(true)
+
+  twitterUrl  String?
+  showTwitter Boolean @default(true)
+
+  telegramUrl  String?
+  showTelegram Boolean @default(true)
+
+  threadsUrl  String?
+  showThreads Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  email     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ShippingCity {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  shippingFee Decimal  @default(0) @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  name      String
+  city      String?
+  content   String
+  rating    Int      @default(5)
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  isGlobal  Boolean  @default(true)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HomepageSettings {
+  id                  String @id @default("singleton")
+  // Hero Section
+  heroTitle           String @default("متجرك")
+  heroSubtitle        String @default("حضورٌ لا يُنسى.")
+  heroDescription     String @default("اكتشف مجموعتنا المختارة بعناية، المصممة لتمنحك تجربة تسوق واضحة وفريدة.")
+  heroPrimaryButton   String @default("اكتشف المنتجات")
+  heroSecondaryButton String @default("اعرف المزيد")
+
+  // About Section
+  aboutTopTitle    String @default("هوية المتجر")
+  aboutMainTitle   String @default("من نحن")
+  aboutQuote       String @default("\"نختار منتجاتنا بعناية لنقدم لك تجربة واضحة ومميزة.\"")
+  aboutDescription String @default("نقدم منتجات مختارة بعناية، وخدمة موثوقة، وتجربة تسوق بسيطة تناسب احتياجات عملائنا.")
+
+  // Experience Section
+  expTopTitle  String @default("قيمنا")
+  expMainTitle String @default("تجربة تسوق أفضل")
+  expBox1Title String @default("اختيار واضح")
+  expBox1Desc  String @default("نوضح تفاصيل منتجاتنا وأسعارها وخياراتها حتى تتخذ قرارك بثقة.")
+  expBox2Title String @default("خدمة موثوقة")
+  expBox2Desc  String @default("نرافقك قبل الشراء وبعده من خلال قنوات تواصل واضحة وتجربة طلب آمنة.")
+
+  // Stats Section (Stored as JSON array to allow flexible stats)
+  statsJson String @default("[{\"value\":\"01\",\"label\":\"اختيار واضح\"},{\"value\":\"02\",\"label\":\"خدمة موثوقة\"},{\"value\":\"03\",\"label\":\"تجربة سهلة\"},{\"value\":\"04\",\"label\":\"دعم مستمر\"}]")
+
+  updatedAt DateTime @updatedAt
+}
+
+model AdminProfile {
+  id              String   @id @default("singleton")
+  name            String   @default("مدير المتجر")
+  avatarUrl       String?
+  themeBackground String?
+  passwordHash    String?
+  isSetupComplete Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model AdminSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UsagePlan {
+  id                  String              @id @default(cuid())
+  name                String
+  slug                String              @unique
+  price               Decimal             @default(0) @db.Decimal(10, 2)
+  currencyCode        String              @default("USD")
+  databaseLimitBytes  BigInt
+  blobLimitBytes      BigInt
+  bandwidthLimitBytes BigInt
+  isActive            Boolean             @default(true)
+  sortOrder           Int                 @default(0)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  subscriptions       StoreSubscription[]
+}
+
+model StoreSubscription {
+  id         String     @id @default("singleton")
+  planId     String?
+  plan       UsagePlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  status     String     @default("ACTIVE")
+  startedAt  DateTime   @default(now())
+  renewsAt   DateTime?
+  graceUntil DateTime?
+  notes      String?    @db.Text
+  updatedBy  String?
+  updatedAt  DateTime   @updatedAt
+}
+
+model UsageSnapshot {
+  id          String    @id @default(cuid())
+  resource    String
+  usedBytes   BigInt
+  limitBytes  BigInt
+  source      String
+  confidence  String    @default("measured")
+  periodStart DateTime
+  periodEnd   DateTime?
+  measuredAt  DateTime  @default(now())
+
+  @@unique([resource, periodStart])
+  @@index([resource, measuredAt])
+}
+
+model StorageObject {
+  id            String    @id @default(cuid())
+  url           String    @unique
+  storageKey    String?
+  sizeBytes     BigInt
+  kind          String    @default("other")
+  isDeleted     Boolean   @default(false)
+  reservedUntil DateTime?
+  createdAt     DateTime  @default(now())
+  deletedAt     DateTime?
+
+  @@index([kind, isDeleted])
+  @@index([createdAt])
+}
+
+model AdminNotificationPreference {
+  id                 String   @id @default("singleton")
+  orderNotifications Boolean  @default(true)
+  limitNotifications Boolean  @default(true)
+  pushEnabled        Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
+}
+
+model InAppNotification {
+  id        String    @id @default(cuid())
+  type      String
+  title     String
+  body      String    @db.Text
+  url       String?
+  dedupeKey String    @unique
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([readAt, createdAt])
+  @@index([type, createdAt])
+}

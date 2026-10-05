@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>إعدادات الدفع - لوكس أرومـا</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&amp;family=Playfair+Display:wght@600;700&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#261900",
+                        "on-surface-variant": "#414944",
+                        "tertiary-fixed-dim": "#8fd5b5",
+                        "outline-variant": "#c0c9c2",
+                        "border-subtle": "#E2E8F0",
+                        "surface-container-high": "#e7e8e9",
+                        "status-success": "#107C10",
+                        "outline": "#717973",
+                        "secondary": "#775a19",
+                        "primary-fixed-dim": "#a0d1b8",
+                        "secondary-fixed": "#ffdea5",
+                        "status-warning": "#F5A623",
+                        "on-secondary-fixed-variant": "#5d4201",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f3f4f5",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#e9c176",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d9dadb",
+                        "on-secondary-container": "#785a1a",
+                        "on-surface": "#191c1d",
+                        "surface-variant": "#e1e3e4",
+                        "on-primary-fixed": "#002114",
+                        "status-info": "#0078D4",
+                        "inverse-on-surface": "#f0f1f2",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-primary-container": "#73a48c",
+                        "primary-fixed": "#bbeed3",
+                        "on-primary-fixed-variant": "#204f3c",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container": "#edeeef",
+                        "surface-tint": "#396752",
+                        "tertiary-container": "#003927",
+                        "surface-card": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#00513a",
+                        "tertiary": "#002116",
+                        "on-tertiary": "#ffffff",
+                        "status-danger": "#D83B01",
+                        "inverse-primary": "#a0d1b8",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2e3132",
+                        "primary": "#002215",
+                        "on-background": "#191c1d",
+                        "primary-container": "#043927",
+                        "on-error-container": "#93000a",
+                        "surface": "#f8f9fa",
+                        "on-tertiary-container": "#62a689",
+                        "secondary-container": "#fed488",
+                        "on-tertiary-fixed": "#002115",
+                        "background": "#f8f9fa",
+                        "tertiary-fixed": "#abf1d0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "grid-gutter": "24px",
+                        "container-padding": "32px",
+                        "stack-md": "16px",
+                        "stack-sm": "8px",
+                        "stack-lg": "24px",
+                        "sidebar-width": "280px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Playfair Display"],
+                        "title-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "headline-sm": ["Playfair Display"],
+                        "body-md": ["Hanken Grotesk"],
+                        "display-lg": ["Playfair Display"],
+                        "data-mono": ["JetBrains Mono"],
+                        "label-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["40px", { "lineHeight": "52px", "fontWeight": "700" }],
+                        "data-mono": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #F8F9FA; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #043927;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #043927;
+        }
+        .toggle-checkbox:checked + .toggle-label:after {
+            transform: translateX(100%);
+            border-color: white;
+        }
+        .toggle-label {
+            width: 44px;
+            height: 24px;
+            background-color: #E2E8F0;
+            border-radius: 9999px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .toggle-label:after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface bg-background antialiased flex">
+<!-- SideNavBar -->
+<aside class="fixed right-0 top-0 h-full w-[280px] bg-primary text-secondary flex flex-col z-50">
+<div class="p-container-padding pb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-white tracking-tight">لوكس أرومـا</h1>
+<p class="font-body-sm text-body-sm text-outline mt-1 opacity-80">إدارة المتجر</p>
+</div>
+<nav class="flex-1 flex flex-col h-full right-0 text-right gap-stack-sm px-4">
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>لوحة القيادة</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>المنتجات</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span>التصنيفات</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span>الطلبات</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg bg-primary-container text-white border-r-4 border-secondary-fixed opacity-90 transition-all font-label-md text-label-md relative overflow-hidden group" href="#">
+<div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="material-symbols-outlined icon-fill" data-icon="payments">payments</span>
+<span>إعدادات الدفع</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>العملاء</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>الإعدادات العامة</span>
+</a>
+</nav>
+<div class="p-4 mt-auto border-t border-white/10">
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>تسجيل الخروج</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 mr-[280px] flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="h-16 bg-surface flex justify-between items-center w-full px-grid-gutter border-b border-border-subtle sticky top-0 z-40">
+<div class="font-title-lg text-title-lg text-primary font-bold">إعدادات الدفع</div>
+<div class="flex items-center gap-4">
+<button aria-label="Notifications" class="text-on-surface-variant hover:text-primary transition-transform scale-95 hover:scale-100">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button aria-label="Help" class="text-on-surface-variant hover:text-primary transition-transform scale-95 hover:scale-100">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-border-subtle ml-2">
+<img alt="Admin User" class="w-full h-full object-cover" data-alt="A professional headshot of an administrator in a corporate setting, soft lighting, clean background, modern luxury aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAA2KvyhurmJNYL6fzcC8y0nEOId8rgrtCi6Z2_JJEa5OfL_3l9EXJdirb7quPgtcJvhZdnRvYBWTH8b0aD2H2HLN7b1KT_RCc3aECnnnPh50rbARyZDtICY8LwvCKzi6Eg1oIwv68Ikj8b3hbXW6JyAyVYVokSQG6A5s9aBmY9NLKxiHp3myx3om-y3Tp-SwGr8kbiWvveaYgyKlrg9t2aXkFazQ7nclYx_LbPsyKcbTecGFa_doQizA"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-container-padding">
+<div class="max-w-5xl mx-auto space-y-stack-lg">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-2">طرق الدفع اليدوية (السوق اليمني)</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">قم بإدارة طرق الدفع المتاحة لعملائك في اليمن. يمكنك تفعيل أو تعطيل أي طريقة وتعديل تفاصيلها.</p>
+</div>
+<button class="bg-primary text-white font-label-md text-label-md px-6 py-2.5 rounded-lg hover:bg-primary-container transition-colors shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="save">save</span>
+                        حفظ التغييرات
+                    </button>
+</div>
+<div class="grid grid-cols-12 gap-grid-gutter">
+<!-- Bank Transfer Section -->
+<div class="col-span-12 xl:col-span-8 space-y-6">
+<section class="bg-surface-card rounded-xl border border-border-subtle overflow-hidden">
+<div class="p-6 border-b border-border-subtle bg-surface-bright flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">حوالة بنكية</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">السماح للعملاء بالدفع عبر التحويل البنكي المباشر.</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-sm text-label-sm text-status-success bg-status-success/10 px-2.5 py-1 rounded-full uppercase tracking-wider">مفعل</span>
+<div class="relative inline-block w-[44px] align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer opacity-0 z-10" id="toggle_bank" name="toggle_bank" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer" for="toggle_bank"></label>
+</div>
+</div>
+</div>
+<div class="p-6 space-y-6">
+<!-- Account 1 -->
+<div class="p-5 rounded-lg border border-border-subtle bg-surface-bright relative group">
+<div class="absolute left-4 top-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 rounded bg-surface hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors" title="تعديل">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="w-8 h-8 rounded bg-surface hover:bg-error-container text-error flex items-center justify-center transition-colors" title="حذف">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2">اسم البنك</label>
+<input class="w-full px-4 py-2.5 rounded-lg border border-border-subtle bg-surface font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" readonly="" type="text" value="بنك التضامن الإسلامي"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2">اسم صاحب الحساب</label>
+<input class="w-full px-4 py-2.5 rounded-lg border border-border-subtle bg-surface font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" readonly="" type="text" value="شركة لوكس أروما للتجارة"/>
+</div>
+<div class="md:col-span-2">
+<label class="block font-label-md text-label-md text-on-surface mb-2">رقم الحساب / IBAN</label>
+<input class="w-full px-4 py-2.5 rounded-lg border border-border-subtle bg-surface font-data-mono text-data-mono text-left dir-ltr focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" readonly="" type="text" value="YE12 0045 1234 5678 9012 3456 7890"/>
+</div>
+</div>
+</div>
+<button class="w-full py-3 border border-dashed border-secondary rounded-lg text-secondary font-label-md text-label-md hover:bg-secondary-fixed/10 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+                                    إضافة حساب بنكي جديد
+                                </button>
+<div class="pt-4 border-t border-border-subtle">
+<label class="block font-label-md text-label-md text-on-surface mb-2">تعليمات الدفع (تظهر للعميل عند الدفع)</label>
+<textarea class="w-full px-4 py-3 rounded-lg border border-border-subtle bg-surface font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" rows="3">يرجى تحويل المبلغ الإجمالي إلى أحد الحسابات المذكورة أعلاه. بعد إتمام التحويل، يرجى إرفاق صورة الإيصال في صفحة تأكيد الطلب أو إرساله عبر الواتساب مع رقم الطلب لتسريع عملية التأكيد.</textarea>
+</div>
+</div>
+</section>
+<!-- Digital Wallets Section -->
+<section class="bg-surface-card rounded-xl border border-border-subtle overflow-hidden">
+<div class="p-6 border-b border-border-subtle bg-surface-bright flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="wallet">wallet</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">المحافظ الإلكترونية</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">الكريمي جوال، موبايل موني، فلوسك، وغيرها.</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-sm text-label-sm text-status-success bg-status-success/10 px-2.5 py-1 rounded-full uppercase tracking-wider">مفعل</span>
+<div class="relative inline-block w-[44px] align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer opacity-0 z-10" id="toggle_wallet" name="toggle_wallet" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer" for="toggle_wallet"></label>
+</div>
+</div>
+</div>
+<div class="p-6 space-y-4">
+<table class="w-full text-right border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-border-subtle">
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold">اسم المحفظة</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold">رقم الحساب / الجوال</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold w-24">إجراء</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm divide-y divide-border-subtle">
+<tr class="hover:bg-secondary-fixed/5 transition-colors">
+<td class="py-4 px-4 text-on-surface font-medium">ام فلوس (M-Floos)</td>
+<td class="py-4 px-4 text-on-surface font-data-mono dir-ltr text-left">770 123 456</td>
+<td class="py-4 px-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors" title="تعديل">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-secondary-fixed/5 transition-colors">
+<td class="py-4 px-4 text-on-surface font-medium">الكريمي جوال</td>
+<td class="py-4 px-4 text-on-surface font-data-mono dir-ltr text-left">123456789</td>
+<td class="py-4 px-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors" title="تعديل">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<button class="mt-4 px-4 py-2 border border-secondary rounded-lg text-secondary font-label-md text-label-md hover:bg-secondary-fixed/10 transition-colors inline-flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                                    إضافة محفظة
+                                </button>
+<div class="pt-4 mt-4 border-t border-border-subtle">
+<label class="block font-label-md text-label-md text-on-surface mb-2">تعليمات الدفع للمحافظ</label>
+<textarea class="w-full px-4 py-3 rounded-lg border border-border-subtle bg-surface font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" rows="2">يرجى تحويل قيمة الطلب إلى أحد أرقام المحافظ الموضحة. يجب إدخال رقم الطلب في خانة "البيان" أو "الملاحظات" عند التحويل.</textarea>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column (Settings & COD) -->
+<div class="col-span-12 xl:col-span-4 space-y-6">
+<!-- Cash on Delivery -->
+<section class="bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-[0_4px_12px_rgba(4,57,39,0.02)]">
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">الدفع عند الاستلام</h3>
+</div>
+</div>
+<div class="relative inline-block w-[44px] align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer opacity-0 z-10" id="toggle_cod" name="toggle_cod" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer" for="toggle_cod"></label>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">يتيح للعميل الدفع نقداً عند استلام الطلبية من مندوب التوصيل. (غير مفعل حالياً)</p>
+<div class="opacity-50 pointer-events-none transition-opacity duration-300" id="cod_settings">
+<label class="block font-label-md text-label-md text-on-surface mb-2">رسوم إضافية (اختياري)</label>
+<div class="relative">
+<input class="w-full px-4 py-2.5 rounded-lg border border-border-subtle bg-surface font-data-mono text-data-mono focus:outline-none pl-12 dir-ltr text-right" type="number" value="0"/>
+<span class="absolute left-4 top-1/2 -translate-y-1/2 font-body-sm text-on-surface-variant">YER</span>
+</div>
+<label class="block font-label-md text-label-md text-on-surface mt-4 mb-2">تعليمات</label>
+<textarea class="w-full px-4 py-2.5 rounded-lg border border-border-subtle bg-surface font-body-sm text-body-sm focus:outline-none resize-none" rows="2">سيتم تحصيل مبلغ الطلب نقداً عند التسليم. يرجى تجهيز المبلغ المحدد لتسهيل عملية الاستلام.</textarea>
+</div>
+</div>
+</section>
+<!-- Currency Note Widget -->
+<section class="bg-primary/5 rounded-xl border border-primary/20 p-6">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="info">info</span>
+<div>
+<h4 class="font-label-md text-label-md text-primary font-bold mb-1">ملاحظة حول العملات</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">نظراً لتعدد أسعار الصرف في السوق اليمني، تأكد من تحديث إعدادات العملة في <a class="text-primary underline hover:text-primary-container" href="#">الإعدادات العامة</a> لضمان دقة احتساب المبالغ عند الدفع.</p>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        // Simple script to toggle visual state of COD settings based on checkbox
+        document.getElementById('toggle_cod').addEventListener('change', function(e) {
+            const settingsBlock = document.getElementById('cod_settings');
+            if(e.target.checked) {
+                settingsBlock.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                settingsBlock.classList.add('opacity-50', 'pointer-events-none');
+            }
+        });
+    </script>
+</body></html>

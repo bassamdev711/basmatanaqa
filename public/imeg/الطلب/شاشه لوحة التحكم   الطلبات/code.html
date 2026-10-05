@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>إدارة الطلبات - لوكس أروما</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&amp;family=Playfair+Display:wght@600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed-variant": "#5d4201",
+                        "on-tertiary-fixed": "#002115",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary": "#775a19",
+                        "secondary-container": "#fed488",
+                        "secondary-fixed-dim": "#e9c176",
+                        "tertiary-fixed": "#abf1d0",
+                        "on-primary-fixed-variant": "#204f3c",
+                        "primary-fixed": "#bbeed3",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#717973",
+                        "surface-container-low": "#f3f4f5",
+                        "on-secondary": "#ffffff",
+                        "border-subtle": "#E2E8F0",
+                        "on-tertiary-fixed-variant": "#00513a",
+                        "on-secondary-container": "#785a1a",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container": "#edeeef",
+                        "surface-dim": "#d9dadb",
+                        "primary": "#002215",
+                        "status-danger": "#D83B01",
+                        "primary-fixed-dim": "#a0d1b8",
+                        "error-container": "#ffdad6",
+                        "surface": "#f8f9fa",
+                        "surface-container-highest": "#e1e3e4",
+                        "secondary-fixed": "#ffdea5",
+                        "on-surface-variant": "#414944",
+                        "status-success": "#107C10",
+                        "status-warning": "#F5A623",
+                        "inverse-primary": "#a0d1b8",
+                        "surface-card": "#FFFFFF",
+                        "on-secondary-fixed": "#261900",
+                        "on-primary-container": "#73a48c",
+                        "inverse-surface": "#2e3132",
+                        "surface-tint": "#396752",
+                        "tertiary-fixed-dim": "#8fd5b5",
+                        "tertiary-container": "#003927",
+                        "on-surface": "#191c1d",
+                        "on-error": "#ffffff",
+                        "outline-variant": "#c0c9c2",
+                        "tertiary": "#002116",
+                        "surface-variant": "#e1e3e4",
+                        "on-background": "#191c1d",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#62a689",
+                        "primary-container": "#043927",
+                        "background": "#f8f9fa",
+                        "surface-container-high": "#e7e8e9",
+                        "status-info": "#0078D4",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#002114",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.125rem",
+                        lg: "0.25rem",
+                        xl: "0.5rem",
+                        full: "0.75rem"
+                    },
+                    spacing: {
+                        "stack-lg": "24px",
+                        "grid-gutter": "24px",
+                        "sidebar-width": "280px",
+                        "stack-md": "16px",
+                        "container-padding": "32px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "display-lg": ["Playfair Display"],
+                        "headline-md": ["Playfair Display"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "data-mono": ["JetBrains Mono"],
+                        "title-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "headline-sm": ["Playfair Display"]
+                    },
+                    fontSize: {
+                        "display-lg": ["40px", { lineHeight: "52px", fontWeight: "700" }],
+                        "headline-md": ["28px", { lineHeight: "36px", fontWeight: "600" }],
+                        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "600" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-md": ["14px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
+                        "data-mono": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+                        "title-lg": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "headline-sm": ["22px", { lineHeight: "28px", fontWeight: "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Hide scrollbar for clean look but keep functionality */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E2E8F0;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c0c9c2;
+        }
+        .table-row-hover:hover {
+            background-color: #FCF9F2;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex text-right overflow-x-hidden">
+<!-- SideNavBar -->
+<nav class="fixed right-0 top-0 h-full w-[280px] bg-primary dark:bg-primary-container z-50 flex flex-col text-right no shadows">
+<div class="p-stack-lg border-b border-white/10">
+<h1 class="font-headline-md text-headline-md font-bold text-white mb-2">لوكس أرومـا</h1>
+<p class="font-body-sm text-body-sm text-secondary-fixed-dim">إدارة المتجر</p>
+</div>
+<div class="flex-1 overflow-y-auto py-stack-md flex flex-col gap-2 px-4">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-secondary-fixed-dim transition-colors" data-icon="dashboard">dashboard</span>
+<span class="font-title-lg text-title-lg">لوحة القيادة</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-secondary-fixed-dim transition-colors" data-icon="inventory_2">inventory_2</span>
+<span class="font-title-lg text-title-lg">المنتجات</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-secondary-fixed-dim transition-colors" data-icon="layers">layers</span>
+<span class="font-title-lg text-title-lg">التصنيفات</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-white border-r-4 border-secondary-fixed opacity-90 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="font-title-lg text-title-lg">الطلبات</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-secondary-fixed-dim transition-colors" data-icon="payments">payments</span>
+<span class="font-title-lg text-title-lg">إعدادات الدفع</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-secondary-fixed-dim transition-colors" data-icon="group">group</span>
+<span class="font-title-lg text-title-lg">العملاء</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-primary-fixed-variant hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-secondary-fixed-dim transition-colors" data-icon="settings">settings</span>
+<span class="font-title-lg text-title-lg">الإعدادات العامة</span>
+</a>
+</div>
+<div class="p-stack-lg border-t border-white/10 mt-auto">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-status-danger hover:bg-status-danger/10 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-title-lg text-title-lg">تسجيل الخروج</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 mr-[280px] p-container-padding min-h-screen">
+<!-- Header Section -->
+<header class="flex justify-between items-end mb-stack-lg">
+<div>
+<h1 class="font-headline-md text-headline-md text-on-surface mb-2">إدارة الطلبات</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">مراجعة وتحديث حالة الطلبات والدفعات.</p>
+</div>
+<div class="flex gap-4">
+<button class="bg-surface-card border border-border-subtle text-on-surface px-4 py-2 rounded flex items-center gap-2 hover:bg-surface-container-low transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="download">download</span>
+<span class="font-label-md text-label-md">تصدير التقرير</span>
+</button>
+<button class="bg-primary text-white px-6 py-2 rounded flex items-center gap-2 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+<span class="font-label-md text-label-md">طلب جديد</span>
+</button>
+</div>
+</header>
+<!-- Summary Counters -->
+<section class="grid grid-cols-4 gap-grid-gutter mb-stack-lg">
+<div class="bg-surface-card border border-border-subtle rounded-lg p-stack-md flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">إجمالي الطلبات</span>
+<span class="material-symbols-outlined text-outline" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-display-lg text-on-surface">1,248</span>
+<span class="font-label-sm text-label-sm text-status-success mb-2 flex items-center">
+<span class="material-symbols-outlined text-[16px] mr-1" data-icon="trending_up">trending_up</span>
+                        +12%
+                    </span>
+</div>
+</div>
+<div class="bg-surface-card border border-border-subtle rounded-lg p-stack-md flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">بانتظار الدفع</span>
+<span class="material-symbols-outlined text-status-warning" data-icon="pending_actions">pending_actions</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-display-lg text-on-surface">42</span>
+<span class="font-label-sm text-label-sm text-status-warning mb-2 flex items-center">عاجل</span>
+</div>
+</div>
+<div class="bg-surface-card border border-border-subtle rounded-lg p-stack-md flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">قيد التجهيز</span>
+<span class="material-symbols-outlined text-status-info" data-icon="package_2">package_2</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-display-lg text-on-surface">86</span>
+</div>
+</div>
+<div class="bg-surface-card border border-border-subtle rounded-lg p-stack-md flex flex-col justify-between h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">تم الشحن</span>
+<span class="material-symbols-outlined text-status-success" data-icon="local_shipping">local_shipping</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-display-lg text-on-surface">315</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mb-2">هذا الأسبوع</span>
+</div>
+</div>
+</section>
+<!-- Main Orders Table Section -->
+<section class="bg-surface-card border border-border-subtle rounded-lg overflow-hidden">
+<!-- Filters Bar -->
+<div class="p-stack-md border-b border-border-subtle bg-surface-bright flex gap-4 items-center flex-wrap">
+<div class="relative flex-1 min-w-[250px]">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-white border border-border-subtle rounded py-2 pr-10 pl-4 font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-right" placeholder="البحث برقم الطلب أو الهاتف..." type="text"/>
+</div>
+<div class="flex gap-3">
+<select class="bg-white border border-border-subtle rounded py-2 px-4 font-label-md text-label-md text-on-surface-variant focus:outline-none focus:border-primary text-right appearance-none pr-4 pl-10 cursor-pointer">
+<option>حالة الطلب: الكل</option>
+<option>جديد</option>
+<option>قيد التجهيز</option>
+<option>مشحون</option>
+</select>
+<select class="bg-white border border-border-subtle rounded py-2 px-4 font-label-md text-label-md text-on-surface-variant focus:outline-none focus:border-primary text-right appearance-none pr-4 pl-10 cursor-pointer">
+<option>تاريخ: آخر 7 أيام</option>
+<option>اليوم</option>
+<option>آخر 30 يوم</option>
+</select>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-right border-collapse">
+<thead class="bg-[#F1F5F9] border-b border-border-subtle">
+<tr>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant w-[100px]">رقم الطلب</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant min-w-[150px]">العميل</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant w-[120px]">التاريخ</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant w-[120px]">المبلغ الإجمالي</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant w-[140px]">طريقة الدفع</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant w-[140px]">حالة الدفع</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant w-[140px]">حالة الطلب</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant w-[100px] text-center">إجراءات</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="border-b border-border-subtle table-row-hover transition-colors">
+<td class="py-4 px-4 font-data-mono text-data-mono">#ORD-9021</td>
+<td class="py-4 px-4 font-medium">أحمد المحمد</td>
+<td class="py-4 px-4 text-on-surface-variant text-[13px]">2023-10-24</td>
+<td class="py-4 px-4 font-data-mono text-data-mono">1,450 ر.س</td>
+<td class="py-4 px-4 text-on-surface-variant flex items-center gap-2 h-full min-h-[48px]">
+                                تحويل بنكي
+                                <button class="text-status-info hover:text-primary transition-colors flex items-center justify-center bg-status-info/10 p-1 rounded" title="عرض إيصال التحويل">
+<span class="material-symbols-outlined text-[16px]" data-icon="receipt_long">receipt_long</span>
+</button>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-status-warning/10 text-status-warning font-label-sm text-label-sm uppercase">بانتظار التأكيد</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-status-info/10 text-status-info font-label-sm text-label-sm uppercase">جديد</span>
+</td>
+<td class="py-4 px-4 text-center">
+<button class="text-outline hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-border-subtle table-row-hover transition-colors">
+<td class="py-4 px-4 font-data-mono text-data-mono">#ORD-9020</td>
+<td class="py-4 px-4 font-medium">سارة عبدالله</td>
+<td class="py-4 px-4 text-on-surface-variant text-[13px]">2023-10-24</td>
+<td class="py-4 px-4 font-data-mono text-data-mono">890 ر.س</td>
+<td class="py-4 px-4 text-on-surface-variant h-full min-h-[48px] flex items-center">
+                                الدفع عند الاستلام
+                            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase">معلق</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-status-info/10 text-status-info font-label-sm text-label-sm uppercase">قيد التجهيز</span>
+</td>
+<td class="py-4 px-4 text-center">
+<button class="text-outline hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-border-subtle table-row-hover transition-colors">
+<td class="py-4 px-4 font-data-mono text-data-mono">#ORD-9019</td>
+<td class="py-4 px-4 font-medium">خالد سعيد</td>
+<td class="py-4 px-4 text-on-surface-variant text-[13px]">2023-10-23</td>
+<td class="py-4 px-4 font-data-mono text-data-mono">2,100 ر.س</td>
+<td class="py-4 px-4 text-on-surface-variant h-full min-h-[48px] flex items-center">
+                                بطاقة ائتمانية
+                            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-status-success/10 text-status-success font-label-sm text-label-sm uppercase">مؤكد</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-status-success/10 text-status-success font-label-sm text-label-sm uppercase">مشحون</span>
+</td>
+<td class="py-4 px-4 text-center">
+<button class="text-outline hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-stack-md border-t border-border-subtle bg-surface-bright flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">عرض 1 إلى 10 من أصل 1,248 طلب</span>
+<div class="flex gap-2">
+<button class="w-8 h-8 flex items-center justify-center border border-border-subtle rounded bg-white text-outline hover:bg-surface-container-low transition-colors" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center border border-primary rounded bg-primary text-white font-label-sm">1</button>
+<button class="w-8 h-8 flex items-center justify-center border border-border-subtle rounded bg-white text-on-surface hover:bg-surface-container-low transition-colors font-label-sm">2</button>
+<button class="w-8 h-8 flex items-center justify-center border border-border-subtle rounded bg-white text-on-surface hover:bg-surface-container-low transition-colors font-label-sm">3</button>
+<span class="w-8 h-8 flex items-center justify-center text-outline">...</span>
+<button class="w-8 h-8 flex items-center justify-center border border-border-subtle rounded bg-white text-on-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="chevron_left">chevron_left</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+</body></html>

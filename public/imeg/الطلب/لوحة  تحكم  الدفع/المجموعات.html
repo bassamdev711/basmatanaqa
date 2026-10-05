@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>إدارة التصنيفات - لوكس أروما</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config injected from Style Guidance -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#261900",
+                        "on-surface-variant": "#414944",
+                        "tertiary-fixed-dim": "#8fd5b5",
+                        "outline-variant": "#c0c9c2",
+                        "border-subtle": "#E2E8F0",
+                        "surface-container-high": "#e7e8e9",
+                        "status-success": "#107C10",
+                        "outline": "#717973",
+                        "secondary": "#775a19",
+                        "primary-fixed-dim": "#a0d1b8",
+                        "secondary-fixed": "#ffdea5",
+                        "status-warning": "#F5A623",
+                        "on-secondary-fixed-variant": "#5d4201",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f3f4f5",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#e9c176",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d9dadb",
+                        "on-secondary-container": "#785a1a",
+                        "on-surface": "#191c1d",
+                        "surface-variant": "#e1e3e4",
+                        "on-primary-fixed": "#002114",
+                        "status-info": "#0078D4",
+                        "inverse-on-surface": "#f0f1f2",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-primary-container": "#73a48c",
+                        "primary-fixed": "#bbeed3",
+                        "on-primary-fixed-variant": "#204f3c",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container": "#edeeef",
+                        "surface-tint": "#396752",
+                        "tertiary-container": "#003927",
+                        "surface-card": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#00513a",
+                        "tertiary": "#002116",
+                        "on-tertiary": "#ffffff",
+                        "status-danger": "#D83B01",
+                        "inverse-primary": "#a0d1b8",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2e3132",
+                        "primary": "#002215",
+                        "on-background": "#191c1d",
+                        "primary-container": "#043927",
+                        "on-error-container": "#93000a",
+                        "surface": "#f8f9fa",
+                        "on-tertiary-container": "#62a689",
+                        "secondary-container": "#fed488",
+                        "on-tertiary-fixed": "#002115",
+                        "background": "#f8f9fa",
+                        "tertiary-fixed": "#abf1d0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "grid-gutter": "24px",
+                        "container-padding": "32px",
+                        "stack-md": "16px",
+                        "stack-sm": "8px",
+                        "stack-lg": "24px",
+                        "sidebar-width": "280px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Playfair Display"],
+                        "title-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "headline-sm": ["Playfair Display"],
+                        "body-md": ["Hanken Grotesk"],
+                        "display-lg": ["Playfair Display"],
+                        "data-mono": ["JetBrains Mono"],
+                        "label-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["40px", { "lineHeight": "52px", "fontWeight": "700" }],
+                        "data-mono": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Base styles to ensure consistency with the design system */
+        body {
+            background-color: #F8F9FA;
+            color: #191c1d;
+        }
+        
+        /* Modal Transitions */
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 300ms ease-out, transform 300ms ease-out;
+        }
+        .modal-exit {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .modal-exit-active {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 200ms ease-in, transform 200ms ease-in;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen bg-background text-on-background overflow-x-hidden flex flex-row rtl">
+<!-- JSON Component: SideNavBar -->
+<nav class="fixed right-0 top-0 h-full w-[280px] bg-primary dark:bg-primary-container text-right flex flex-col z-50">
+<div class="px-6 py-8 border-b border-white/10">
+<h1 class="font-headline-md text-headline-md font-bold text-white">لوكس أرومـا</h1>
+<p class="font-label-sm text-label-sm text-tertiary-fixed-dim mt-1">إدارة المتجر</p>
+</div>
+<div class="flex-1 overflow-y-auto py-6 flex flex-col gap-2 px-3">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-primary-fixed-variant hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">لوحة القيادة</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-primary-fixed-variant hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-md text-label-md">المنتجات</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded bg-primary-container text-white border-r-4 border-secondary-fixed opacity-90 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span class="font-label-md text-label-md">التصنيفات</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-primary-fixed-variant hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="font-label-md text-label-md">الطلبات</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-primary-fixed-variant hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-md text-label-md">إعدادات الدفع</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-primary-fixed-variant hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md">العملاء</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-primary-fixed-variant hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">الإعدادات العامة</span>
+</a>
+</div>
+<div class="p-6 border-t border-white/10 mt-auto">
+<a class="flex items-center gap-3 text-on-primary-fixed-variant hover:bg-white/5 transition-colors px-4 py-3 rounded" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-md text-label-md">تسجيل الخروج</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<div class="flex-1 mr-[280px] min-h-screen flex flex-col">
+<!-- JSON Component: TopNavBar -->
+<header class="docked full-width top-0 bg-surface dark:bg-surface-dim border-b border-border-subtle dark:border-outline-variant flex justify-between items-center w-full px-grid-gutter h-16 sticky z-40">
+<!-- Left Side Actions -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-border-subtle ml-2">
+<img alt="Admin User" class="w-full h-full object-cover" data-alt="A small, professional portrait photograph of an admin user. Soft lighting, neutral background, reflecting a sophisticated corporate identity. High quality, sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzSico-JJG2jwzXIMBIK7aEuimDRmk-Gxhy69etYgxN2dWWNADgQAd0VeZLB_q8oS7ITyA4M1MKUhhtH09L1kMnMcdouTGIxEwKk9pxbBnDzH9ZBxambOyxQAdhDRCpzKaXNuCy3ZLIQCvZtf2rXn4YDxiUhhtMdCvnBCU2ai5UTqxB2X0UrkrO1zH_Me22aDlGmVN1rtB3o4pO2VDLRy-ZYLb08WJgHQ5Z0wb-eyqR7BMkUEWHu2M2g"/>
+</div>
+</div>
+<!-- Right Side (Brand/Breadcrumb area) -->
+<div class="flex items-center">
+<span class="font-label-md text-label-md text-on-surface-variant hidden">لوكس أرومـا</span>
+</div>
+</header>
+<!-- Page Content -->
+<main class="p-container-padding flex-1 flex flex-col gap-stack-lg">
+<!-- Page Header -->
+<div class="flex justify-between items-center">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">التصنيفات</h2>
+<button class="bg-primary-container text-white px-6 py-2 rounded-lg font-label-md text-label-md hover:bg-primary transition-colors flex items-center gap-2" id="openModalBtn">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    إنشاء مجموعة جديدة
+                </button>
+</div>
+<!-- Bento Grid / Collections Showcase -->
+<div class="grid grid-cols-12 gap-grid-gutter">
+<!-- Collection Card 1 -->
+<div class="col-span-12 md:col-span-6 lg:col-span-4 bg-surface-card border border-border-subtle rounded-xl overflow-hidden hover:shadow-[0_4px_12px_rgba(4,57,39,0.08)] transition-shadow group relative flex flex-col h-full">
+<div class="h-48 relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="A highly detailed, luxurious product photography setup featuring premium oriental perfumes. Deep amber and rich gold tones, dramatic lighting with soft shadows. Elegant glass bottles arranged on dark marble. High-end e-commerce aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCtc55VAqNEoU-RBm2CPHGiUP7doppwtmUgJLOV-1uhHCHAsxd68gzVqMxV5okFHrTkT-Ayj-osfUf4Kmj3vJ4BAtvGEOnhKCFPgKirgCxAsiQT5sAwwqKYlv-Ex-IbRSgFd1P3LHs3BXP1vzRgEMGJRz8z9t9hISKcrQ2Sgve6rTwF_5ukU3xvP_ZUMu-a0zoH6pb1u77_NaQJPOD-tpn3o8rydrJXX38eADpIbmtnCabbWSLnQcntsQ')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<span class="absolute top-4 right-4 bg-status-success/20 text-status-success px-2 py-1 rounded font-label-sm text-label-sm border border-status-success/30">نشط</span>
+</div>
+<div class="p-6 flex-1 flex flex-col gap-stack-sm">
+<h3 class="font-title-lg text-title-lg text-on-surface">المجموعة الشرقية</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">تشكيلة فاخرة من العطور الشرقية الأصيلة التي تجسد عبق التاريخ والأصالة.</p>
+<div class="mt-auto pt-4 flex items-center justify-between border-t border-border-subtle">
+<span class="font-data-mono text-data-mono text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> 12 منتج
+                            </span>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Collection Card 2 -->
+<div class="col-span-12 md:col-span-6 lg:col-span-4 bg-surface-card border border-border-subtle rounded-xl overflow-hidden hover:shadow-[0_4px_12px_rgba(4,57,39,0.08)] transition-shadow group relative flex flex-col h-full">
+<div class="h-48 relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="A delicate and sophisticated product photography composition featuring floral perfumes. Soft pastel pinks and whites, bright airy lighting. Fresh flowers artfully arranged around elegant glass flacons on a pristine white background. High-end corporate e-commerce style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAmlllId7TW02eUcacWvdlZpQlOg5i2wfFmFIP7qLzbM-WwSfR94R8b62zx99udgYuKk3M6a-BxZpTC_rxwyTZCHY5UrIbFuKPmxQcUgf3iKb_nK11bNJkmEYtDwbwcLnaxXl_pnWiLavyEpGpPWVL-AUSdwQ5WVSnfbplH5C7QhWSlw0Uzj0UkMdXmp4sZnjyFomiEoR76lQMjMgF4aMREQLikFhqSpOuT1SD0g-jMLNRSXtkTNKDSqQ')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<span class="absolute top-4 right-4 bg-status-success/20 text-status-success px-2 py-1 rounded font-label-sm text-label-sm border border-status-success/30">نشط</span>
+</div>
+<div class="p-6 flex-1 flex flex-col gap-stack-sm">
+<h3 class="font-title-lg text-title-lg text-on-surface">الزهور الناعمة</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">باقة من أرق العطور الزهرية التي تمنحك إحساساً بالانتعاش والأنوثة.</p>
+<div class="mt-auto pt-4 flex items-center justify-between border-t border-border-subtle">
+<span class="font-data-mono text-data-mono text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> 8 منتجات
+                            </span>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Collection Card 3 -->
+<div class="col-span-12 md:col-span-6 lg:col-span-4 bg-surface-card border border-border-subtle rounded-xl overflow-hidden hover:shadow-[0_4px_12px_rgba(4,57,39,0.08)] transition-shadow group relative flex flex-col h-full">
+<div class="h-48 relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" data-alt="Dark, moody, and extremely luxurious product photography of pure Oud perfumes. Deep emerald and onyx tones, striking dramatic rim lighting. Heavy, ornate dark glass bottles resting on dark textured stone. Premium corporate e-commerce aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB5LimJQPVgwF6csHzwgvG86H-jwtEH51Oe8KRvyZDDM8HrMsSy220FYYculiOnzwcq-rOFIN3rqaylNpkaF7QfjgV4Hyfu48iGlR9tgyWUWZ1ZEkciVFnegDernT_0lFytpiLPI6TrxHf_488HuJaRHtyN8EpoBOFSnG0URGDMv-CzsVYjwekijWFUxWqoZVYcIA_mWAwUicHuc4bIKVF4wQgK49nZ43jyj20EuzzXDalAPhfPY9h9Yw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<span class="absolute top-4 right-4 bg-status-warning/20 text-status-warning px-2 py-1 rounded font-label-sm text-label-sm border border-status-warning/30">مسودة</span>
+</div>
+<div class="p-6 flex-1 flex flex-col gap-stack-sm">
+<h3 class="font-title-lg text-title-lg text-on-surface">مجموعة العود</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">تشكيلة حصرية من أندر أنواع العود الفاخر المستخلص بعناية فائقة.</p>
+<div class="mt-auto pt-4 flex items-center justify-between border-t border-border-subtle">
+<span class="font-data-mono text-data-mono text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> 4 منتجات
+                            </span>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Create Collection Modal -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center hidden" id="createModal">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-black/40 backdrop-blur-sm" id="modalBackdrop"></div>
+<!-- Modal Content -->
+<div class="relative bg-surface-card w-full max-w-2xl rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[921px]">
+<!-- Modal Header -->
+<div class="px-6 py-4 border-b border-border-subtle flex justify-between items-center bg-surface-bright">
+<h3 class="font-title-lg text-title-lg text-on-surface">إنشاء مجموعة جديدة</h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors" id="closeModalBtn">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body (Form) -->
+<div class="p-6 overflow-y-auto flex-1 flex flex-col gap-stack-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
+<!-- Name Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="colName">اسم المجموعة</label>
+<input class="w-full px-4 py-2 border border-border-subtle rounded-lg bg-surface font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-shadow" id="colName" placeholder="مثال: المجموعة الشرقية" type="text"/>
+</div>
+<!-- Slug Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="colSlug">الرابط الدائم (Slug)</label>
+<input class="w-full px-4 py-2 border border-border-subtle rounded-lg bg-surface font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-shadow" dir="ltr" id="colSlug" placeholder="مثال: oriental-collection" type="text"/>
+</div>
+</div>
+<!-- Description Textarea -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="colDesc">الوصف</label>
+<textarea class="w-full px-4 py-2 border border-border-subtle rounded-lg bg-surface font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-shadow resize-none" id="colDesc" placeholder="اكتب وصفاً مختصراً للمجموعة..." rows="3"></textarea>
+</div>
+<!-- Image Upload Zone -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant">صورة الغلاف</label>
+<div class="border-2 border-dashed border-secondary/50 rounded-lg bg-secondary/5 p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-secondary/10 transition-colors">
+<span class="material-symbols-outlined text-4xl text-secondary mb-2">cloud_upload</span>
+<p class="font-label-md text-label-md text-on-surface">اسحب وأفلت الصورة هنا</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">أو انقر لاختيار ملف من جهازك (PNG, JPG حتى 2MB)</p>
+</div>
+</div>
+<!-- Status Toggle (Simple implementation) -->
+<div class="flex items-center gap-3 mt-2">
+<input checked="" class="w-5 h-5 rounded border-border-subtle text-primary-container focus:ring-primary-container" id="colActive" type="checkbox"/>
+<label class="font-label-md text-label-md text-on-surface" for="colActive">تفعيل المجموعة فوراً</label>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-6 py-4 border-t border-border-subtle bg-surface-bright flex justify-end gap-3">
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md border border-secondary text-secondary hover:bg-surface-dim transition-colors" id="cancelModalBtn">
+                    إلغاء
+                </button>
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md bg-primary-container text-white hover:bg-primary transition-colors shadow-sm">
+                    حفظ المجموعة
+                </button>
+</div>
+</div>
+</div>
+<!-- Inline script for minimal interactivity (Modal) -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('createModal');
+            const openBtn = document.getElementById('openModalBtn');
+            const closeBtn = document.getElementById('closeModalBtn');
+            const cancelBtn = document.getElementById('cancelModalBtn');
+            const backdrop = document.getElementById('modalBackdrop');
+            const modalContent = modal.querySelector('.relative');
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                // Small delay to allow display:block to apply before animating opacity
+                setTimeout(() => {
+                    modalContent.classList.add('modal-enter-active');
+                }, 10);
+            }
+
+            function closeModal() {
+                modalContent.classList.remove('modal-enter-active');
+                modalContent.classList.add('modal-exit-active');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modalContent.classList.remove('modal-exit-active');
+                }, 200);
+            }
+
+            openBtn.addEventListener('click', openModal);
+            closeBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeModal);
+            backdrop.addEventListener('click', closeModal);
+        });
+    </script>
+</body></html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر طيف | تحت الصيانة</title>
+    <!-- استيراد خط تجوال تماماً كالموقع الأصلي -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #F5F1E8; /* لون العاج الأساسي (Ivory) */
+            font-family: 'Tajawal', sans-serif;
+            color: #202522; /* أخضر داكن جداً للنصوص */
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(18, 60, 53, 0.08);
+            border: 1px solid rgba(200, 164, 93, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .gradient-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(to right, #123C35, #C8A45D, #123C35);
+        }
+        .logo {
+            font-size: 40px;
+            font-weight: 900;
+            color: #C8A45D; /* اللون الذهبي */
+            letter-spacing: 5px;
+            margin-bottom: 5px;
+        }
+        .logo-sub {
+            font-size: 12px;
+            color: #123C35;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+        .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(18, 60, 53, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+            border: 1px solid rgba(18, 60, 53, 0.1);
+        }
+        .icon-wrapper svg {
+            width: 40px;
+            height: 40px;
+            stroke: #123C35; /* الأخضر الزمردي */
+        }
+        h1 {
+            font-size: 28px;
+            color: #123C35;
+            margin: 0 0 15px 0;
+            font-weight: 900;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: rgba(32, 37, 34, 0.8);
+            margin: 0 0 30px 0;
+        }
+        .refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: #123C35;
+            color: #F5F1E8;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .refresh-btn:hover {
+            background-color: #1a544a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(18, 60, 53, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="gradient-top"></div>
+        
+        <div class="logo">طيف</div>
+        <div class="logo-sub">T I F</div>
+
+        <div class="icon-wrapper">
+            <svg xmlns="http://www.3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v4"></path>
+                <path d="m16.2 7.8 2.9-2.9"></path>
+                <path d="M18 12h4"></path>
+                <path d="m16.2 16.2 2.9 2.9"></path>
+                <path d="M12 18v4"></path>
+                <path d="m4.9 19.1 2.9-2.9"></path>
+                <path d="M2 12h4"></path>
+                <path d="m4.9 4.9 2.9 2.9"></path>
+            </svg>
+        </div>
+
+        <h1>تحت التحديث والصيانة</h1>
+        <p>نعتذر منك، المتجر يمر حالياً بفترة تحديث وصيانة سريعة لتقديم تجربة تسوق أفضل. سنعود للعمل خلال وقت قصير جداً.</p>
+        
+        <button class="refresh-btn" onclick="window.location.reload()">
+            <svg xmlns="http://www.3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                <path d="M16 21v-5h5"></path>
+            </svg>
+            تحديث الصفحة
+        </button>
+    </div>
+</body>
+</html>
