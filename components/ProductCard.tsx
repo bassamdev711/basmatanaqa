@@ -60,7 +60,7 @@ export default function ProductCard({ product, currency, priority = false }: Pro
             sizes={getImageSizes('card')}
             priority={priority}
             loading={priority ? undefined : 'lazy'}
-            className="object-cover mix-blend-multiply transition-transform duration-700 ease-out z-0 hover:scale-105"
+            className="object-contain p-4 md:p-8 mix-blend-multiply transition-transform duration-700 ease-out z-0 hover:scale-110"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-accent/20 text-6xl z-0">

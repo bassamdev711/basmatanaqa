@@ -156,7 +156,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                       alt={product.name}
                       fill
                       priority
-                      className="object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                      className="object-contain p-4 md:p-8 mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
                       sizes={getImageSizes('detail')}
                     />
                   ) : (
@@ -189,7 +189,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                         fill
                         loading="lazy"
                         sizes={getImageSizes('thumbnail')}
-                        className="object-cover mix-blend-multiply"
+                        className="object-contain p-1 mix-blend-multiply"
                       />
                     </div>
                   </button>
