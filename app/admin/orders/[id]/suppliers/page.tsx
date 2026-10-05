@@ -1,5 +1,5 @@
 import React from 'react'
-import { getOrderBySupplier } from '../../actions'
+import { getOrderBySupplier } from '../../../suppliers/actions'
 import { Package, Phone, MessageCircle, AlertCircle, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
