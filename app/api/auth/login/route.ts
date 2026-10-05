@@ -11,7 +11,13 @@ export async function POST(request: Request) {
   try {
     const parsed = loginSchema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ error: 'بيانات الدخول غير صحيحة.' }, { status: 401 })
-    const user = await prisma.user.findUnique({ where: { phone: normalizePhone(parsed.data.phone) } })
+    
+    const phone = normalizePhone(parsed.data.phone)
+    if (!checkRateLimit(`login_phone:${phone}`, 5, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: 'محاولات دخول كثيرة خاطئة، تم قفل الحساب مؤقتاً لمدة 15 دقيقة.' }, { status: 429 })
+    }
+
+    const user = await prisma.user.findUnique({ where: { phone } })
     if (!user || !user.isActive || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
       return NextResponse.json({ error: 'بيانات الدخول غير صحيحة.' }, { status: 401 })
     }

@@ -2,7 +2,13 @@ import { z } from 'zod'
 
 export const phoneSchema = z.string().trim().min(7).max(32).regex(/^\+?[\d\s().-]+$/)
 export const emailSchema = z.string().trim().toLowerCase().email().max(254).nullable().optional()
-export const passwordSchema = z.string().min(10).max(128)
+export const passwordSchema = z.string()
+  .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
+  .max(128)
+  .refine(
+    (password) => /[a-zA-Z]/.test(password) && /\d/.test(password),
+    { message: 'كلمة المرور يجب أن تحتوي على أحرف وأرقام معاً لحماية حسابك' }
+  )
 
 export const registerSchema = z.object({
   name: z.string().trim().min(2).max(120),
