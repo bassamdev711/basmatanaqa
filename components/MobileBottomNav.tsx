@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, LayoutGrid, Heart, ShoppingCart, Package } from "lucide-react";
+import { Home, LayoutGrid, Heart, ShoppingCart, UserCircle2 } from "lucide-react";
 import { useCart } from "./CartProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartAnimation } from "./CartAnimationProvider";
@@ -36,9 +36,9 @@ export default function MobileBottomNav() {
       isCart: true,
     },
     {
-      name: "الطلبات",
-      href: "/track",
-      icon: Package,
+      name: "حسابي",
+      href: "/account",
+      icon: UserCircle2,
     },
   ];
 

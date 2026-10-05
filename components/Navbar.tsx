@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Search, ShoppingCart, Package, Heart } from "lucide-react";
+import { Menu, X, Search, ShoppingCart, Package, Heart, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "./CartProvider";
@@ -118,6 +118,13 @@ export default function Navbar({
             <Package className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={1.5} />
           </Link>
           <Link 
+            href="/account" 
+            className="text-accent hover:text-surface transition-colors hidden sm:block" 
+            aria-label="حسابي"
+          >
+            <UserCircle2 className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={1.5} />
+          </Link>
+          <Link 
             href="/favorites" 
             className="text-accent hover:text-surface transition-colors relative hidden md:block" 
             aria-label="المفضلة"
@@ -195,6 +202,36 @@ export default function Navbar({
               </Link>
             </motion.div>
           ))}
+          {/* زر الحساب في المنيو الجوال */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={isMobileMenuOpen ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
+            transition={{ delay: navLinks.length * 0.1, duration: 0.4 }}
+            className="border-t border-surface/10 pt-5 mt-2 flex flex-col items-center gap-3"
+          >
+            <Link
+              href="/account"
+              className="flex items-center gap-2 text-base font-semibold tracking-wider text-accent hover:text-surface transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <UserCircle2 size={20} strokeWidth={1.5} />
+              حسابي
+            </Link>
+            <Link
+              href="/account/login"
+              className="text-sm text-surface/60 hover:text-accent transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              تسجيل الدخول
+            </Link>
+            <Link
+              href="/account/register"
+              className="text-sm text-surface/60 hover:text-accent transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              إنشاء حساب جديد
+            </Link>
+          </motion.div>
         </div>
       </motion.div>
 
