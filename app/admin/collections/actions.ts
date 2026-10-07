@@ -87,12 +87,12 @@ export async function getSubCategories(collectionId: string) {
   await verifyAdmin();
   return prisma.subCategory.findMany({
     where: { collectionId, isActive: true },
-    select: { id: true, name: true, slug: true, description: true, isActive: true },
+    select: { id: true, name: true, slug: true, description: true, isActive: true, imageUrl: true },
     orderBy: { createdAt: 'desc' }
   });
 }
 
-export async function createSubCategory(data: { name: string, slug: string, description: string, isActive: boolean, collectionId: string }) {
+export async function createSubCategory(data: { name: string, slug: string, description: string, isActive: boolean, collectionId: string, imageUrl?: string | null }) {
   await verifyAdmin();
   try {
     await prisma.subCategory.create({ data });
@@ -104,7 +104,7 @@ export async function createSubCategory(data: { name: string, slug: string, desc
   }
 }
 
-export async function updateSubCategory(id: string, data: { name: string, slug: string, description: string, isActive: boolean, collectionId: string }) {
+export async function updateSubCategory(id: string, data: { name: string, slug: string, description: string, isActive: boolean, collectionId: string, imageUrl?: string | null }) {
   await verifyAdmin();
   try {
     await prisma.subCategory.update({ where: { id }, data });

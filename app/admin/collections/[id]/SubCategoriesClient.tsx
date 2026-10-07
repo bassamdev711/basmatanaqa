@@ -3,15 +3,17 @@
 import { useToast } from '@/components/ToastProvider'
 import { useConfirm } from '@/components/ConfirmProvider'
 import React, { useState } from 'react'
-import { Plus, Edit2, X, Trash2, ArrowRight } from 'lucide-react'
+import { Plus, Edit2, X, Trash2, ArrowRight, ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import { createSubCategory, updateSubCategory, deleteSubCategory } from '../actions'
+import ImageUpload from '../../products/ImageUpload'
 
 type SubCategory = {
   id: string
   name: string
   slug: string
   description: string | null
+  imageUrl: string | null
   isActive: boolean
 }
 
@@ -32,12 +34,13 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
     name: '',
     slug: '',
     description: '',
+    imageUrl: '',
     isActive: true
   })
 
   const handleOpenModal = () => {
     setEditingId(null)
-    setFormData({ name: '', slug: '', description: '', isActive: true })
+    setFormData({ name: '', slug: '', description: '', imageUrl: '', isActive: true })
     setIsModalOpen(true)
   }
 
@@ -47,6 +50,7 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
       name: sub.name || '',
       slug: sub.slug || '',
       description: sub.description || '',
+      imageUrl: sub.imageUrl || '',
       isActive: sub.isActive
     })
     setIsModalOpen(true)
@@ -54,7 +58,7 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
-    setFormData({ name: '', slug: '', description: '', isActive: true })
+    setFormData({ name: '', slug: '', description: '', imageUrl: '', isActive: true })
     setEditingId(null)
   }
 
@@ -118,6 +122,7 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
           <table className="w-full text-right">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-6 py-4 text-sm font-bold text-gray-900">الصورة</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-900">الاسم</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-900">الرابط</th>
                 <th className="px-6 py-4 text-sm font-bold text-gray-900">الحالة</th>
@@ -127,6 +132,15 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
             <tbody className="divide-y divide-gray-200">
               {collection.subCategories.map(sub => (
                 <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    {sub.imageUrl ? (
+                      <img src={sub.imageUrl} alt={sub.name} className="w-12 h-12 rounded object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                        <ImageIcon size={20} />
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <span className="font-bold text-gray-900">{sub.name}</span>
                   </td>
@@ -200,6 +214,14 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   rows={3}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 block mb-1">أيقونة/صورة الفرع</label>
+                <ImageUpload
+                  mainImage={formData.imageUrl || ''}
+                  onMainImageChange={(url: string) => setFormData({...formData, imageUrl: url})}
+                  singleOnly={true}
                 />
               </div>
               <label className="flex items-center gap-2 cursor-pointer pt-2">
