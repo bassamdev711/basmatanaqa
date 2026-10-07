@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Lock, Phone, ArrowRight, UserCircle2 } from 'lucide-react'
 
 export default function CustomerLoginPage() {
-  const [phone, setPhone] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,7 +21,7 @@ export default function CustomerLoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ identifier, password }),
       })
 
       const data = await res.json()
@@ -63,17 +63,17 @@ export default function CustomerLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
-              رقم الهاتف
+              رقم الهاتف أو البريد الإلكتروني
             </label>
             <div className="relative">
               <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
               <input
-                type="tel"
+                type="text"
                 dir="ltr"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-right"
-                placeholder="05XXXXXXXX"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-left"
+                placeholder="رقم الهاتف أو البريد الإلكتروني"
                 required
               />
             </div>

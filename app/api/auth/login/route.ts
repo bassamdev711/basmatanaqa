@@ -12,12 +12,17 @@ export async function POST(request: Request) {
     const parsed = loginSchema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ error: 'بيانات الدخول غير صحيحة.' }, { status: 401 })
     
-    const phone = normalizePhone(parsed.data.phone)
-    if (!checkRateLimit(`login_phone:${phone}`, 5, 15 * 60 * 1000)) {
+    const rawIdentifier = parsed.data.identifier
+    const isEmail = rawIdentifier.includes('@')
+    const normalizedIdentifier = isEmail ? rawIdentifier.trim().toLowerCase() : normalizePhone(rawIdentifier)
+
+    if (!checkRateLimit(`login_attempt:${normalizedIdentifier}`, 5, 15 * 60 * 1000)) {
       return NextResponse.json({ error: 'محاولات دخول كثيرة خاطئة، تم قفل الحساب مؤقتاً لمدة 15 دقيقة.' }, { status: 429 })
     }
 
-    const user = await prisma.user.findUnique({ where: { phone } })
+    const user = await prisma.user.findFirst({ 
+      where: isEmail ? { email: normalizedIdentifier } : { phone: normalizedIdentifier } 
+    })
     if (!user || !user.isActive || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
       return NextResponse.json({ error: 'بيانات الدخول غير صحيحة.' }, { status: 401 })
     }
