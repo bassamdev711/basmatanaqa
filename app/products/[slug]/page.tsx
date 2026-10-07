@@ -63,7 +63,11 @@ export default async function ProductDetailPage({
   const decodedSlug = decodeURIComponent(slug)
   const product = await prisma.product.findUnique({ 
     where: { slug: decodedSlug, isActive: true },
-    include: { variants: true }
+    include: { 
+      variants: true,
+      mainCategory: { select: { name: true } },
+      subCategory: { select: { name: true } }
+    }
   })
   if (!product) notFound()
 

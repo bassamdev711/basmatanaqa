@@ -26,6 +26,7 @@ type PaymentSettingsResponse = {
   shippingCities: ShippingCity[]
   bankAccounts: BankAccount[]
   digitalWallets: DigitalWallet[]
+  loyaltyInfo: { balance: number; pointsValue: number } | null
 }
 
 const emptySubscribe = () => () => {}
@@ -60,6 +61,7 @@ export default function CheckoutClient() {
   }, [previewUrl])
 
   const [formData, setFormData] = useState(checkoutData)
+  const [pointsUsed, setPointsUsed] = useState(0)
 
   useEffect(() => {
     getPaymentMethods().then(data => {
@@ -145,7 +147,10 @@ export default function CheckoutClient() {
     shippingFee += codFee;
   }
 
-  const finalTotal = Math.max(0, cartTotal - (appliedCoupon?.discountAmount || 0)) + shippingFee;
+  const preLoyaltyTotal = Math.max(0, cartTotal - (appliedCoupon?.discountAmount || 0)) + shippingFee;
+  const loyaltyPointsValue = paymentSettings.loyaltyInfo ? paymentSettings.loyaltyInfo.pointsValue : 1;
+  const maxUsablePointsValue = Math.min(preLoyaltyTotal, pointsUsed * loyaltyPointsValue);
+  const finalTotal = preLoyaltyTotal - maxUsablePointsValue;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -207,6 +212,7 @@ export default function CheckoutClient() {
         undefined,
         transactionId,
         requestKey,
+        pointsUsed
       )
 
       if (!result.success || !result.orderId) {
@@ -602,6 +608,11 @@ export default function CheckoutClient() {
                     </div>
                     <div className="flex-grow pt-1">
                       <h4 className="font-bold text-foreground text-sm line-clamp-2">{item.name}</h4>
+                      {item.selectedSize && (
+                        <div className="text-xs text-foreground/60 mt-1 font-bold">
+                          المقاس: <span className="text-foreground">{item.selectedSize}</span>
+                        </div>
+                      )}
                       <div className="text-brand text-sm font-bold mt-1">{(item.price).toLocaleString('ar-SA')} {currency}</div>
                       
                       {/* Quantity Control inside Checkout */}
@@ -662,11 +673,65 @@ export default function CheckoutClient() {
                   </div>
                 )}
                 
+                {pointsUsed > 0 && (
+                  <div className="flex justify-between text-brand text-sm font-bold">
+                    <span>خصم نقاط الولاء</span>
+                    <span>- {maxUsablePointsValue.toLocaleString('ar-SA')} {currency}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between font-black text-xl text-foreground pt-4 border-t border-black/10 mt-4">
                   <span>الإجمالي</span>
                   <span className="text-brand">{finalTotal.toLocaleString('ar-SA')} {currency}</span>
                 </div>
               </div>
+
+              {paymentSettings.loyaltyInfo && paymentSettings.loyaltyInfo.balance > 0 && (
+                <div className="mt-8 border border-brand/20 bg-brand/5 p-4 rounded-lg">
+                  <h3 className="font-bold text-brand mb-2">نقاط الولاء</h3>
+                  <p className="text-sm text-foreground/80 mb-4">
+                    رصيدك الحالي: <strong className="text-brand">{paymentSettings.loyaltyInfo.balance}</strong> نقطة
+                    (تعادل {(paymentSettings.loyaltyInfo.balance * paymentSettings.loyaltyInfo.pointsValue).toLocaleString('ar-SA')} {currency})
+                  </p>
+                  
+                  <div className="flex gap-2 items-center">
+                    <input 
+                      type="number"
+                      min="0"
+                      max={paymentSettings.loyaltyInfo.balance}
+                      value={pointsUsed || ''}
+                      onChange={(e) => {
+                        const val = Math.min(
+                          Number(e.target.value) || 0,
+                          paymentSettings.loyaltyInfo!.balance,
+                          Math.ceil(preLoyaltyTotal / paymentSettings.loyaltyInfo!.pointsValue)
+                        );
+                        setPointsUsed(val);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm border border-black/10 rounded-sm bg-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+                      placeholder="عدد النقاط المراد استخدامها"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const maxPoints = Math.min(
+                          paymentSettings.loyaltyInfo!.balance,
+                          Math.ceil(preLoyaltyTotal / paymentSettings.loyaltyInfo!.pointsValue)
+                        );
+                        setPointsUsed(maxPoints);
+                      }}
+                      className="px-4 py-2 text-sm bg-brand text-white rounded-sm hover:bg-brand/90 transition-colors font-bold whitespace-nowrap"
+                    >
+                      استخدام الأقصى
+                    </button>
+                  </div>
+                  {pointsUsed > 0 && (
+                    <p className="text-xs text-brand mt-2 font-bold">
+                      سيتم خصم {(pointsUsed * paymentSettings.loyaltyInfo.pointsValue).toLocaleString('ar-SA')} {currency} من إجمالي الطلب.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </aside>
 

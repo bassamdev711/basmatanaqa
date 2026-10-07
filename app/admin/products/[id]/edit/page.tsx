@@ -14,6 +14,12 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   })
+  
+  const mainCategories = await prisma.mainCategory.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true },
+    orderBy: { createdAt: 'desc' }
+  })
 
   return (
     <EditProductClient
@@ -25,6 +31,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       }}
       collections={collections}
       suppliers={suppliers}
+      mainCategories={mainCategories}
     />
   )
 }

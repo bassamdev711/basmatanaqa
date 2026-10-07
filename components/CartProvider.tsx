@@ -11,6 +11,7 @@ export interface CartItem {
   imageUrl: string
   quantity: number
   maxStock: number
+  selectedSize?: string
 }
 
 export interface AppliedCoupon {
@@ -49,7 +50,8 @@ function isValidCartItem(value: unknown): value is CartItem {
     typeof item.slug === 'string' && item.slug.trim().length > 0 &&
     typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 &&
     typeof item.imageUrl === 'string' &&
-    typeof item.quantity === 'number' && Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 1000
+    typeof item.quantity === 'number' && Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 1000 &&
+    (item.selectedSize === undefined || typeof item.selectedSize === 'string')
   )
 }
 

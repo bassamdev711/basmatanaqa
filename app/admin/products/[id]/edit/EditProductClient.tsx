@@ -1,16 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { startTransition, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Info, ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-react'
 import { updateProduct } from '../../actions'
+import { getSubCategories } from '../../../categories/actions'
 import ImageUpload from '../../ImageUpload'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
 import { toast } from 'react-hot-toast'
-import { useEffect } from 'react'
 
 interface CollectionOption {
+  id: string
+  name: string
+}
+
+interface CategoryOption {
   id: string
   name: string
 }
@@ -27,6 +32,10 @@ interface Product {
   size: string | null
   gender: string | null
   category: string | null
+  mainCategoryId: string | null
+  subCategoryId: string | null
+  hasSizes: boolean
+  availableSizes: string[]
   collectionId: string | null
   supplierId: string | null
   costPrice: number | null
@@ -40,16 +49,47 @@ interface Product {
   seoScore: number | null
 }
 
-export default function EditProductClient({ product, collections = [], suppliers = [] }: { product: Product, collections?: CollectionOption[], suppliers?: CollectionOption[] }) {
+export default function EditProductClient({ 
+  product, 
+  collections = [], 
+  suppliers = [],
+  mainCategories = [] 
+}: { 
+  product: Product, 
+  collections?: CollectionOption[], 
+  suppliers?: CollectionOption[],
+  mainCategories?: CategoryOption[]
+}) {
   const [mainImage, setMainImage] = useState(product.imageUrl || '')
   const [extraImages, setExtraImages] = useState<string[]>(product.images || [])
   const [name, setName] = useState(product.name || '')
   const [slug, setSlug] = useState(product.slug || '')
   const [sku, setSku] = useState(product.sku || '')
   const [description, setDescription] = useState(product.description || '')
+  
+  // Categories State
+  const [subCategories, setSubCategories] = useState<CategoryOption[]>([])
+  const [selectedMainCategory, setSelectedMainCategory] = useState(product.mainCategoryId || '')
+
+  // Sizes State
+  const [hasSizes, setHasSizes] = useState(product.hasSizes || false)
+  const [availableSizes, setAvailableSizes] = useState<string[]>(product.availableSizes || [])
+  const [currentSizeInput, setCurrentSizeInput] = useState('')
+
   const [seoPhrases, setSeoPhrases] = useState<string[]>(product.seoSearchPhrases || [])
   const [seoScore, setSeoScore] = useState<number>(product.seoScore || 0)
   const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const handleAddSize = () => {
+    if (currentSizeInput.trim() && !availableSizes.includes(currentSizeInput.trim())) {
+      setAvailableSizes([...availableSizes, currentSizeInput.trim()])
+      setCurrentSizeInput('')
+    }
+  }
+
+  const handleRemoveSize = (sizeToRemove: string) => {
+    setAvailableSizes(availableSizes.filter(s => s !== sizeToRemove))
+  }
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -62,6 +102,18 @@ export default function EditProductClient({ product, collections = [], suppliers
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (selectedMainCategory) {
+      startTransition(() => {
+        getSubCategories(selectedMainCategory).then(data => {
+          if (Array.isArray(data)) setSubCategories(data.map(c => ({ id: c.id, name: c.name })))
+        }).catch(console.error)
+      })
+    } else {
+      setSubCategories([])
+    }
+  }, [selectedMainCategory])
 
   const generateSlug = (name: string) => {
     return name
@@ -90,6 +142,8 @@ export default function EditProductClient({ product, collections = [], suppliers
         <input type="hidden" name="images" value={JSON.stringify(extraImages)} />
         <input type="hidden" name="seoSearchPhrases" value={JSON.stringify(seoPhrases)} />
         <input type="hidden" name="seoScore" value={seoScore} />
+        <input type="hidden" name="hasSizes" value={hasSizes.toString()} />
+        <input type="hidden" name="availableSizes" value={JSON.stringify(availableSizes)} />
 
         {/* --- الأقسام الأساسية المرئية دائماً --- */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-6">
@@ -113,11 +167,20 @@ export default function EditProductClient({ product, collections = [], suppliers
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة (Collection)</label>
-              <select name="collectionId" defaultValue={product.collectionId || ''} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
+              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الرئيسية</label>
+              <select name="mainCategoryId" value={selectedMainCategory} onChange={(e) => setSelectedMainCategory(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
                 <option value="">بدون مجموعة</option>
-                {collections.map(col => (
-                  <option key={col.id} value={col.id}>{col.name}</option>
+                {mainCategories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الفرعية</label>
+              <select name="subCategoryId" defaultValue={product.subCategoryId || ''} disabled={!selectedMainCategory} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
+                <option value="">بدون مجموعة فرعية</option>
+                {subCategories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -136,6 +199,60 @@ export default function EditProductClient({ product, collections = [], suppliers
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
               <p className="text-xs text-gray-500 mt-1">لا يظهر للعميل — لحساب الربح فقط</p>
             </div>
+          </div>
+
+          <div className="border-t border-gray-200 pt-6">
+            <label className="flex items-center gap-2 cursor-pointer mb-4">
+              <input 
+                type="checkbox" 
+                checked={hasSizes}
+                onChange={(e) => setHasSizes(e.target.checked)}
+                className="h-5 w-5 rounded text-black focus:ring-black" 
+              />
+              <span className="text-base font-bold text-gray-900">المنتج يحتوي على مقاسات</span>
+            </label>
+
+            {hasSizes && (
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">إضافة مقاس (اضغط إنتر أو انقر إضافة)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={currentSizeInput}
+                      onChange={(e) => setCurrentSizeInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddSize()
+                        }
+                      }}
+                      placeholder="مثال: XL، 42، كبير..."
+                      className="flex-1 rounded-md border-gray-300 border p-2 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" 
+                    />
+                    <button type="button" onClick={handleAddSize} className="btn btn-secondary px-4">
+                      إضافة
+                    </button>
+                  </div>
+                </div>
+                
+                {availableSizes.length > 0 && (
+                  <div>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">المقاسات المعتمدة:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {availableSizes.map(size => (
+                        <span key={size} className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white text-sm rounded-full">
+                          {size}
+                          <button type="button" onClick={() => handleRemoveSize(size)} className="hover:text-red-300 focus:outline-none ml-1 font-bold">
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">الوصف التسويقي</label>

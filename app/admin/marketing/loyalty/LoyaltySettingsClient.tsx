@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { Save, Info, Star } from 'lucide-react'
 import { updateLoyaltySettings } from './actions'
-import { useToast } from 'react-hot-toast'
-import SubmitButton from '@/app/admin/components/SubmitButton'
+import toast from 'react-hot-toast'
 
 type LoyaltySettingsProps = {
   settings: {
@@ -57,12 +56,13 @@ export default function LoyaltySettingsClient({ settings }: LoyaltySettingsProps
             تحكم في كيفية اكتساب العملاء للنقاط وكيفية استبدالها برصيد حقيقي في متجرك.
           </p>
         </div>
-        <SubmitButton 
-          label="حفظ التغييرات"
-          loadingLabel="جاري الحفظ..."
+        <button 
+          type="submit"
           className="bg-brand text-surface px-6 py-2 rounded-lg font-bold hover:bg-brand/90 transition-colors flex items-center gap-2"
-          icon={<Save size={18} />}
-        />
+        >
+          <Save size={18} />
+          حفظ التغييرات
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -78,7 +78,11 @@ export default function CartClient() {
                           <X size={18} strokeWidth={2} className="w-4 h-4 md:w-5 md:h-5" />
                         </button>
                       </div>
-                      {/* Subtitle/Size could go here if we tracked it in cart, for now omit or use static */}
+                      {item.selectedSize && (
+                        <div className="text-xs text-foreground/60 mt-1 font-bold">
+                          المقاس: <span className="text-foreground">{item.selectedSize}</span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex justify-between items-end mt-2 md:mt-0">

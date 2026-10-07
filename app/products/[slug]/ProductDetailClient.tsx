@@ -35,6 +35,10 @@ interface Product {
   featured: boolean
   bestseller: boolean
   stock: number
+  hasSizes?: boolean
+  availableSizes?: string[]
+  mainCategory?: { name: string } | null
+  subCategory?: { name: string } | null
   engName?: string
   variants?: ProductVariant[]
 }
@@ -71,11 +75,18 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const hasVariants = product.variants && product.variants.length > 0
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(hasVariants ? product.variants![0] : null)
 
+  // Dynamic Sizes State
+  const [selectedDynamicSize, setSelectedDynamicSize] = useState<string | null>(
+    product.hasSizes && product.availableSizes && product.availableSizes.length > 0 
+      ? product.availableSizes[0] 
+      : null
+  )
+
   // Current Displayed Data
   const currentPrice = selectedVariant ? selectedVariant.price : product.price
   const currentCompareAtPrice = selectedVariant ? selectedVariant.compareAtPrice : product.compareAtPrice
   const currentStock = selectedVariant ? selectedVariant.stock : product.stock
-  const currentSize = selectedVariant ? selectedVariant.size : product.size
+  const currentSize = selectedDynamicSize || (selectedVariant ? selectedVariant.size : product.size)
 
   // Calculate Discount Percentage
   const hasDiscount = currentCompareAtPrice && currentCompareAtPrice > currentPrice
@@ -84,6 +95,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     : 0
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (product.hasSizes && !selectedDynamicSize) {
+      showToast('error', 'الرجاء اختيار المقاس أولاً')
+      return false
+    }
+
     if (currentStock <= 0) {
       showToast('error', 'نعتذر، هذا المنتج نفد من المخزون.')
       return false
@@ -94,13 +110,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     }
 
     addToCart({
-      id: selectedVariant ? `${product.id}-${selectedVariant.id}` : product.id,
-      name: selectedVariant ? `${product.name} (${selectedVariant.size})` : product.name,
+      id: selectedVariant 
+        ? `${product.id}-${selectedVariant.id}` 
+        : selectedDynamicSize 
+          ? `${product.id}-${selectedDynamicSize}` 
+          : product.id,
+      name: selectedVariant 
+        ? `${product.name} (${selectedVariant.size})` 
+        : selectedDynamicSize 
+          ? `${product.name} (${selectedDynamicSize})` 
+          : product.name,
       slug: product.slug,
       price: currentPrice,
       imageUrl: product.imageUrl || '',
       quantity,
       maxStock: currentStock,
+      selectedSize: selectedDynamicSize || undefined,
     })
     
     // Fly-to-cart animation
@@ -231,7 +256,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               {/* Variants Selector */}
               {hasVariants && (
                 <div className="mb-8">
-                  <h3 className="text-sm font-bold text-foreground mb-3">اختر الحجم:</h3>
+                  <h3 className="text-sm font-bold text-foreground mb-3">اختر الحجم (Variant):</h3>
                   <div className="flex flex-wrap gap-3">
                     {product.variants!.map((variant) => (
                       <button
@@ -253,24 +278,49 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 </div>
               )}
 
+              {/* Dynamic Sizes Selector */}
+              {product.hasSizes && product.availableSizes && product.availableSizes.length > 0 && !hasVariants && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold text-foreground mb-3">اختر المقاس:</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {product.availableSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => {
+                          setSelectedDynamicSize(size)
+                          setQuantity(1)
+                        }}
+                        className={`px-6 py-2 border rounded-full text-sm font-bold transition-all ${
+                          selectedDynamicSize === size
+                            ? 'bg-brand text-surface border-brand shadow-md'
+                            : 'bg-white text-foreground border-black/10 hover:border-brand/50'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Specs Grid (Compact) */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 bg-white p-4 border border-black/5 rounded-lg">
-                {!hasVariants && currentSize && (
+                {!hasVariants && !product.hasSizes && currentSize && (
                   <div className="flex flex-col">
                     <span className="text-foreground/50 text-[11px] font-bold mb-1">الحجم</span>
                     <span className="text-foreground text-sm font-bold" dir="ltr">{currentSize}</span>
                   </div>
                 )}
-                {product.gender && (
+                {product.mainCategory?.name && (
                   <div className="flex flex-col">
-                    <span className="text-foreground/50 text-[11px] font-bold mb-1">الجنس</span>
-                    <span className="text-foreground text-sm font-bold">{product.gender}</span>
+                    <span className="text-foreground/50 text-[11px] font-bold mb-1">المجموعة</span>
+                    <span className="text-foreground text-sm font-bold">{product.mainCategory.name}</span>
                   </div>
                 )}
-                {product.category && (
+                {product.subCategory?.name && (
                   <div className="flex flex-col">
                     <span className="text-foreground/50 text-[11px] font-bold mb-1">التصنيف</span>
-                    <span className="text-foreground text-sm font-bold">{product.category}</span>
+                    <span className="text-foreground text-sm font-bold">{product.subCategory.name}</span>
                   </div>
                 )}
                 <div className="flex flex-col">

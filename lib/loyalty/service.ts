@@ -72,30 +72,72 @@ export async function awardOrderPoints(orderId: string) {
 
 export async function reverseOrderPoints(orderId: string) {
   return prisma.$transaction(async (tx) => {
+    // 1. Reverse the earned points (ORDER_REWARD)
     const reward = await tx.loyaltyTransaction.findUnique({ where: { referenceKey: `ORDER_REWARD:${orderId}` } })
-    if (!reward) return null
-    const referenceKey = `ORDER_REFUND:${orderId}`
-    const existing = await tx.loyaltyTransaction.findUnique({ where: { referenceKey } })
-    if (existing) return existing
-    const account = await tx.loyaltyAccount.findUnique({ where: { id: reward.accountId } })
-    if (!account) return null
-    const balance = account.balance - reward.points
-    await tx.loyaltyAccount.update({
-      where: { id: account.id },
-      data: { balance, lifetimeRedeemed: { increment: reward.points } },
+    if (reward) {
+      const referenceKey = `ORDER_REFUND:${orderId}`
+      const existing = await tx.loyaltyTransaction.findUnique({ where: { referenceKey } })
+      if (!existing) {
+        const account = await tx.loyaltyAccount.findUnique({ where: { id: reward.accountId } })
+        if (account) {
+          const balance = account.balance - reward.points
+          await tx.loyaltyAccount.update({
+            where: { id: account.id },
+            data: { balance, lifetimeRedeemed: { increment: reward.points } },
+          })
+          await tx.loyaltyTransaction.create({
+            data: {
+              userId: reward.userId,
+              accountId: account.id,
+              orderId,
+              type: LOYALTY_TYPES.ORDER_REFUND,
+              points: -reward.points,
+              balanceAfter: balance,
+              referenceKey,
+              description: 'عكس نقاط الطلب بعد الاسترجاع',
+            },
+          })
+        }
+      }
+    }
+
+    // 2. Refund any points that were redeemed (used) on this order
+    const redeemed = await tx.loyaltyTransaction.findFirst({
+      where: { orderId, type: 'REDEEM', referenceKey: { startsWith: 'REDEEM_' } }
     })
-    return tx.loyaltyTransaction.create({
-      data: {
-        userId: reward.userId,
-        accountId: account.id,
-        orderId,
-        type: LOYALTY_TYPES.ORDER_REFUND,
-        points: -reward.points,
-        balanceAfter: balance,
-        referenceKey,
-        description: 'عكس نقاط الطلب بعد الاسترجاع',
-      },
-    })
+    
+    if (redeemed) {
+      const refundRefKey = `REFUND_REDEEM_${orderId}`
+      const existingRefund = await tx.loyaltyTransaction.findFirst({ where: { referenceKey: refundRefKey } })
+      
+      if (!existingRefund) {
+        const account = await tx.loyaltyAccount.findUnique({ where: { id: redeemed.accountId } })
+        if (account) {
+          const newBalance = account.balance + redeemed.points
+          await tx.loyaltyAccount.update({
+            where: { id: account.id },
+            // It's a refund, so we add the points back to balance. 
+            // We could deduct from lifetimeRedeemed or add to lifetimeEarned, but let's just restore balance.
+            data: { balance: newBalance }
+          })
+          
+          await tx.loyaltyTransaction.create({
+            data: {
+              userId: redeemed.userId,
+              accountId: account.id,
+              orderId,
+              type: 'REFUND',
+              points: redeemed.points,
+              balanceAfter: newBalance,
+              referenceKey: refundRefKey,
+              description: 'استرجاع النقاط المستخدمة بعد إلغاء الطلب'
+            }
+          })
+        }
+      }
+    }
+    
+    return reward || redeemed || null
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 }
 

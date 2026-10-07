@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, Layers, CreditCard, ArrowRight, ShoppingCart, Truck, FileText, Megaphone, Search, Menu, X, Phone, Inbox, MessageSquare, Activity, Palette, Settings, User, Bell, Star } from 'lucide-react'
+import { LayoutDashboard, Package, Layers, CreditCard, ArrowRight, ShoppingCart, Truck, FileText, Megaphone, Search, Menu, X, Phone, Inbox, MessageSquare, Activity, Palette, Settings, User, Users, Bell, Star } from 'lucide-react'
 import LogoutButton from './LogoutButton'
 import type { StoreConfig } from '@/lib/store-config'
 
@@ -40,9 +40,11 @@ export default function AdminSidebar({
   const navLinks = [
     { href: '/admin', icon: LayoutDashboard, label: 'نظرة عامة', exact: true },
     { href: '/admin/analytics', icon: Activity, label: 'الإحصائيات' },
+    { href: '/admin/customers', icon: Users, label: 'العملاء' },
     { href: '/admin/products', icon: Package, label: 'إدارة المنتجات' },
+    { href: '/admin/categories', icon: Layers, label: 'إدارة التصنيفات (جديد)' },
     { href: '/admin/suppliers', icon: Layers, label: 'إدارة الموردين' },
-    { href: '/admin/collections', icon: Layers, label: 'التصنيفات' },
+    { href: '/admin/collections', icon: Layers, label: 'المجموعات (Collections)' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'الطلبات' },
     { href: '/admin/payment-settings', icon: CreditCard, label: 'إعدادات الدفع' },
     { href: '/admin/shipping-settings', icon: Truck, label: 'إعدادات الشحن' },

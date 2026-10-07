@@ -79,6 +79,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                   <div className="flex-grow">
                     <h3 className="font-bold text-gray-900">{item.product?.name || 'منتج محذوف'}</h3>
                     <p className="text-sm text-gray-500">الكمية: {item.quantity}</p>
+                    {item.selectedSize && (
+                      <p className="text-sm text-gray-500 mt-1 font-bold">المقاس: <span className="text-gray-900">{item.selectedSize}</span></p>
+                    )}
                   </div>
                   <div className="font-bold text-brand">
                     {(Number(item.price) * item.quantity).toLocaleString('ar-SA')} {currency}
@@ -86,9 +89,25 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 </div>
               ))}
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-lg font-black text-gray-900">
-              <span>الإجمالي</span>
-              <span className="text-brand">{Number(order.totalAmount).toLocaleString('ar-SA')} {currency}</span>
+            <div className="mt-6 pt-4 border-t border-gray-100 space-y-2">
+              <div className="flex justify-between items-center text-sm text-gray-600">
+                <span>المجموع الفرعي (قبل الخصم والتوصيل)</span>
+                <span>{order.items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toLocaleString('ar-SA')} {currency}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm text-gray-600">
+                <span>رسوم التوصيل</span>
+                <span>{Number(order.shippingFee).toLocaleString('ar-SA')} {currency}</span>
+              </div>
+              {order.pointsUsed > 0 && (
+                <div className="flex justify-between items-center text-sm font-bold text-brand">
+                  <span>خصم نقاط الولاء ({order.pointsUsed} نقطة)</span>
+                  <span>- {Number(order.pointsDiscount).toLocaleString('ar-SA')} {currency}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-lg font-black text-gray-900 border-t border-gray-100 pt-2 mt-2">
+                <span>الإجمالي</span>
+                <span className="text-brand">{Number(order.totalAmount).toLocaleString('ar-SA')} {currency}</span>
+              </div>
             </div>
           </div>
 
@@ -106,7 +125,16 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               تفاصيل العميل والشحن
             </h2>
             <div className="space-y-3 text-sm text-gray-600">
-              <p><span className="font-bold text-gray-900">الاسم:</span> {order.customerName}</p>
+              <p className="flex items-center gap-2">
+                <span className="font-bold text-gray-900">الاسم:</span> 
+                {order.userId ? (
+                  <Link href={`/admin/customers/${order.userId}`} className="text-brand hover:underline font-bold">
+                    {order.customerName}
+                  </Link>
+                ) : (
+                  <span>{order.customerName}</span>
+                )}
+              </p>
               <p className="flex items-center gap-2">
                 <span className="font-bold text-gray-900">الجوال:</span> 
                 <a href={`tel:${order.customerPhone}`} className="text-brand hover:underline" dir="ltr">{order.customerPhone}</a>

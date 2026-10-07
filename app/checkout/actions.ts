@@ -54,6 +54,7 @@ export async function createOrder(
   _legacyPaymentProofUrl?: string,
   transactionId?: string,
   idempotencyKey?: string,
+  pointsUsed?: number,
 ) {
   try {
     const authenticatedUser = await requireCurrentUser()
@@ -98,11 +99,15 @@ export async function createOrder(
 
     const parsedItems = cartItems.map((item) => {
       const parts = item.id.split('-')
+      // If item has a selectedSize, it's a dynamic size, not a variant.
+      // The id format is: product.id-size. So variantId should be null.
+      const isVariant = parts.length > 1 && !item.selectedSize
       return {
         originalId: item.id,
         productId: parts[0],
-        variantId: parts.length > 1 ? parts.slice(1).join('-') : null,
+        variantId: isVariant ? parts.slice(1).join('-') : null,
         quantity: item.quantity,
+        selectedSize: item.selectedSize || null,
       }
     })
 
@@ -117,7 +122,7 @@ export async function createOrder(
     }
 
     let calculatedCartTotal = 0
-    const orderItemsData: { productId: string; variantId?: string | null; quantity: number; price: number }[] = []
+    const orderItemsData: { productId: string; variantId?: string | null; quantity: number; price: number; selectedSize?: string | null }[] = []
 
     for (const item of parsedItems) {
       const dbProduct = dbProducts.find((product) => product.id === item.productId)
@@ -143,6 +148,7 @@ export async function createOrder(
         variantId: item.variantId,
         quantity: item.quantity,
         price: itemPrice,
+        selectedSize: item.selectedSize,
       })
     }
 
@@ -206,7 +212,29 @@ export async function createOrder(
       if (Number.isFinite(codFee) && codFee > 0) shippingFee += codFee
     }
 
-    const finalTotal = discountedCartTotal + shippingFee
+    let pointsDiscountValue = 0
+    let pointsToUse = 0
+    
+    if (pointsUsed && pointsUsed > 0) {
+      const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
+      if (loyaltySettings?.isEnabled && loyaltySettings?.redeemEnabled) {
+        const userAccount = await prisma.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
+        if (userAccount && userAccount.balance >= pointsUsed) {
+          const pointVal = Number(loyaltySettings.pointsValue) || 1
+          const requestedDiscount = pointsUsed * pointVal
+          const preTotal = discountedCartTotal + shippingFee
+          
+          pointsDiscountValue = Math.min(requestedDiscount, preTotal)
+          pointsToUse = pointsDiscountValue / pointVal // only use what's actually discounted
+        } else {
+          return { success: false, error: 'رصيد نقاط الولاء غير كافٍ.' }
+        }
+      } else {
+        return { success: false, error: 'استخدام نقاط الولاء غير متاح حالياً.' }
+      }
+    }
+
+    const finalTotal = discountedCartTotal + shippingFee - pointsDiscountValue
     const paymentStatus = 'PENDING'
     const transaction = normalizeText(transactionId, 100) || null
     const year = new Date().getFullYear()
@@ -226,6 +254,8 @@ export async function createOrder(
           paymentMethod: checkoutData.paymentMethod,
           shippingFee,
           totalAmount: finalTotal,
+          pointsUsed: pointsToUse,
+          pointsDiscount: pointsDiscountValue,
           paymentStatus,
           status: 'NEW',
           couponId: validatedCouponId,
@@ -234,6 +264,32 @@ export async function createOrder(
           items: { create: orderItemsData },
         },
       })
+
+      if (pointsToUse > 0) {
+        const userAccount = await tx.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
+        if (userAccount) {
+          const newBalance = userAccount.balance - pointsToUse
+          await tx.loyaltyAccount.update({
+            where: { id: userAccount.id },
+            data: {
+              balance: newBalance,
+              lifetimeRedeemed: userAccount.lifetimeRedeemed + pointsToUse
+            }
+          })
+          await tx.loyaltyTransaction.create({
+            data: {
+              userId: authenticatedUser.id,
+              accountId: userAccount.id,
+              type: 'REDEEM',
+              points: pointsToUse,
+              balanceAfter: newBalance,
+              orderId: newOrder.id,
+              description: `استخدام نقاط في الطلب #${newOrder.orderNumber}`,
+              referenceKey: `REDEEM_${newOrder.id}_${Date.now()}`
+            }
+          })
+        }
+      }
 
       for (const item of orderItemsData) {
         const updateResult = item.variantId
@@ -378,6 +434,24 @@ export async function getPaymentMethods() {
     orderBy: { name: 'asc' },
   })
 
+  let loyaltyInfo = null
+  try {
+    const { getCurrentUser } = await import('@/lib/user-auth')
+    const user = await getCurrentUser()
+    if (user) {
+      const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
+      if (loyaltySettings?.isEnabled && loyaltySettings?.redeemEnabled) {
+        const account = await prisma.loyaltyAccount.findUnique({ where: { userId: user.id } })
+        loyaltyInfo = {
+          balance: account?.balance || 0,
+          pointsValue: Number(loyaltySettings.pointsValue) || 1,
+        }
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
   return {
     settings: {
       bankTransferEnabled: settings.bankTransferEnabled,
@@ -409,5 +483,6 @@ export async function getPaymentMethods() {
       walletName: wallet.walletName,
       accountNumber: wallet.accountNumber,
     })),
+    loyaltyInfo,
   }
 }

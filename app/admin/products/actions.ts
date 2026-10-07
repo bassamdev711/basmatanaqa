@@ -44,6 +44,18 @@ export async function createProduct(formData: FormData) {
     const extraImages = JSON.parse((formData.get('images') as string) || '[]');
     const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
     const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
+    
+    const mainCategoryId = formData.get('mainCategoryId') as string | null;
+    const subCategoryId = formData.get('subCategoryId') as string | null;
+    const hasSizes = formData.get('hasSizes') === 'true';
+    const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
+
+    if (mainCategoryId && subCategoryId) {
+      const subCat = await prisma.subCategory.findUnique({ where: { id: subCategoryId } });
+      if (subCat && subCat.mainCategoryId !== mainCategoryId) {
+        throw new Error('INVALID_SUBCATEGORY');
+      }
+    }
 
     // Upload main image to Vercel Blob if a URL is provided
     let storedImageUrl = imageUrl;
@@ -91,6 +103,10 @@ export async function createProduct(formData: FormData) {
         images: storedExtraImages,
         seoSearchPhrases,
         seoScore,
+        mainCategoryId: mainCategoryId || undefined,
+        subCategoryId: subCategoryId || undefined,
+        hasSizes,
+        availableSizes,
       },
     });
     
@@ -100,6 +116,9 @@ export async function createProduct(formData: FormData) {
     redirect('/admin/products');
   } catch (err: any) {
     if (isNextRedirectError(err)) throw err;
+    if (err.message === 'INVALID_SUBCATEGORY') {
+      redirect('/admin/products/new?error=invalid_subcategory');
+    }
     if (err.code === 'P2002') {
       redirect('/admin/products/new?error=duplicate_slug');
     }
@@ -152,6 +171,18 @@ export async function updateProduct(formData: FormData) {
     const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
     const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
 
+    const mainCategoryId = formData.get('mainCategoryId') as string | null;
+    const subCategoryId = formData.get('subCategoryId') as string | null;
+    const hasSizes = formData.get('hasSizes') === 'true';
+    const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
+
+    if (mainCategoryId && subCategoryId) {
+      const subCat = await prisma.subCategory.findUnique({ where: { id: subCategoryId } });
+      if (subCat && subCat.mainCategoryId !== mainCategoryId) {
+        throw new Error('INVALID_SUBCATEGORY');
+      }
+    }
+
     let storedImageUrl = imageUrl;
     if (imageUrl && !imageUrl.startsWith('https://')) {
       const file = await fetch(imageUrl).then((r) => r.blob());
@@ -197,6 +228,10 @@ export async function updateProduct(formData: FormData) {
         images: storedExtraImages,
         seoSearchPhrases,
         seoScore,
+        mainCategoryId: mainCategoryId || null,
+        subCategoryId: subCategoryId || null,
+        hasSizes,
+        availableSizes,
       },
     });
 
@@ -208,6 +243,9 @@ export async function updateProduct(formData: FormData) {
     if (isNextRedirectError(err)) throw err;
     // We don't have id available outside the try, wait, let's keep id extract outside or move it above.
     const id = formData.get('id') as string;
+    if (err.message === 'INVALID_SUBCATEGORY') {
+      redirect(`/admin/products/${id}/edit?error=invalid_subcategory`);
+    }
     if (err.code === 'P2002') {
       redirect(`/admin/products/${id}/edit?error=duplicate_slug`);
     }
