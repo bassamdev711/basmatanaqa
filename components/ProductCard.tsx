@@ -80,9 +80,7 @@ export default function ProductCard({ product, currency, priority = false }: Pro
           </div>
         )}
       </div>
-      
-      </div>
-      
+
       <div className="flex flex-col flex-1 p-3 md:p-4 bg-white z-20 relative text-right">
         {/* Brand / Category */}
         <p className="text-black/50 text-[10px] md:text-xs tracking-wider uppercase mb-1 line-clamp-1">
