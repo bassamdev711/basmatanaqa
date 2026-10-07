@@ -3,9 +3,10 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, Phone, ArrowRight, UserCircle2 } from 'lucide-react'
+import { Lock, Phone, ArrowRight, UserCircle2, Mail } from 'lucide-react'
 
 export default function CustomerLoginPage() {
+  const [loginType, setLoginType] = useState<'PHONE' | 'EMAIL'>('PHONE')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -62,21 +63,52 @@ export default function CustomerLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
-              رقم الهاتف أو البريد الإلكتروني
-            </label>
-            <div className="relative">
-              <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-              <input
-                type="text"
-                dir="ltr"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-left"
-                placeholder="رقم الهاتف أو البريد الإلكتروني"
-                required
-              />
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-semibold text-foreground">
+                {loginType === 'PHONE' ? 'رقم الهاتف' : 'البريد الإلكتروني'}
+              </label>
+              <button 
+                type="button" 
+                onClick={() => { setLoginType(loginType === 'PHONE' ? 'EMAIL' : 'PHONE'); setIdentifier(''); }}
+                className="text-xs font-bold text-brand hover:text-accent transition-colors"
+              >
+                {loginType === 'PHONE' ? 'استخدام البريد الإلكتروني' : 'استخدام رقم الهاتف'}
+              </button>
             </div>
+
+            {loginType === 'PHONE' ? (
+              <div className="relative flex items-center bg-surface/50 border border-foreground/10 rounded-xl focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all overflow-hidden" dir="ltr">
+                <span className="pl-4 pr-3 font-bold text-foreground/70 select-none border-r border-foreground/10 py-3 flex items-center justify-center bg-black/5">+967</span>
+                <input
+                  type="tel"
+                  value={identifier.replace('+967', '')}
+                  onChange={(e) => {
+                    let digits = e.target.value.replace(/\D/g, '');
+                    digits = digits.replace(/^[^7]+/, '');
+                    setIdentifier('+967' + digits.slice(0, 9));
+                  }}
+                  className="w-full pl-3 pr-12 py-3 bg-transparent outline-none text-foreground"
+                  placeholder="7XXXXXXXX"
+                  minLength={9}
+                  maxLength={9}
+                  required
+                />
+                <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
+              </div>
+            ) : (
+              <div className="relative">
+                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
+                <input
+                  type="email"
+                  dir="ltr"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-left"
+                  placeholder="email@example.com"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <div>

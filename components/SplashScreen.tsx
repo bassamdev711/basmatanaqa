@@ -47,7 +47,7 @@ export default function SplashScreen({
             <span className="mb-8 text-[10px] font-bold tracking-[0.38em] text-accent">BASMAT ANAQAH</span>
             <div className="w-full border-y border-accent/35 py-8">
               <Image
-                src="/basmat-anaqah-logo.png"
+                src="/basmat-anaqah-logo.webp"
                 alt={`شعار ${storeName}`}
                 width={360}
                 height={360}

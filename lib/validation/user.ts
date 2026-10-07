@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const phoneSchema = z.string().trim().min(7).max(32).regex(/^\+?[\d\s().-]+$/)
+export const phoneSchema = z.string().trim().regex(/^\+9677[0-9]{8}$/, 'رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 7 (مع المفتاح +967)')
 export const emailSchema = z.string().trim().toLowerCase().email().max(254).nullable().optional()
 export const passwordSchema = z.string()
   .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')

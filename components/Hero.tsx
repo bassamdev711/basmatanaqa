@@ -53,7 +53,7 @@ export default function Hero({ data = {}, brandName = 'بصمة أناقة' }: {
             <div className="absolute inset-6 border border-accent/25" />
             <div className="absolute bottom-8 left-8 text-[10px] font-bold tracking-[0.3em] text-surface/40 [writing-mode:vertical-rl]">CURATED DETAILS</div>
             <div className="relative z-10 flex flex-col items-center text-center">
-              <Image src="/basmat-anaqah-logo.png" alt="شعار بصمة أناقة" width={360} height={360} priority className="h-64 w-64 object-contain sm:h-80 sm:w-80" />
+              <Image src="/basmat-anaqah-logo.webp" alt="شعار بصمة أناقة" width={360} height={360} priority className="h-64 w-64 object-contain sm:h-80 sm:w-80" />
               <span className="mt-7 h-px w-20 bg-accent" />
               <span className="mt-4 text-sm tracking-[0.18em] text-surface/75">تفاصيل مختارة. حضور مختلف.</span>
             </div>

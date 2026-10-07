@@ -302,16 +302,24 @@ export default function CheckoutClient() {
                   
                   <div className="flex flex-col">
                     <label htmlFor="phone" className="text-sm font-bold text-foreground/70 mb-2">رقم الهاتف</label>
-                    <input 
-                      type="tel" 
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                      dir="ltr"
-                      placeholder="05XXXXXXXX"
-                      className="bg-transparent border-b border-black/20 pb-3 outline-none focus:border-brand transition-colors text-right"
-                    />
+                    <div className="flex items-center border-b border-black/20 pb-3 focus-within:border-brand transition-colors bg-transparent" dir="ltr">
+                      <span className="text-foreground/70 pr-2 font-bold select-none">+967</span>
+                      <input 
+                        type="tel" 
+                        name="phone"
+                        value={formData.phone.replace('+967', '')}
+                        onChange={(e) => {
+                          let digits = e.target.value.replace(/\D/g, '');
+                          digits = digits.replace(/^[^7]+/, '');
+                          setFormData(prev => ({ ...prev, phone: '+967' + digits.slice(0, 9) }))
+                        }}
+                        required
+                        minLength={9}
+                        maxLength={9}
+                        placeholder="7XXXXXXXX"
+                        className="bg-transparent outline-none w-full text-left"
+                      />
+                    </div>
                   </div>
 
                   <div className="flex flex-col">

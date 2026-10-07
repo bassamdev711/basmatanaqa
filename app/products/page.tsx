@@ -6,6 +6,9 @@ import { getCurrency } from '@/lib/currency'
 import ProductCard from '@/components/ProductCard'
 import CategoryFilterChips from '@/components/CategoryFilterChips'
 import { getSiteUrl, getStoreConfig } from '@/lib/store-config'
+import ProductDiscoveryFilters from '@/components/ProductDiscoveryFilters'
+import PaginationControls from '@/components/PaginationControls'
+import { Prisma } from '@prisma/client'
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreConfig()
@@ -30,11 +33,19 @@ export const dynamic = 'force-dynamic'
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ collection?: string; subcategory?: string }>
+  searchParams: Promise<{ collection?: string; subcategory?: string; page?: string; sort?: string; minPrice?: string; maxPrice?: string; brand?: string }>
 }) {
   const searchParamsResolved = await searchParams;
   const collection = searchParamsResolved.collection;
   const subcategory = searchParamsResolved.subcategory;
+  
+  const page = parseInt(searchParamsResolved.page || '1', 10);
+  const pageSize = 12;
+  
+  const sort = searchParamsResolved.sort || 'newest';
+  const minPrice = searchParamsResolved.minPrice ? parseFloat(searchParamsResolved.minPrice) : undefined;
+  const maxPrice = searchParamsResolved.maxPrice ? parseFloat(searchParamsResolved.maxPrice) : undefined;
+  const brands = searchParamsResolved.brand ? searchParamsResolved.brand.split(',') : [];
 
   const currency = await getCurrency()
   let products: Array<{
@@ -47,39 +58,78 @@ export default async function ProductsPage({
     imageUrl: string | null
     featured: boolean
   }> = []
+  
   let dbCollections: Array<{ name: string; slug: string; imageUrl: string | null }> = []
   let dbSubCategories: Array<{ name: string; slug: string; imageUrl: string | null }> = []
   let dataLoadFailed = false
+  let totalCount = 0;
+  let availableBrands: string[] = [];
 
   try {
-    // جلب الحقول الأساسية فقط — لا حاجة للوصف أو الصور المتعددة في القائمة
-    products = await prisma.product.findMany({
-      where: {
-        isActive: true,
+    const whereClause: Prisma.ProductWhereInput = {
+      isActive: true,
+      stock: { gt: 0 },
+      ...(collection ? { collection: { slug: collection } } : {}),
+      ...(subcategory ? { subCategory: { slug: subcategory } } : {}),
+      ...(minPrice !== undefined || maxPrice !== undefined ? {
+         price: {
+           ...(minPrice !== undefined ? { gte: minPrice } : {}),
+           ...(maxPrice !== undefined ? { lte: maxPrice } : {})
+         }
+      } : {}),
+      ...(brands.length > 0 ? { brand: { in: brands } } : {})
+    };
+
+    let orderByClause: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] = [{ featured: 'desc' }, { createdAt: 'desc' }];
+    if (sort === 'price_asc') {
+      orderByClause = { price: 'asc' };
+    } else if (sort === 'price_desc') {
+      orderByClause = { price: 'desc' };
+    } else if (sort === 'newest') {
+      orderByClause = { createdAt: 'desc' };
+    }
+
+    const [productsResult, countResult] = await Promise.all([
+      prisma.product.findMany({
+        where: whereClause,
+        orderBy: orderByClause,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          brand: true,
+          price: true,
+          compareAtPrice: true,
+          imageUrl: true,
+          featured: true,
+        },
+      }),
+      prisma.product.count({ where: whereClause })
+    ]);
+    
+    products = productsResult;
+    totalCount = countResult;
+
+    // fetch distinct brands for filters
+    const distinctBrandsResult = await prisma.product.findMany({
+      where: { 
+        isActive: true, 
         stock: { gt: 0 },
         ...(collection ? { collection: { slug: collection } } : {}),
-        ...(subcategory ? { subCategory: { slug: subcategory } } : {}),
+        ...(subcategory ? { subCategory: { slug: subcategory } } : {})
       },
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        brand: true,
-        price: true,
-        compareAtPrice: true,
-        imageUrl: true,
-        featured: true,
-      },
-    })
+      select: { brand: true },
+      distinct: ['brand']
+    });
+    availableBrands = distinctBrandsResult.map(b => b.brand).filter(Boolean) as string[];
 
-    // جلب التصنيفات النشطة للفلاتر
     dbCollections = await prisma.collection.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     })
     
-    // جلب المجموعات الفرعية
     if (collection) {
       dbSubCategories = await prisma.subCategory.findMany({
         where: { isActive: true, collection: { slug: collection } },
@@ -96,7 +146,6 @@ export default async function ProductsPage({
     dataLoadFailed = true
   }
 
-  // قائمة الروابط للـ Chips في الديسكتوب
   const chipFilters = [
     { label: 'الكل', href: '/products', imageUrl: null },
     ...dbCollections.map(c => ({
@@ -111,7 +160,6 @@ export default async function ProductsPage({
       <Navbar />
 
       <div className="flex-grow pt-16 md:pt-20 pb-24 relative">
-        {/* Quick Filter Chips — Responsive & Sticky */}
         <div className="flex flex-col border-b border-black/5 bg-surface/95 backdrop-blur-md sticky top-14 md:top-[68px] z-40">
           <CategoryFilterChips filters={chipFilters} activeSlug={collection} paramKey="collection" />
           
@@ -132,23 +180,8 @@ export default async function ProductsPage({
           )}
         </div>
 
-        {/* Filter and Sort Bar */}
-        <div className="flex items-center justify-between px-4 md:px-12 py-3 bg-white border-b border-black/5 text-sm mb-4 md:mb-6">
-          <div className="text-black/60 font-medium">{products.length} منتج</div>
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1.5 font-medium hover:text-brand transition-colors">
-              <span>ترتيب</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
-            </button>
-            <div className="w-px h-4 bg-black/10"></div>
-            <button className="flex items-center gap-1.5 font-medium hover:text-brand transition-colors">
-              <span>الفلاتر</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            </button>
-          </div>
-        </div>
+        <ProductDiscoveryFilters totalProducts={totalCount} availableBrands={availableBrands} />
 
-        {/* Product Grid */}
         <section className="px-3 md:px-12 max-w-7xl mx-auto">
           {dataLoadFailed ? (
             <div className="text-center py-20 text-foreground/60 text-lg">
@@ -156,27 +189,30 @@ export default async function ProductsPage({
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-20 text-foreground/50 text-lg">
-              لا توجد منتجات في هذه المجموعة حالياً
+              لا توجد منتجات مطابقة للبحث أو الفلاتر الحالية
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-8">
-              {products.map((product, index) => (
-                <ProductCard 
-                  key={product.id}
-                  product={{
-                    id: product.id,
-                    name: product.name,
-                    slug: product.slug,
-                    price: Number(product.price),
-                    compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
-                    imageUrl: product.imageUrl || '',
-                    brand: product.brand || undefined,
-                  }}
-                  currency={currency}
-                  priority={index < 4}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-8">
+                {products.map((product, index) => (
+                  <ProductCard 
+                    key={product.id}
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      slug: product.slug,
+                      price: Number(product.price),
+                      compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+                      imageUrl: product.imageUrl || '',
+                      brand: product.brand || undefined,
+                    }}
+                    currency={currency}
+                    priority={index < 4}
+                  />
+                ))}
+              </div>
+              <PaginationControls currentPage={page} totalPages={Math.ceil(totalCount / pageSize)} />
+            </>
           )}
         </section>
       </div>

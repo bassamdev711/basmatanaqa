@@ -87,7 +87,7 @@ export default async function Footer({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-12 md:mb-16">
           <div className="md:col-span-1">
             <Link href="/" className="mb-6 inline-flex items-center gap-3">
-              <Image src="/basmat-anaqah-logo.png" alt={`شعار ${storeName}`} width={58} height={58} className="h-12 w-12 object-contain" />
+              <Image src="/basmat-anaqah-logo.webp" alt={`شعار ${storeName}`} width={58} height={58} className="h-12 w-12 object-contain" />
               <span className="flex flex-col gap-1 leading-none">
                 <span className="text-xs font-bold tracking-[0.18em] text-accent">{storeNameLatin}</span>
                 <span className="text-xl font-light tracking-[0.12em] text-surface">{storeName}</span>

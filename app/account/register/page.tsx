@@ -101,24 +101,23 @@ export default function CustomerRegisterPage() {
             <label className="block text-sm font-semibold text-foreground mb-1">
               رقم الهاتف
             </label>
-            <div className="relative">
-              <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
+            <div className="relative flex items-center bg-surface/50 border border-foreground/10 rounded-xl focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all overflow-hidden" dir="ltr">
+              <span className="pl-4 pr-3 font-bold text-foreground/70 select-none border-r border-foreground/10 py-3 flex items-center justify-center bg-black/5">+967</span>
               <input
                 type="tel"
-                dir="ltr"
-                value={phone}
+                value={phone.replace('+967', '')}
                 onChange={(e) => {
-                  let val = e.target.value;
-                  if (!val.startsWith('+967')) {
-                    val = '+967';
-                  }
-                  const digits = val.slice(4).replace(/\D/g, '').slice(0, 9);
-                  setPhone('+967' + digits);
+                  let digits = e.target.value.replace(/\D/g, '');
+                  digits = digits.replace(/^[^7]+/, '');
+                  setPhone('+967' + digits.slice(0, 9));
                 }}
-                className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-left"
-                placeholder="+967XXXXXXXXX"
+                className="w-full pl-3 pr-12 py-3 bg-transparent outline-none text-foreground"
+                placeholder="7XXXXXXXX"
+                minLength={9}
+                maxLength={9}
                 required
               />
+              <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
             </div>
           </div>
 

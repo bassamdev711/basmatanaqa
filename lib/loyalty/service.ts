@@ -30,9 +30,10 @@ export async function awardOrderPoints(orderId: string) {
     if (existing) return existing
 
     const order = await tx.order.findUnique({ where: { id: orderId } })
-    if (!order || order.status !== 'COMPLETED') return null
+    if (!order || order.status !== 'COMPLETED' || !order.userId) return null
     const paymentEligible = order.paymentStatus === 'PAID' || (order.paymentMethod === 'cod' && order.paymentStatus === 'PENDING')
     if (!paymentEligible) return null
+
 
     const settings = await tx.loyaltySettings.upsert({
       where: { id: 'singleton' },

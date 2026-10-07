@@ -155,17 +155,23 @@ export default function TrackOrderClient() {
             {method === 'PHONE' ? (
               <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <label className="text-sm font-bold text-foreground mb-2">رقم الجوال</label>
-                <div className="relative">
-                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
+                <div className="relative flex items-center bg-surface/50 border border-black/10 rounded-none focus-within:border-accent transition-colors overflow-hidden" dir="ltr">
+                  <span className="pl-4 pr-3 font-bold text-foreground/70 select-none border-r border-black/10 py-3 md:py-4 flex items-center justify-center bg-black/5 text-base md:text-lg">+967</span>
                   <input 
                     type="tel" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="رقم الجوال المستخدم في الطلب"
-                    dir="ltr"
+                    value={phone.replace('+967', '')}
+                    onChange={(e) => {
+                      let digits = e.target.value.replace(/\D/g, '');
+                      digits = digits.replace(/^[^7]+/, '');
+                      setPhone('+967' + digits.slice(0, 9));
+                    }}
+                    placeholder="7XXXXXXXX"
+                    minLength={9}
+                    maxLength={9}
                     required
-                    className="w-full bg-surface/50 border border-black/10 rounded-none py-3 md:py-4 pr-11 pl-4 focus:outline-none focus:border-accent transition-colors text-right text-base md:text-lg"
+                    className="w-full bg-transparent outline-none py-3 md:py-4 pr-11 pl-3 text-base md:text-lg text-left"
                   />
+                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
                 </div>
                     <p className="text-xs text-gray-500 mt-2">أدخل رقم الهاتف ورقم الطلب معًا للتحقق من ملكية الطلب.</p>
                 <div className="flex flex-col mt-4">

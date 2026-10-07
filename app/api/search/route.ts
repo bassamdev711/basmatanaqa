@@ -22,15 +22,22 @@ export async function GET(req: Request) {
   const query = rawQuery.trim().slice(0, 100)
 
   try {
+    const { getArabicSearchVariations } = await import('@/lib/search-utils');
+    const variations = getArabicSearchVariations(query);
+    const searchConditions = variations.map(v => ({
+      OR: [
+        { name: { contains: v, mode: 'insensitive' as const } },
+        { brand: { contains: v, mode: 'insensitive' as const } },
+        { category: { contains: v, mode: 'insensitive' as const } },
+        { seoSearchPhrases: { hasSome: [v, v.toLowerCase()] } }
+      ]
+    }));
+
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { brand: { contains: query, mode: 'insensitive' } },
-          { category: { contains: query, mode: 'insensitive' } },
-          { seoSearchPhrases: { hasSome: [query, query.trim(), query.toLowerCase()] } }
-        ]
+        stock: { gt: 0 },
+        ...(searchConditions.length > 0 ? { OR: searchConditions } : {})
       },
       take: 8,
       select: {
