@@ -102,41 +102,64 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
     if (!currentOrder) return { success: false, error: 'الطلب غير موجود' }
 
+    let previousStatus = currentOrder.status;
+
     await prisma.$transaction(async (tx) => {
-      // 1. Update status
-      await tx.order.update({
+      const orderInTx = await tx.order.findUnique({
         where: { id: orderId },
+        include: { items: true }
+      })
+
+      if (!orderInTx) throw new Error('ORDER_NOT_FOUND')
+      previousStatus = orderInTx.status
+
+      if (previousStatus === status) return // No change
+
+      if (previousStatus === 'CANCELLED' || previousStatus === 'REFUNDED') {
+        throw new Error('INVALID_TRANSITION')
+      }
+
+      // 1. Update status ATOMICALLY
+      const updateRes = await tx.order.updateMany({
+        where: { 
+          id: orderId,
+          status: previousStatus 
+        },
         data: { status }
       })
 
+      if (updateRes.count !== 1) {
+        throw new Error('CONCURRENT_TRANSITION_FAILED')
+      }
+
       // 2. Handle cancellation: restore stock, decrement coupon
-      if (currentOrder.status !== 'CANCELLED' && status === 'CANCELLED') {
-        for (const item of currentOrder.items) {
+      if (status === 'CANCELLED') {
+        for (const item of orderInTx.items) {
           if (item.variantId) {
-            await tx.productVariant.update({
+            await tx.productVariant.updateMany({
               where: { id: item.variantId },
               data: { stock: { increment: item.quantity } }
             })
           } else if (item.productId) {
-            await tx.product.update({
+            await tx.product.updateMany({
               where: { id: item.productId },
               data: { stock: { increment: item.quantity } }
             })
           }
         }
         
-        if (currentOrder.couponId) {
-          await tx.coupon.update({
-            where: { id: currentOrder.couponId },
+        if (orderInTx.couponId) {
+          await tx.coupon.updateMany({
+            where: { id: orderInTx.couponId },
             data: { usedCount: { decrement: 1 } }
           })
         }
       }
-
-
     })
 
-    if (status !== currentOrder.status) {
+    if (status === previousStatus) return { success: true }
+
+    if (status !== previousStatus) {
       await createUserNotification({
         userId: currentOrder.userId,
         type: 'ORDER_STATUS_CHANGED',
@@ -145,11 +168,11 @@ export async function updateOrderStatus(orderId: string, status: string) {
         dedupeKey: `ORDER_STATUS:${orderId}:${status}`,
       })
     }
-    if (status === 'COMPLETED' && currentOrder.status !== 'COMPLETED') {
+    if (status === 'COMPLETED' && previousStatus !== 'COMPLETED') {
       const transaction = await awardOrderPoints(orderId)
       if (transaction) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_EARNED', title: 'تمت إضافة نقاط', message: `أضيفت ${transaction.points} نقطة لإكمال طلبك.`, dedupeKey: transaction.referenceKey })
     }
-    if ((status === 'REFUNDED' || status === 'CANCELLED') && currentOrder.status !== status) {
+    if ((status === 'REFUNDED' || status === 'CANCELLED') && previousStatus !== status) {
       const transaction = await reverseOrderPoints(orderId)
       const reason = status === 'CANCELLED' ? 'الإلغاء' : 'الاسترجاع'
       if (transaction) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_REVERSED', title: 'تم عكس نقاط الطلب', message: `تم عكس ${Math.abs(transaction.points)} نقطة بسبب ${reason}.`, dedupeKey: transaction.referenceKey })
@@ -157,6 +180,12 @@ export async function updateOrderStatus(orderId: string, status: string) {
     revalidatePath('/admin/orders')
     return { success: true }
   } catch (error) {
+    if (error instanceof Error && error.message === 'INVALID_TRANSITION') {
+      return { success: false, error: 'لا يمكن تغيير حالة طلب ملغى أو مسترجع.' }
+    }
+    if (error instanceof Error && error.message === 'CONCURRENT_TRANSITION_FAILED') {
+      return { success: false, error: 'تم تحديث حالة الطلب من قبل مستخدم آخر في نفس الوقت.' }
+    }
     console.error('Failed to update order status:', error)
     return { success: false, error: 'Failed to update order status' }
   }

@@ -26,8 +26,9 @@ const statusLabels = {
   CANCELLED: 'ملغي',
 }
 
-export default async function CustomerDetailsPage({ params }: { params: { id: string } }) {
-  const { customer, pointsValue } = await getCustomerDetails(params.id)
+export default async function CustomerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const { customer, pointsValue } = await getCustomerDetails(id)
 
   if (!customer) {
     notFound()

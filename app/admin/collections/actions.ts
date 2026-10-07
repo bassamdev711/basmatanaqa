@@ -82,3 +82,47 @@ export async function updateCollection(id: string, data: { name: string, slug: s
     return { success: false, error: 'حدث خطأ أثناء تحديث المجموعة.' }
   }
 }
+
+export async function getSubCategories(collectionId: string) {
+  await verifyAdmin();
+  return prisma.subCategory.findMany({
+    where: { collectionId, isActive: true },
+    select: { id: true, name: true, slug: true, description: true, isActive: true },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function createSubCategory(data: { name: string, slug: string, description: string, isActive: boolean, collectionId: string }) {
+  await verifyAdmin();
+  try {
+    await prisma.subCategory.create({ data });
+    revalidatePath(`/admin/collections/${data.collectionId}`);
+    return { success: true };
+  } catch (error: any) {
+    if (error.code === 'P2002') return { success: false, error: 'الرابط الدائم مستخدم مسبقاً.' };
+    return { success: false, error: 'حدث خطأ' };
+  }
+}
+
+export async function updateSubCategory(id: string, data: { name: string, slug: string, description: string, isActive: boolean, collectionId: string }) {
+  await verifyAdmin();
+  try {
+    await prisma.subCategory.update({ where: { id }, data });
+    revalidatePath(`/admin/collections/${data.collectionId}`);
+    return { success: true };
+  } catch (error: any) {
+    if (error.code === 'P2002') return { success: false, error: 'الرابط الدائم مستخدم مسبقاً.' };
+    return { success: false, error: 'حدث خطأ' };
+  }
+}
+
+export async function deleteSubCategory(id: string, collectionId: string) {
+  await verifyAdmin();
+  try {
+    await prisma.subCategory.delete({ where: { id } });
+    revalidatePath(`/admin/collections/${collectionId}`);
+    return { success: true };
+  } catch {
+    return { success: false, error: 'حدث خطأ. ربما يكون هناك منتجات مرتبطة بهذا التصنيف.' };
+  }
+}

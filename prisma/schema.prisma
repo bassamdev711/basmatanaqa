@@ -19,8 +19,6 @@ model Product {
   size             String?
   gender           String?
   category         String?
-  mainCategoryId   String?
-  mainCategory     MainCategory?    @relation(fields: [mainCategoryId], references: [id])
   subCategoryId    String?
   subCategory      SubCategory?     @relation(fields: [subCategoryId], references: [id])
   hasSizes         Boolean          @default(false)
@@ -72,22 +70,6 @@ model Supplier {
   @@index([isActive])
 }
 
-// ─── نظام التصنيفات ───────────────────────────────────────────
-
-model MainCategory {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  subCategories SubCategory[]
-  products      Product[]
-}
-
 model SubCategory {
   id          String   @id @default(cuid())
   name        String
@@ -98,9 +80,9 @@ model SubCategory {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  mainCategoryId String
-  mainCategory   MainCategory @relation(fields: [mainCategoryId], references: [id], onDelete: Cascade)
-  products       Product[]
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  products     Product[]
 }
 
 model DailyStats {
@@ -330,6 +312,7 @@ model Collection {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   products         Product[]
+  subCategories    SubCategory[]
   seoSearchPhrases String[]
 }
 

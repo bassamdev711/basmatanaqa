@@ -4,9 +4,8 @@ import { startTransition, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Info, ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-react'
 import { createProduct } from '../actions'
-import { getCollections } from '../../collections/actions'
+import { getCollections, getSubCategories } from '../../collections/actions'
 import { getSuppliers } from '../../suppliers/actions'
-import { getMainCategories, getSubCategories } from '../../categories/actions'
 import ImageUpload from '../ImageUpload'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { useFormStatus } from 'react-dom'
@@ -34,9 +33,8 @@ export default function NewProductPage() {
   const [suppliers, setSuppliers] = useState<CollectionOption[]>([])
   
   // Categories State
-  const [mainCategories, setMainCategories] = useState<CategoryOption[]>([])
   const [subCategories, setSubCategories] = useState<CategoryOption[]>([])
-  const [selectedMainCategory, setSelectedMainCategory] = useState('')
+  const [selectedCollection, setSelectedCollection] = useState('')
 
   // Sizes State
   const [hasSizes, setHasSizes] = useState(false)
@@ -81,15 +79,12 @@ export default function NewProductPage() {
   useEffect(() => {
     startTransition(() => {
       getCollections().then(data => {
-        if (Array.isArray(data)) setCollections(data)
+        if (Array.isArray(data)) setCollections(data.map(c => ({ id: c.id, name: c.name })))
       }).catch(console.error)
       getSuppliers().then(data => {
         if (Array.isArray(data)) {
           setSuppliers(data.filter(s => s.isActive).map(s => ({ id: s.id, name: s.name })))
         }
-      }).catch(console.error)
-      getMainCategories().then(data => {
-        if (Array.isArray(data)) setMainCategories(data.map(c => ({ id: c.id, name: c.name })))
       }).catch(console.error)
       // Auto-generate initial SKU
       generateSKU()
@@ -107,16 +102,16 @@ export default function NewProductPage() {
   }, [])
 
   useEffect(() => {
-    if (selectedMainCategory) {
+    if (selectedCollection) {
       startTransition(() => {
-        getSubCategories(selectedMainCategory).then(data => {
+        getSubCategories(selectedCollection).then(data => {
           if (Array.isArray(data)) setSubCategories(data.map(c => ({ id: c.id, name: c.name })))
         }).catch(console.error)
       })
     } else {
       setSubCategories([])
     }
-  }, [selectedMainCategory])
+  }, [selectedCollection])
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -160,17 +155,17 @@ export default function NewProductPage() {
               <p className="text-xs text-gray-500 mt-1">القيمة الافتراضية 10 لتسريع الإضافة</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الرئيسية</label>
-              <select name="mainCategoryId" value={selectedMainCategory} onChange={(e) => setSelectedMainCategory(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
+              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة (Collection)</label>
+              <select name="collectionId" value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
                 <option value="">بدون مجموعة</option>
-                {mainCategories.map(c => (
+                {collections.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الفرعية</label>
-              <select name="subCategoryId" disabled={!selectedMainCategory} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
+              <select name="subCategoryId" disabled={!selectedCollection} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
                 <option value="">بدون مجموعة فرعية</option>
                 {subCategories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>

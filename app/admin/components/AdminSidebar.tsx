@@ -42,7 +42,6 @@ export default function AdminSidebar({
     { href: '/admin/analytics', icon: Activity, label: 'الإحصائيات' },
     { href: '/admin/customers', icon: Users, label: 'العملاء' },
     { href: '/admin/products', icon: Package, label: 'إدارة المنتجات' },
-    { href: '/admin/categories', icon: Layers, label: 'إدارة التصنيفات (جديد)' },
     { href: '/admin/suppliers', icon: Layers, label: 'إدارة الموردين' },
     { href: '/admin/collections', icon: Layers, label: 'المجموعات (Collections)' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'الطلبات' },

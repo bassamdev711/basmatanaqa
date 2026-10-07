@@ -37,7 +37,7 @@ interface Product {
   stock: number
   hasSizes?: boolean
   availableSizes?: string[]
-  mainCategory?: { name: string } | null
+  collection?: { name: string } | null
   subCategory?: { name: string } | null
   engName?: string
   variants?: ProductVariant[]
@@ -311,10 +311,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     <span className="text-foreground text-sm font-bold" dir="ltr">{currentSize}</span>
                   </div>
                 )}
-                {product.mainCategory?.name && (
+                {product.collection?.name && (
                   <div className="flex flex-col">
                     <span className="text-foreground/50 text-[11px] font-bold mb-1">المجموعة</span>
-                    <span className="text-foreground text-sm font-bold">{product.mainCategory.name}</span>
+                    <span className="text-foreground text-sm font-bold">{product.collection.name}</span>
                   </div>
                 )}
                 {product.subCategory?.name && (

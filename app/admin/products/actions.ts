@@ -45,14 +45,13 @@ export async function createProduct(formData: FormData) {
     const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
     const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
     
-    const mainCategoryId = formData.get('mainCategoryId') as string | null;
     const subCategoryId = formData.get('subCategoryId') as string | null;
     const hasSizes = formData.get('hasSizes') === 'true';
     const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
 
-    if (mainCategoryId && subCategoryId) {
+    if (collectionId && subCategoryId) {
       const subCat = await prisma.subCategory.findUnique({ where: { id: subCategoryId } });
-      if (subCat && subCat.mainCategoryId !== mainCategoryId) {
+      if (subCat && subCat.collectionId !== collectionId) {
         throw new Error('INVALID_SUBCATEGORY');
       }
     }
@@ -103,7 +102,6 @@ export async function createProduct(formData: FormData) {
         images: storedExtraImages,
         seoSearchPhrases,
         seoScore,
-        mainCategoryId: mainCategoryId || undefined,
         subCategoryId: subCategoryId || undefined,
         hasSizes,
         availableSizes,
@@ -171,14 +169,13 @@ export async function updateProduct(formData: FormData) {
     const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
     const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
 
-    const mainCategoryId = formData.get('mainCategoryId') as string | null;
     const subCategoryId = formData.get('subCategoryId') as string | null;
     const hasSizes = formData.get('hasSizes') === 'true';
     const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
 
-    if (mainCategoryId && subCategoryId) {
+    if (collectionId && subCategoryId) {
       const subCat = await prisma.subCategory.findUnique({ where: { id: subCategoryId } });
-      if (subCat && subCat.mainCategoryId !== mainCategoryId) {
+      if (subCat && subCat.collectionId !== collectionId) {
         throw new Error('INVALID_SUBCATEGORY');
       }
     }
@@ -228,7 +225,6 @@ export async function updateProduct(formData: FormData) {
         images: storedExtraImages,
         seoSearchPhrases,
         seoScore,
-        mainCategoryId: mainCategoryId || null,
         subCategoryId: subCategoryId || null,
         hasSizes,
         availableSizes,

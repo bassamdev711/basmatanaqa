@@ -65,7 +65,7 @@ export default async function ProductDetailPage({
     where: { slug: decodedSlug, isActive: true },
     include: { 
       variants: true,
-      mainCategory: { select: { name: true } },
+      collection: { select: { name: true } },
       subCategory: { select: { name: true } }
     }
   })

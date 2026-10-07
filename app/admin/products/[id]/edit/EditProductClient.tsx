@@ -4,7 +4,7 @@ import { startTransition, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Info, ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-react'
 import { updateProduct } from '../../actions'
-import { getSubCategories } from '../../../categories/actions'
+import { getSubCategories } from '../../../collections/actions'
 import ImageUpload from '../../ImageUpload'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
@@ -32,7 +32,7 @@ interface Product {
   size: string | null
   gender: string | null
   category: string | null
-  mainCategoryId: string | null
+  collectionId: string | null
   subCategoryId: string | null
   hasSizes: boolean
   availableSizes: string[]
@@ -53,12 +53,10 @@ export default function EditProductClient({
   product, 
   collections = [], 
   suppliers = [],
-  mainCategories = [] 
 }: { 
   product: Product, 
   collections?: CollectionOption[], 
-  suppliers?: CollectionOption[],
-  mainCategories?: CategoryOption[]
+  suppliers?: CollectionOption[]
 }) {
   const [mainImage, setMainImage] = useState(product.imageUrl || '')
   const [extraImages, setExtraImages] = useState<string[]>(product.images || [])
@@ -69,7 +67,7 @@ export default function EditProductClient({
   
   // Categories State
   const [subCategories, setSubCategories] = useState<CategoryOption[]>([])
-  const [selectedMainCategory, setSelectedMainCategory] = useState(product.mainCategoryId || '')
+  const [selectedCollection, setSelectedCollection] = useState(product.collectionId || '')
 
   // Sizes State
   const [hasSizes, setHasSizes] = useState(product.hasSizes || false)
@@ -104,16 +102,16 @@ export default function EditProductClient({
   }, [])
 
   useEffect(() => {
-    if (selectedMainCategory) {
+    if (selectedCollection) {
       startTransition(() => {
-        getSubCategories(selectedMainCategory).then(data => {
+        getSubCategories(selectedCollection).then(data => {
           if (Array.isArray(data)) setSubCategories(data.map(c => ({ id: c.id, name: c.name })))
         }).catch(console.error)
       })
     } else {
       setSubCategories([])
     }
-  }, [selectedMainCategory])
+  }, [selectedCollection])
 
   const generateSlug = (name: string) => {
     return name
@@ -167,17 +165,17 @@ export default function EditProductClient({
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الرئيسية</label>
-              <select name="mainCategoryId" value={selectedMainCategory} onChange={(e) => setSelectedMainCategory(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
+              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة (Collection)</label>
+              <select name="collectionId" value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
                 <option value="">بدون مجموعة</option>
-                {mainCategories.map(c => (
+                {collections.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الفرعية</label>
-              <select name="subCategoryId" defaultValue={product.subCategoryId || ''} disabled={!selectedMainCategory} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
+              <select name="subCategoryId" defaultValue={product.subCategoryId || ''} disabled={!selectedCollection} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
                 <option value="">بدون مجموعة فرعية</option>
                 {subCategories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>

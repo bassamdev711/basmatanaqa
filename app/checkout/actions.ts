@@ -268,14 +268,22 @@ export async function createOrder(
       if (pointsToUse > 0) {
         const userAccount = await tx.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
         if (userAccount) {
-          const newBalance = userAccount.balance - pointsToUse
-          await tx.loyaltyAccount.update({
-            where: { id: userAccount.id },
+          const updateResult = await tx.loyaltyAccount.updateMany({
+            where: {
+              id: userAccount.id,
+              balance: { gte: pointsToUse }
+            },
             data: {
-              balance: newBalance,
-              lifetimeRedeemed: userAccount.lifetimeRedeemed + pointsToUse
+              balance: { decrement: pointsToUse },
+              lifetimeRedeemed: { increment: pointsToUse }
             }
           })
+
+          if (updateResult.count !== 1) {
+            throw new Error('INSUFFICIENT_POINTS')
+          }
+
+          const newBalance = userAccount.balance - pointsToUse
           await tx.loyaltyTransaction.create({
             data: {
               userId: authenticatedUser.id,
@@ -355,8 +363,11 @@ export async function createOrder(
 
     return { success: true, orderId: order.id, paymentUploadToken, trackingToken }
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === 'UNAUTHORIZED') {
-      return { success: false, error: 'يجب تسجيل الدخول لإتمام الطلب.' }
+    if (error instanceof Error) {
+      if (error.message === 'UNAUTHORIZED') return { success: false, error: 'يجب تسجيل الدخول لإتمام الطلب.' }
+      if (error.message === 'INSUFFICIENT_POINTS') return { success: false, error: 'رصيد نقاط الولاء غير كافٍ.' }
+      if (error.message === 'STOCK_UNAVAILABLE') return { success: false, error: 'الكمية المطلوبة من بعض المنتجات لم تعد متوفرة.' }
+      if (error.message === 'COUPON_UNAVAILABLE') return { success: false, error: 'الكوبون المستخدم لم يعد صالحاً أو تجاوز حد الاستخدام.' }
     }
     const errorCode = typeof error === 'object' && error !== null && 'code' in error
       ? (error as { code?: unknown }).code

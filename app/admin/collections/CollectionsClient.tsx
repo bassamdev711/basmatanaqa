@@ -4,6 +4,7 @@ import { useToast } from '@/components/ToastProvider'
 import { useConfirm } from '@/components/ConfirmProvider'
 import React, { useState } from 'react'
 import { Plus, Package, Edit2, X, Trash2 } from 'lucide-react'
+import Link from 'next/link'
 import { createCollection, deleteCollection, updateCollection } from './actions'
 import ImageUpload from '../products/ImageUpload'
 
@@ -149,6 +150,9 @@ export default function CollectionsClient({
                   <Package size={16} /> {col._count?.products ?? 0} منتج
                 </span>
                 <div className="flex items-center gap-3">
+                  <Link href={`/admin/collections/${col.id}`} className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-bold bg-blue-50 px-2 py-1 rounded" title="إدارة الفروع">
+                    الفروع
+                  </Link>
                   <button onClick={() => handleEdit(col)} className="text-brand hover:text-brand-800 transition-colors" title="تعديل">
                     <Edit2 size={18} />
                   </button>
