@@ -159,7 +159,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
     if (status === previousStatus) return { success: true }
 
-    if (status !== previousStatus) {
+    if (status !== previousStatus && currentOrder.userId) {
       await createUserNotification({
         userId: currentOrder.userId,
         type: 'ORDER_STATUS_CHANGED',
@@ -170,12 +170,12 @@ export async function updateOrderStatus(orderId: string, status: string) {
     }
     if (status === 'COMPLETED' && previousStatus !== 'COMPLETED') {
       const transaction = await awardOrderPoints(orderId)
-      if (transaction) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_EARNED', title: 'تمت إضافة نقاط', message: `أضيفت ${transaction.points} نقطة لإكمال طلبك.`, dedupeKey: transaction.referenceKey })
+      if (transaction && currentOrder.userId) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_EARNED', title: 'تمت إضافة نقاط', message: `أضيفت ${transaction.points} نقطة لإكمال طلبك.`, dedupeKey: transaction.referenceKey })
     }
     if ((status === 'REFUNDED' || status === 'CANCELLED') && previousStatus !== status) {
       const transaction = await reverseOrderPoints(orderId)
       const reason = status === 'CANCELLED' ? 'الإلغاء' : 'الاسترجاع'
-      if (transaction) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_REVERSED', title: 'تم عكس نقاط الطلب', message: `تم عكس ${Math.abs(transaction.points)} نقطة بسبب ${reason}.`, dedupeKey: transaction.referenceKey })
+      if (transaction && currentOrder.userId) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_REVERSED', title: 'تم عكس نقاط الطلب', message: `تم عكس ${Math.abs(transaction.points)} نقطة بسبب ${reason}.`, dedupeKey: transaction.referenceKey })
     }
     revalidatePath('/admin/orders')
     return { success: true }
@@ -202,7 +202,7 @@ export async function updatePaymentStatus(orderId: string, paymentStatus: string
     })
     if (paymentStatus === 'PAID' && order.status === 'COMPLETED') {
       const transaction = await awardOrderPoints(orderId)
-      if (transaction) await createUserNotification({ userId: order.userId, type: 'POINTS_EARNED', title: 'تمت إضافة نقاط', message: `أضيفت ${transaction.points} نقطة لإكمال طلبك.`, dedupeKey: transaction.referenceKey })
+      if (transaction && order.userId) await createUserNotification({ userId: order.userId, type: 'POINTS_EARNED', title: 'تمت إضافة نقاط', message: `أضيفت ${transaction.points} نقطة لإكمال طلبك.`, dedupeKey: transaction.referenceKey })
     }
     revalidatePath('/admin/orders')
     return { success: true }
