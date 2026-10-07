@@ -30,11 +30,13 @@ export const dynamic = 'force-dynamic'
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ collection?: string }>
+  searchParams: Promise<{ collection?: string; subcategory?: string }>
 }) {
-  const currency = await getCurrency()
+  const searchParamsResolved = await searchParams;
+  const collection = searchParamsResolved.collection;
+  const subcategory = searchParamsResolved.subcategory;
 
-  const { collection } = await searchParams
+  const currency = await getCurrency()
   let products: Array<{
     id: string
     slug: string
@@ -46,6 +48,7 @@ export default async function ProductsPage({
     featured: boolean
   }> = []
   let dbCollections: Array<{ name: string; slug: string; imageUrl: string | null }> = []
+  let dbSubCategories: Array<{ name: string; slug: string; imageUrl: string | null }> = []
   let dataLoadFailed = false
 
   try {
@@ -55,6 +58,7 @@ export default async function ProductsPage({
         isActive: true,
         stock: { gt: 0 },
         ...(collection ? { collection: { slug: collection } } : {}),
+        ...(subcategory ? { subCategory: { slug: subcategory } } : {}),
       },
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       select: {
@@ -74,6 +78,19 @@ export default async function ProductsPage({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     })
+    
+    // جلب المجموعات الفرعية
+    if (collection) {
+      dbSubCategories = await prisma.subCategory.findMany({
+        where: { isActive: true, collection: { slug: collection } },
+        orderBy: { createdAt: 'desc' }
+      })
+    } else {
+      dbSubCategories = await prisma.subCategory.findMany({
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' }
+      })
+    }
   } catch (error) {
     console.error('Failed to load products page data:', error)
     dataLoadFailed = true
@@ -95,7 +112,24 @@ export default async function ProductsPage({
 
       <div className="flex-grow pt-16 md:pt-20 pb-24 relative">
         {/* Quick Filter Chips — Responsive & Sticky */}
-        <CategoryFilterChips filters={chipFilters} activeCollection={collection} />
+        <div className="flex flex-col border-b border-black/5 bg-surface/95 backdrop-blur-md sticky top-14 md:top-[68px] z-40">
+          <CategoryFilterChips filters={chipFilters} activeSlug={collection} paramKey="collection" />
+          
+          {dbSubCategories.length > 0 && (
+            <CategoryFilterChips 
+              filters={[
+                { label: 'الكل', href: collection ? `/products?collection=${collection}` : '/products', imageUrl: null },
+                ...dbSubCategories.map(sub => ({
+                  label: sub.name,
+                  href: collection ? `/products?collection=${collection}&subcategory=${sub.slug}` : `/products?subcategory=${sub.slug}`,
+                  imageUrl: sub.imageUrl
+                }))
+              ]}
+              activeSlug={subcategory} 
+              paramKey="subcategory"
+            />
+          )}
+        </div>
 
         {/* Product Grid */}
         <section className="px-3 md:px-12 max-w-7xl mx-auto">

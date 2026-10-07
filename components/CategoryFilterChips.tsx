@@ -13,32 +13,17 @@ interface FilterChip {
 
 interface CategoryFilterChipsProps {
   filters: FilterChip[];
-  activeCollection?: string | null;
+  activeSlug?: string | null;
+  paramKey?: string;
 }
 
-export default function CategoryFilterChips({ filters, activeCollection }: CategoryFilterChipsProps) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
+export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'collection' }: CategoryFilterChipsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollStartRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > 120 && currentScrollY > lastScrollY + 5) {
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY - 5 || currentScrollY < 50) {
-        setIsVisible(true);
-      }
-      setLastScrollY(currentScrollY);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   // Drag to scroll — works with both LTR and RTL scrollLeft
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -58,11 +43,7 @@ export default function CategoryFilterChips({ filters, activeCollection }: Categ
   };
 
   return (
-    <div
-      className={`sticky z-40 transition-all duration-500 ease-in-out bg-surface/95 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-b border-black/5 ${
-        isVisible ? 'top-14 md:top-[68px]' : '-top-[200px]'
-      }`}
-    >
+    <div className="w-full">
       {/*
         الحل الصحيح النهائي:
         - حاوية التمرير: dir="rtl" مباشرةً → scrollLeft=0 يعرض اليمين (الكل) على كل المتصفحات الحديثة
@@ -87,9 +68,9 @@ export default function CategoryFilterChips({ filters, activeCollection }: Categ
           }}
         >
           {filters.map((f) => {
-            const isActive = f.href === '/products'
-              ? !activeCollection
-              : activeCollection === new URLSearchParams(f.href.split('?')[1]).get('collection');
+            const hrefParams = new URLSearchParams(f.href.split('?')[1] || '');
+            const isActive = (!activeSlug && !hrefParams.get(paramKey)) || 
+                             (activeSlug === hrefParams.get(paramKey));
 
             return (
               <Link
