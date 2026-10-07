@@ -36,7 +36,6 @@ interface Product {
   subCategoryId: string | null
   hasSizes: boolean
   availableSizes: string[]
-  collectionId: string | null
   supplierId: string | null
   costPrice: number | null
   stock: number
