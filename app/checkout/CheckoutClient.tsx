@@ -91,7 +91,8 @@ export default function CheckoutClient() {
         storeSettings: { shippingFee: 0, freeShippingThreshold: 0 },
         shippingCities: [],
         bankAccounts: [],
-        digitalWallets: []
+        digitalWallets: [],
+        loyaltyInfo: null
       });
     })
   }, [formData.paymentMethod])

@@ -3,6 +3,7 @@
 import { verifyAdmin } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { hashPassword, revokeAllUserSessions } from '@/lib/user-auth'
 
 export async function getCustomers(query?: string) {
   await verifyAdmin()
@@ -192,5 +193,63 @@ export async function adjustLoyaltyPoints(
   } catch (error) {
     console.error('Failed to adjust points:', error)
     return { success: false, error: 'حدث خطأ أثناء تعديل النقاط' }
+  }
+}
+
+export async function changeCustomerPassword(userId: string, newPassword: string) {
+  await verifyAdmin()
+  
+  if (!newPassword || newPassword.length < 6) {
+    return { success: false, error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }
+  }
+
+  try {
+    const hashedPassword = await hashPassword(newPassword)
+    
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashedPassword }
+    })
+    
+    await revokeAllUserSessions(userId)
+    
+    revalidatePath(`/admin/customers/${userId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to change password:', error)
+    return { success: false, error: 'حدث خطأ أثناء تغيير كلمة المرور' }
+  }
+}
+
+export async function toggleCustomerStatus(userId: string) {
+  await verifyAdmin()
+
+  try {
+    const customer = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isActive: true }
+    })
+
+    if (!customer) {
+      return { success: false, error: 'العميل غير موجود' }
+    }
+
+    const newStatus = !customer.isActive
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isActive: newStatus }
+    })
+
+    if (!newStatus) {
+      await revokeAllUserSessions(userId)
+    }
+
+    revalidatePath(`/admin/customers/${userId}`)
+    revalidatePath('/admin/customers')
+    return { success: true, isActive: newStatus }
+  } catch (error) {
+    console.error('Failed to toggle customer status:', error)
+    return { success: false, error: 'حدث خطأ أثناء تغيير حالة الحساب' }
   }
 }

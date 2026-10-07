@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowRight, User, Mail, Phone, Calendar, Star, ShoppingCart, Clock, CheckCircle, XCircle, Plus, Minus } from 'lucide-react'
 import { getCustomerDetails } from '../actions'
 import PointsManager from './PointsManager'
+import CustomerSettings from './CustomerSettings'
 
 export const metadata: Metadata = {
   title: 'تفاصيل العميل | لوحة التحكم',
@@ -115,6 +116,9 @@ export default async function CustomerDetailsPage({ params }: { params: { id: st
             <PointsManager userId={customer.id} currentBalance={loyaltyBalance} />
 
           </div>
+
+          {/* Account Settings */}
+          <CustomerSettings userId={customer.id} isActive={customer.isActive} />
 
           {/* Points History */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
