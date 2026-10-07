@@ -353,13 +353,15 @@ export async function createOrder(
       url: `/admin/orders/${order.id}`,
       dedupeKey: `order:${order.id}:created`,
     })
-    await createUserNotification({
-      userId: authenticatedUser.id,
-      type: 'ORDER_CREATED',
-      title: 'تم استلام طلبك',
-      message: `تم إنشاء طلبك رقم ${order.orderNumber}.`,
-      dedupeKey: `ORDER_CREATED:${order.id}`,
-    })
+    if (authenticatedUser) {
+      await createUserNotification({
+        userId: authenticatedUser.id,
+        type: 'ORDER_CREATED',
+        title: 'تم استلام طلبك',
+        message: `تم إنشاء طلبك رقم ${order.orderNumber}.`,
+        dedupeKey: `ORDER_CREATED:${order.id}`,
+      })
+    }
 
     const paymentUploadToken = RECEIPT_PAYMENT_METHODS.has(checkoutData.paymentMethod)
       ? await createOrderUploadToken(order.id)
