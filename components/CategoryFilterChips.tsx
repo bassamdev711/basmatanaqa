@@ -15,10 +15,10 @@ interface CategoryFilterChipsProps {
   filters: FilterChip[];
   activeSlug?: string | null;
   paramKey?: string;
+  variant?: 'circles' | 'pills';
 }
 
-
-export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'collection' }: CategoryFilterChipsProps) {
+export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'collection', variant = 'circles' }: CategoryFilterChipsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
@@ -60,7 +60,7 @@ export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'c
         onMouseMove={handleMouseMove}
       >
         <div
-          className="flex items-start gap-5 md:gap-8 py-4 md:py-6"
+          className={`flex items-center gap-3 md:gap-4 ${variant === 'circles' ? 'py-4 md:py-6' : 'py-2.5 md:py-3'}`}
           style={{
             width: 'max-content',
             paddingRight: 'max(1rem, calc((100vw - 80rem) / 2 + 1rem))',
@@ -77,36 +77,50 @@ export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'c
                 key={f.href}
                 href={f.href}
                 draggable={false}
-                className="flex flex-col items-center gap-2 group shrink-0"
+                className={`group shrink-0 ${variant === 'circles' ? 'flex flex-col items-center gap-2' : ''}`}
                 onClick={(e) => { if (isDragging) e.preventDefault(); }}
               >
-                <div
-                  className={`relative w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center overflow-hidden border-[3px] transition-all duration-300 pointer-events-none ${
-                    isActive
-                      ? 'border-brand shadow-[0_0_15px_rgba(32,37,34,0.1)] scale-105'
-                      : 'border-transparent bg-black/5 group-hover:border-brand/30 group-hover:scale-105'
-                  }`}
-                >
-                  {f.imageUrl ? (
-                    <Image
-                      src={f.imageUrl}
-                      alt={f.label}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 64px, 96px"
-                      draggable={false}
-                    />
-                  ) : (
-                    <LayoutGrid className={`w-6 h-6 md:w-8 md:h-8 transition-all ${
-                      isActive ? 'text-brand' : 'text-foreground/40 group-hover:text-brand'
-                    }`} />
-                  )}
-                </div>
-                <span className={`text-xs md:text-sm font-bold transition-colors pointer-events-none text-center w-16 md:w-20 whitespace-normal ${
-                  isActive ? 'text-brand' : 'text-foreground/70 group-hover:text-brand'
-                }`}>
-                  {f.label}
-                </span>
+                {variant === 'circles' ? (
+                  <>
+                    <div
+                      className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center overflow-hidden border-[2px] transition-all duration-300 pointer-events-none ${
+                        isActive
+                          ? 'border-brand shadow-sm scale-105'
+                          : 'border-transparent bg-black/5 group-hover:border-brand/30 group-hover:scale-105'
+                      }`}
+                    >
+                      {f.imageUrl ? (
+                        <Image
+                          src={f.imageUrl}
+                          alt={f.label}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 56px, 64px"
+                          draggable={false}
+                        />
+                      ) : (
+                        <LayoutGrid className={`w-5 h-5 md:w-6 md:h-6 transition-all ${
+                          isActive ? 'text-brand' : 'text-foreground/40 group-hover:text-brand'
+                        }`} />
+                      )}
+                    </div>
+                    <span className={`text-[10px] md:text-xs font-bold transition-colors pointer-events-none text-center w-14 md:w-16 whitespace-normal ${
+                      isActive ? 'text-brand' : 'text-foreground/70 group-hover:text-brand'
+                    }`}>
+                      {f.label}
+                    </span>
+                  </>
+                ) : (
+                  <div
+                    className={`px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-all duration-300 border ${
+                      isActive
+                        ? 'bg-black text-white border-black'
+                        : 'bg-white text-black border-black/10 hover:border-black'
+                    }`}
+                  >
+                    {f.label}
+                  </div>
+                )}
               </Link>
             );
           })}

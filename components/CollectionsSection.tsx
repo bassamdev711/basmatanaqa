@@ -44,35 +44,36 @@ export default async function CollectionsSection({ brandName = 'بصمة أنا�
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           {collections.map((collection) => (
             <Link 
               key={collection.id} 
               href={`/products?collection=${collection.slug}`}
-              className="group relative h-[200px] md:h-[400px] overflow-hidden rounded-xl md:rounded-3xl bg-black/5 border border-black/20 shadow-md hover:shadow-xl transition-shadow duration-300"
+              className="group relative h-[140px] sm:h-[180px] md:h-[400px] overflow-hidden rounded-xl md:rounded-3xl bg-surface/50 border border-black/5 shadow-sm hover:shadow-xl transition-shadow duration-300"
             >
               {collection.imageUrl ? (
                 <Image 
                   src={collection.imageUrl} 
                   alt={collection.name}
                   fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-700 md:group-hover:scale-110"
                 />
               ) : (
-                <div className="absolute inset-0 bg-brand/10 flex items-center justify-center">
-                  <span className="text-brand font-black text-3xl opacity-20">{brandName}</span>
+                <div className="absolute inset-0 bg-brand/5 flex items-center justify-center">
+                  <span className="text-brand font-black text-xl md:text-3xl opacity-20">{brandName}</span>
                 </div>
               )}
               
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/30 to-transparent" />
+              {/* Subtle gradient for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               
-              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
-                <h3 className="text-lg md:text-2xl font-bold text-surface mb-1 md:mb-2 group-hover:-translate-y-2 transition-transform duration-300">
+              <div className="absolute bottom-0 left-0 right-0 p-3 md:p-8">
+                <h3 className="text-sm sm:text-base md:text-2xl font-bold text-white mb-0.5 md:mb-2 md:group-hover:-translate-y-2 transition-transform duration-300">
                   {collection.name}
                 </h3>
                 {collection.description && (
-                  <p className="text-surface/70 text-sm line-clamp-2 opacity-0 group-hover:opacity-100 group-hover:-translate-y-2 transition-all duration-300 delay-75">
+                  <p className="text-white/80 text-[10px] md:text-sm line-clamp-1 md:line-clamp-2 md:opacity-0 md:group-hover:opacity-100 md:group-hover:-translate-y-2 transition-all duration-300 delay-75">
                     {collection.description}
                   </p>
                 )}

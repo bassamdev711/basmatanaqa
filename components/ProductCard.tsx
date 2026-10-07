@@ -44,12 +44,24 @@ export default function ProductCard({ product, currency, priority = false }: Pro
   };
 
   return (
-    <div className="relative bg-white cursor-pointer group shadow-sm hover:shadow-xl transition-all duration-500 border border-black/10 rounded-xl md:rounded-2xl flex flex-col overflow-hidden h-auto md:h-[500px]">
-      <div className="relative w-full h-[180px] md:h-[60%] bg-surface/50 transition-colors duration-500 group-hover:bg-surface flex items-center justify-center">
+    <div className="relative bg-white cursor-pointer group transition-all duration-300 rounded-xl md:rounded-2xl flex flex-col overflow-hidden h-full border border-black/5 hover:border-black/10">
+      {/* Top badges & buttons */}
+      <div className="absolute top-2 md:top-4 w-full px-2 md:px-4 flex justify-between items-start z-20 pointer-events-none">
+        {/* Discount Badge */}
+        {product.compareAtPrice && product.compareAtPrice > product.price ? (
+          <div className="bg-red-500/90 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-md pointer-events-auto shadow-sm">
+            -{Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}%
+          </div>
+        ) : <div />}
+        
+        {/* Wishlist Button */}
         <FavoriteButton 
           product={product}
-          className="z-20 m-4 md:m-6"
+          className="pointer-events-auto bg-white/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
         />
+      </div>
+
+      <div className="relative w-full aspect-[3/4] bg-[#f9f9f9] transition-colors duration-500 flex items-center justify-center overflow-hidden">
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-10" />
         
         {product.imageUrl ? (
@@ -60,37 +72,50 @@ export default function ProductCard({ product, currency, priority = false }: Pro
             sizes={getImageSizes('card')}
             priority={priority}
             loading={priority ? undefined : 'lazy'}
-            className="object-contain p-4 md:p-8 mix-blend-multiply transition-transform duration-700 ease-out z-0 hover:scale-110"
+            className="object-cover transition-transform duration-700 ease-out z-0 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-accent/20 text-6xl z-0">
+          <div className="w-full h-full flex items-center justify-center text-black/10 text-4xl z-0 font-black">
             متجرنا
           </div>
         )}
       </div>
       
-      <div className="flex-1 flex flex-col items-center justify-center p-3 md:p-6 text-center bg-white z-20 border-t border-black/5 relative">
-        <h3 className="text-base md:text-2xl font-black text-foreground mb-0.5 md:mb-1">{product.name}</h3>
-        <p className="text-accent text-[9px] md:text-[10px] tracking-[0.2em] uppercase mb-2 md:mb-4">
-          {product.engName || product.brand || 'Featured product'}
+      </div>
+      
+      <div className="flex flex-col flex-1 p-3 md:p-4 bg-white z-20 relative text-right">
+        {/* Brand / Category */}
+        <p className="text-black/50 text-[10px] md:text-xs tracking-wider uppercase mb-1 line-clamp-1">
+          {product.brand || product.engName || 'منتج مميز'}
         </p>
         
-        <div className="flex items-center gap-1.5 md:gap-2 mb-3 md:mb-6">
-          <p className="text-brand font-bold text-sm md:text-lg">{Number(product.price).toLocaleString('ar-SA')} {currency}</p>
-          {product.compareAtPrice && (
-            <p className="text-foreground/40 line-through text-[10px] md:text-sm">
+        {/* Title */}
+        <h3 className="text-sm md:text-base font-medium text-black mb-2 line-clamp-2 md:line-clamp-1 group-hover:text-brand transition-colors">
+          {product.name}
+        </h3>
+        
+        {/* Prices */}
+        <div className="flex items-baseline gap-2 mb-3 mt-auto">
+          <p className="text-black font-bold text-sm md:text-lg">
+            {Number(product.price).toLocaleString('ar-SA')} {currency}
+          </p>
+          {product.compareAtPrice && product.compareAtPrice > product.price && (
+            <p className="text-black/40 line-through text-[10px] md:text-sm">
               {Number(product.compareAtPrice).toLocaleString('ar-SA')}
             </p>
           )}
         </div>
         
-        <button 
-          onClick={handleAddToCart}
-          className="w-full max-w-full md:max-w-[200px] h-8 md:h-10 border border-brand text-brand hover:bg-brand hover:text-surface transition-colors rounded-lg md:rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs"
-        >
-          <ShoppingBag size={13} className="md:w-4 md:h-4" />
-          أضف للسلة
-        </button>
+        {/* Add to Cart - Visible on mobile, hover on desktop */}
+        <div className="mt-auto">
+          <button 
+            onClick={handleAddToCart}
+            className="w-full py-2 border border-black/10 text-black md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 hover:bg-black hover:text-white transition-all duration-300 rounded-md flex items-center justify-center gap-2 font-medium text-xs md:text-sm"
+          >
+            <ShoppingBag size={14} className="opacity-70" />
+            أضف للسلة
+          </button>
+        </div>
       </div>
     </div>
   );

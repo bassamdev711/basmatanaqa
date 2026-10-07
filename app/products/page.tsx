@@ -127,8 +127,25 @@ export default async function ProductsPage({
               ]}
               activeSlug={subcategory} 
               paramKey="subcategory"
+              variant="pills"
             />
           )}
+        </div>
+
+        {/* Filter and Sort Bar */}
+        <div className="flex items-center justify-between px-4 md:px-12 py-3 bg-white border-b border-black/5 text-sm mb-4 md:mb-6">
+          <div className="text-black/60 font-medium">{products.length} منتج</div>
+          <div className="flex items-center gap-4">
+            <button className="flex items-center gap-1.5 font-medium hover:text-brand transition-colors">
+              <span>ترتيب</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+            </button>
+            <div className="w-px h-4 bg-black/10"></div>
+            <button className="flex items-center gap-1.5 font-medium hover:text-brand transition-colors">
+              <span>الفلاتر</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            </button>
+          </div>
         </div>
 
         {/* Product Grid */}
