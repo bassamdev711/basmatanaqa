@@ -10,7 +10,7 @@ import { validateCouponCode } from '@/app/admin/marketing/coupons/actions'
 import { createAdminNotification } from '@/lib/admin-notifications'
 import { createOrderUploadToken, verifyOrderUploadToken } from '@/lib/order-upload-token'
 import { createOrderTrackingToken } from '@/lib/order-tracking-token'
-import { requireCurrentUser } from '@/lib/user-auth'
+import { requireCurrentUser, getCurrentUser } from '@/lib/user-auth'
 import { createUserNotification } from '@/lib/notifications/service'
 
 const PAYMENT_METHODS = new Set(['cod', 'bank_transfer', 'wallets'])
@@ -57,7 +57,7 @@ export async function createOrder(
   pointsUsed?: number,
 ) {
   try {
-    const authenticatedUser = await requireCurrentUser()
+    const authenticatedUser = await getCurrentUser()
     const headersList = await headers()
     const ip = getClientIp(headersList.get('x-forwarded-for'))
     const requestKey = typeof idempotencyKey === 'string' ? idempotencyKey.trim().slice(0, 128) : ''
@@ -67,7 +67,9 @@ export async function createOrder(
     }
 
     const existingOrder = await prisma.order.findFirst({
-      where: { idempotencyKey: requestKey, userId: authenticatedUser.id },
+      where: authenticatedUser
+        ? { idempotencyKey: requestKey, userId: authenticatedUser.id }
+        : { idempotencyKey: requestKey, userId: null },
       select: { id: true, paymentMethod: true },
     })
     if (existingOrder) {
@@ -214,8 +216,11 @@ export async function createOrder(
 
     let pointsDiscountValue = 0
     let pointsToUse = 0
-    
     if (pointsUsed && pointsUsed > 0) {
+      if (!authenticatedUser) {
+        return { success: false, error: 'يجب تسجيل الدخول لاستخدام نقاط الولاء.' }
+      }
+      
       const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
       if (loyaltySettings?.isEnabled && loyaltySettings?.redeemEnabled) {
         const userAccount = await prisma.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
@@ -243,7 +248,7 @@ export async function createOrder(
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
-          userId: authenticatedUser.id,
+          userId: authenticatedUser?.id || null,
           orderNumber,
           idempotencyKey: requestKey,
           customerName: normalizeText(checkoutData.fullName, 120),
@@ -265,7 +270,7 @@ export async function createOrder(
         },
       })
 
-      if (pointsToUse > 0) {
+      if (pointsToUse > 0 && authenticatedUser) {
         const userAccount = await tx.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
         if (userAccount) {
           const updateResult = await tx.loyaltyAccount.updateMany({

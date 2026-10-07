@@ -110,8 +110,8 @@ model ProductVariant {
 model Order {
   id                  String               @id @default(cuid())
   orderNumber         String?              @unique
-  userId              String
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  userId              String?
+  user                User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   customerName        String
   customerPhone       String
   governorate         String
