@@ -17,6 +17,10 @@ export default async function AccountPointsPage() {
     }
   })
 
+  const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
+  const pointsValue = Number(loyaltySettings?.pointsValue) || 1
+
+
   if (!loyaltyAccount) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-20 animate-slide-in-panel">
@@ -47,7 +51,13 @@ export default async function AccountPointsPage() {
             </div>
             <div>
               <p className="text-surface/80 font-medium mb-1">الرصيد الحالي</p>
-              <p className="text-5xl font-black">{loyaltyAccount.balance} <span className="text-lg font-medium text-surface/80">نقطة</span></p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-5xl font-black">{loyaltyAccount.balance}</p>
+                <span className="text-lg font-medium text-surface/80">نقطة</span>
+              </div>
+              <p className="text-accent text-sm mt-1 font-bold">
+                (تعادل {(loyaltyAccount.balance * pointsValue).toLocaleString('ar-SA')} ريال)
+              </p>
             </div>
           </div>
           <div className="bg-surface/10 backdrop-blur-sm px-6 py-4 rounded-2xl border border-surface/20 text-center">
