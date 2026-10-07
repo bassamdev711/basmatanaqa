@@ -7,7 +7,7 @@ import { Lock, Phone, ArrowRight, UserCircle2, Mail, User } from 'lucide-react'
 
 export default function CustomerRegisterPage() {
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState('+967')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   
@@ -21,6 +21,11 @@ export default function CustomerRegisterPage() {
     
     if (password.length < 10) {
       setError('كلمة المرور يجب أن تكون 10 أحرف على الأقل')
+      return
+    }
+
+    if (phone.length !== 13) {
+      setError('رقم الهاتف يجب أن يتكون من 9 أرقام بعد الرمز +967')
       return
     }
 
@@ -102,9 +107,16 @@ export default function CustomerRegisterPage() {
                 type="tel"
                 dir="ltr"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-right"
-                placeholder="05XXXXXXXX"
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (!val.startsWith('+967')) {
+                    val = '+967';
+                  }
+                  const digits = val.slice(4).replace(/\D/g, '').slice(0, 9);
+                  setPhone('+967' + digits);
+                }}
+                className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-left"
+                placeholder="+967XXXXXXXXX"
                 required
               />
             </div>
