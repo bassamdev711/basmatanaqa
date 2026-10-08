@@ -11,7 +11,7 @@ type AboutData = {
 
 export default function About({
   data = {},
-  brandName = 'بصمة أناقة',
+  brandName = 'شهرزاد',
 }: {
   data?: AboutData
   brandName?: string

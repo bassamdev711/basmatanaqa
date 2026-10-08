@@ -38,7 +38,7 @@ export default async function AccountPointsPage() {
       <div className="border-b border-foreground/10 pb-6 flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-black text-foreground mb-2">نقاط الولاء</h1>
-          <p className="text-foreground/60 font-medium">برنامج المكافآت الخاص بك في بصمة أناقة.</p>
+          <p className="text-foreground/60 font-medium">برنامج المكافآت الخاص بك في شهرزاد.</p>
         </div>
       </div>
 

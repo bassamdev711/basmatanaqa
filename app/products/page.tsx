@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `المنتجات | ${store.name}`,
     description: `تصفح منتجات ${store.name}: ملابس، أحذية، حقائب، إكسسوارات، عطور، تجميل، عناية وجمال وهدايا.`,
-    keywords: ['منتجات بصمة أناقة', 'ملابس', 'أحذية', 'حقائب', 'إكسسوارات', 'عطور', 'تجميل', 'هدايا'],
+    keywords: ['منتجات شهرزاد', 'ملابس', 'أحذية', 'حقائب', 'إكسسوارات', 'عطور', 'تجميل', 'هدايا'],
     alternates: { canonical: new URL('/products', siteUrl).toString() },
     openGraph: {
       title: `المنتجات | ${store.name}`,

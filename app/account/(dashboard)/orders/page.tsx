@@ -27,7 +27,7 @@ export default async function AccountOrdersPage() {
             <Package className="w-12 h-12 text-brand" />
           </div>
           <h3 className="text-xl font-bold mb-2">لم تقم بأي طلبات بعد</h3>
-          <p className="text-foreground/60 mb-6 max-w-md">استكشف مجموعاتنا المميزة وابدأ بتجربة تسوق فريدة مع بصمة أناقة.</p>
+          <p className="text-foreground/60 mb-6 max-w-md">استكشف مجموعاتنا المميزة وابدأ بتجربة تسوق فريدة مع شهرزاد.</p>
           <Link href="/" className="btn btn-primary">
             تصفح المنتجات
           </Link>

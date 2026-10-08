@@ -27,7 +27,7 @@ export default async function Home() {
   ]);
   const safeSettings = {
     ...(settings || {}),
-    heroTitle: 'بصمة أناقة',
+    heroTitle: 'شهرزاد',
     heroSubtitle: 'اختيارات تصنع حضورك.',
     heroDescription: 'تشكيلة متنوعة من المنتجات المختارة بعناية، لتجد ما يناسب ذوقك في كل مناسبة.',
     heroPrimaryButton: 'اكتشف التشكيلة',

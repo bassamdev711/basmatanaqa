@@ -22,8 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const shareImage = new URL('/share.webp', siteUrl).toString()
   const twitterImage = new URL('/share.webp', siteUrl).toString()
   const keywords = [
-    'بصمة أناقة',
-    'متجر بصمة أناقة',
+    'شهرزاد',
+    'متجر شهرزاد',
     'متجر إلكتروني متنوع',
     'ملابس وأزياء',
     'أحذية وحقائب',
@@ -37,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
       default: `${store.name} | متجر إلكتروني متنوع`,
       template: `%s | ${store.name}`,
     },
-    description: 'بصمة أناقة متجر إلكتروني متنوع للملابس والأحذية والحقائب والإكسسوارات والعطور والتجميل والعناية والهدايا.',
+    description: 'شهرزاد متجر إلكتروني متنوع للملابس والأحذية والحقائب والإكسسوارات والعطور والتجميل والعناية والهدايا.',
     keywords,
     alternates: { canonical: siteUrl.toString() },
     authors: [{ name: store.name }],
@@ -49,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: siteUrl.toString(),
       siteName: store.name,
       type: 'website',
-      images: [{ url: shareImage, width: 1200, height: 630, alt: 'بصمة أناقة' }],
+      images: [{ url: shareImage, width: 1200, height: 630, alt: 'شهرزاد' }],
     },
     twitter: {
       card: 'summary_large_image',

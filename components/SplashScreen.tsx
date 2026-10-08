@@ -10,8 +10,8 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({
-  storeName = 'بصمة أناقة',
-  storeNameLatin = 'BASMAT ANAQAH',
+  storeName = 'شهرزاد',
+  storeNameLatin = 'SHAHRAZAD',
 }: SplashScreenProps) {
   const [showSplash, setShowSplash] = useState(false)
 
@@ -44,7 +44,7 @@ export default function SplashScreen({
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="relative z-10 flex w-[min(88vw,460px)] flex-col items-center text-center"
           >
-            <span className="mb-8 text-[10px] font-bold tracking-[0.38em] text-accent">BASMAT ANAQAH</span>
+            <span className="mb-8 text-[10px] font-bold tracking-[0.38em] text-accent">SHAHRAZAD</span>
             <div className="w-full border-y border-accent/35 py-8">
               <Image
                 src="/logo.webp"

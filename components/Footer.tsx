@@ -18,8 +18,8 @@ const XIcon = (props: React.SVGProps<SVGSVGElement> & { size?: number }) => (
 );
 
 export default async function Footer({
-  storeName = 'بصمة أناقة',
-  storeNameLatin = 'BASMAT ANAQAH',
+  storeName = 'شهرزاد',
+  storeNameLatin = 'SHAHRAZAD',
 }: {
   storeName?: string
   storeNameLatin?: string

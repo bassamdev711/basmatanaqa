@@ -83,7 +83,7 @@ export default function CustomerRegisterPage() {
 
         <h1 className="text-3xl font-bold text-center text-foreground mb-2">إنشاء حساب</h1>
         <p className="text-center text-foreground/60 mb-8 text-sm">
-          انضم إلينا في بصمة أناقة واستمتع بتجربة تسوق فريدة
+          انضم إلينا في شهرزاد واستمتع بتجربة تسوق فريدة
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

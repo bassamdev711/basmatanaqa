@@ -15,8 +15,8 @@ export type StoreConfig = {
 }
 
 export const DEFAULT_STORE_CONFIG: StoreConfig = {
-  name: 'بصمة أناقة',
-  nameLatin: 'BASMAT ANAQAH',
+  name: 'شهرزاد',
+  nameLatin: 'SHAHRAZAD',
   tagline: 'اختيارات تصنع حضورك.',
   description: 'اكتشف تشكيلة متنوعة من المنتجات المختارة بعناية، مع تجربة تسوق راقية وواضحة وآمنة.',
   logoUrl: 'https://raw.githubusercontent.com/bassamdev711/basmatanaqa/main/logo.webp',
@@ -43,13 +43,21 @@ type StoreSettingsRecord = {
 function normalizeStoreConfig(settings: StoreSettingsRecord | null | undefined): StoreConfig {
   const storedName = settings?.storeName?.trim()
   const storedLatin = settings?.storeNameLatin?.trim()
-  const isLegacyBrand = !storedName || ['طيف', 'TIF', 'متجرك'].includes(storedName) || ['YOUR STORE', 'TIF'].includes(storedLatin || '')
+  const isLegacyBrand = !storedName || ['طيف', 'TIF', 'متجرك', 'بصمة أناقة', 'بصمة اناقة'].includes(storedName) || ['YOUR STORE', 'TIF', 'BASMAT ANAQAH'].includes(storedLatin || '')
+  
+  let tagline = settings?.storeTagline?.trim() || DEFAULT_STORE_CONFIG.tagline
+  let description = settings?.storeDescription?.trim() || DEFAULT_STORE_CONFIG.description
+  
+  // Force clean up old name in description and tagline if it exists in DB
+  tagline = tagline.replace(/بصمة أناقة/g, 'شهرزاد').replace(/بصمة اناقة/g, 'شهرزاد')
+  description = description.replace(/بصمة أناقة/g, 'شهرزاد').replace(/بصمة اناقة/g, 'شهرزاد')
+
   return {
     ...DEFAULT_STORE_CONFIG,
     name: isLegacyBrand ? DEFAULT_STORE_CONFIG.name : storedName!,
     nameLatin: isLegacyBrand ? DEFAULT_STORE_CONFIG.nameLatin : storedLatin!,
-    tagline: isLegacyBrand ? DEFAULT_STORE_CONFIG.tagline : (settings?.storeTagline?.trim() || DEFAULT_STORE_CONFIG.tagline),
-    description: isLegacyBrand ? DEFAULT_STORE_CONFIG.description : (settings?.storeDescription?.trim() || DEFAULT_STORE_CONFIG.description),
+    tagline: isLegacyBrand ? DEFAULT_STORE_CONFIG.tagline : tagline,
+    description: isLegacyBrand ? DEFAULT_STORE_CONFIG.description : description,
     logoUrl: settings?.logoUrl || null,
     faviconUrl: settings?.faviconUrl || null,
     ogImageUrl: settings?.ogImageUrl || null,

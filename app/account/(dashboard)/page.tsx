@@ -17,7 +17,7 @@ export default async function AccountPage() {
     <div className="space-y-8 animate-slide-in-panel">
       <div className="border-b border-foreground/10 pb-6">
         <h1 className="text-3xl font-black text-foreground mb-2">الملف الشخصي</h1>
-        <p className="text-foreground/60 font-medium">مرحباً بك في حسابك الشخصي لدى بصمة أناقة.</p>
+        <p className="text-foreground/60 font-medium">مرحباً بك في حسابك الشخصي لدى شهرزاد.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -15,7 +15,7 @@ type ExperienceData = {
 
 export default function Experience({
   data = {},
-  brandName = 'بصمة أناقة',
+  brandName = 'شهرزاد',
 }: {
   data?: ExperienceData
   brandName?: string
@@ -75,7 +75,7 @@ export default function Experience({
                     height={220}
                     className="mb-6 h-36 w-36 object-contain"
                   />
-                  <span className="text-xs font-bold tracking-[0.3em] text-accent">BASMAT ANAQAH</span>
+                  <span className="text-xs font-bold tracking-[0.3em] text-accent">SHAHRAZAD</span>
                   <span className="mt-3 text-sm text-surface/70">تفاصيل تصنع الفرق</span>
                 </div>
               </div>

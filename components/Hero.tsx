@@ -12,12 +12,12 @@ type HeroData = {
 }
 
 const brandDefaults = {
-  title: "بصمة أناقة",
+  title: "شهرزاد",
   subtitle: "اختيارات تصنع حضورك.",
   description: "تشكيلة متنوعة من المنتجات المختارة بعناية، لتجد ما يناسب ذوقك في كل مناسبة.",
 }
 
-export default function Hero({ data = {}, brandName = 'بصمة أناقة' }: {
+export default function Hero({ data = {}, brandName = 'شهرزاد' }: {
   data?: HeroData
   brandName?: string
   brandNameLatin?: string
@@ -36,7 +36,7 @@ export default function Hero({ data = {}, brandName = 'بصمة أناقة' }: {
         <motion.div initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="order-2 text-center lg:order-1 lg:text-right">
           <span className="mb-6 inline-flex items-center gap-4 text-[11px] font-bold tracking-[0.32em] text-accent">
             <span className="h-px w-12 bg-accent" />
-            BASMAT ANAQAH
+            SHAHRAZAD
           </span>
           <h1 className="mb-5 text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-7xl lg:text-[6.2rem]">{title}</h1>
           <p className="mb-6 text-2xl font-light leading-snug text-brand sm:text-3xl">{subtitle}</p>
@@ -53,7 +53,7 @@ export default function Hero({ data = {}, brandName = 'بصمة أناقة' }: {
             <div className="absolute inset-6 border border-accent/25" />
             <div className="absolute bottom-8 left-8 text-[10px] font-bold tracking-[0.3em] text-surface/40 [writing-mode:vertical-rl]">CURATED DETAILS</div>
             <div className="relative z-10 flex flex-col items-center text-center">
-              <Image src="/logo.webp" alt="شعار بصمة أناقة" width={360} height={360} priority className="h-64 w-64 object-contain sm:h-80 sm:w-80" />
+              <Image src="/logo.webp" alt="شعار شهرزاد" width={360} height={360} priority className="h-64 w-64 object-contain sm:h-80 sm:w-80" />
               <span className="mt-7 h-px w-20 bg-accent" />
               <span className="mt-4 text-sm tracking-[0.18em] text-surface/75">تفاصيل مختارة. حضور مختلف.</span>
             </div>

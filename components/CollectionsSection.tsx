@@ -14,7 +14,7 @@ type CollectionCard = {
 // Caching to improve speed
 export const revalidate = 3600 // revalidate every hour
 
-export default async function CollectionsSection({ brandName = 'بصمة أناقة' }: { brandName?: string }) {
+export default async function CollectionsSection({ brandName = 'شهرزاد' }: { brandName?: string }) {
   let collections: CollectionCard[] = []
   
   try {

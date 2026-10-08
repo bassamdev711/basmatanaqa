@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       return created
     })
     await createUserSession(user.id)
-    await createUserNotification({ userId: user.id, type: 'ACCOUNT_CREATED', title: 'مرحبًا بك في بصمة أناقة', message: 'تم إنشاء حسابك بنجاح.' })
+    await createUserNotification({ userId: user.id, type: 'ACCOUNT_CREATED', title: 'مرحبًا بك في شهرزاد', message: 'تم إنشاء حسابك بنجاح.' })
     return NextResponse.json({ user: { id: user.id, name: user.name, phone: user.phone, email: user.email } }, { status: 201 })
   } catch (error) {
     if (typeof error === 'object' && error && 'code' in error && error.code === 'P2002') return NextResponse.json({ error: 'تعذر إنشاء الحساب بالبيانات المقدمة.' }, { status: 409 })

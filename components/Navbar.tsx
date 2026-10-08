@@ -11,8 +11,8 @@ import { useCartAnimation } from "./CartAnimationProvider";
 import NotificationBadge from "./NotificationBadge";
 
 export default function Navbar({
-  storeName = 'بصمة أناقة',
-  storeNameLatin = 'BASMAT ANAQAH',
+  storeName = 'شهرزاد',
+  storeNameLatin = 'SHAHRAZAD',
 }: {
   storeName?: string
   storeNameLatin?: string

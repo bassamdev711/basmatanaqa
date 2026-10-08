@@ -58,7 +58,7 @@ export default function CustomerLoginPage() {
 
         <h1 className="text-3xl font-bold text-center text-foreground mb-2">تسجيل الدخول</h1>
         <p className="text-center text-foreground/60 mb-8 text-sm">
-          مرحباً بك مجدداً في بصمة أناقة
+          مرحباً بك مجدداً في شهرزاد
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
