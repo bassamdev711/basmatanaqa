@@ -82,7 +82,7 @@ export default function Navbar({
         {/* Logo */}
         <Link href="/" className="relative z-50 flex items-center gap-1.5 md:gap-2 group">
           <Image
-            src="/basmat-anaqah-logo.webp"
+            src="/logo.webp"
             alt={`شعار ${storeName}`}
             width={42}
             height={42}

@@ -69,7 +69,7 @@ export default function Experience({
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(184,138,69,.22),transparent_55%),linear-gradient(145deg,var(--brand-color),#2c2822)]" />
                 <div className="absolute inset-10 flex flex-col items-center justify-center rounded-2xl border border-accent/35 bg-brand/40 text-center">
                   <Image
-                    src="/basmat-anaqah-logo.webp"
+                    src="/logo.webp"
                     alt={`شعار ${brandName}`}
                     width={220}
                     height={220}

@@ -1,5 +1,5 @@
 const appConfig = {
-  logoUrl: 'https://raw.githubusercontent.com/bassamdev711/basmatanaqa/main/basmat-anaqah-logo.webp',
+  logoUrl: 'https://raw.githubusercontent.com/bassamdev711/basmatanaqa/main/logo.webp',
 }
 
 export default appConfig

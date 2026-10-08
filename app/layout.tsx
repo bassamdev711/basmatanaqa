@@ -19,8 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
   // The social crawlers need a public absolute URL, not a local/relative path.
   // Prefer the deployment URL from Vercel over any stale database value.
   const siteUrl = getSiteUrl(process.env.NEXT_PUBLIC_SITE_URL || store.storeUrl)
-  const shareImage = new URL('/opengraph-image.webp', siteUrl).toString()
-  const twitterImage = new URL('/twitter-image.webp', siteUrl).toString()
+  const shareImage = new URL('/share.webp', siteUrl).toString()
+  const twitterImage = new URL('/share.webp', siteUrl).toString()
   const keywords = [
     'بصمة أناقة',
     'متجر بصمة أناقة',
@@ -69,9 +69,9 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     icons: {
-      icon: '/favicon.ico',
-      shortcut: '/favicon.ico',
-      apple: '/favicon.ico',
+      icon: '/logo.webp',
+      shortcut: '/logo.webp',
+      apple: '/logo.webp',
     },
   }
 }
@@ -101,7 +101,7 @@ export default async function RootLayout({
     name: store.name,
     alternateName: store.nameLatin,
     url: siteUrl.toString(),
-    logo: new URL('/basmat-anaqah-logo.webp', siteUrl).toString(),
+    logo: new URL('/logo.webp', siteUrl).toString(),
   }
   const websiteSchema = {
     '@context': 'https://schema.org',
