@@ -13,7 +13,7 @@ import { createOrderTrackingToken } from '@/lib/order-tracking-token'
 import { requireCurrentUser, getCurrentUser } from '@/lib/user-auth'
 import { createUserNotification } from '@/lib/notifications/service'
 
-const PAYMENT_METHODS = new Set(['cod', 'bank_transfer', 'wallets'])
+const PAYMENT_METHODS = new Set(['cod', 'bank_transfer', 'wallets', 'customer_service'])
 const RECEIPT_PAYMENT_METHODS = new Set(['bank_transfer', 'wallets'])
 
 function getClientIp(value: string | null): string {
@@ -116,7 +116,17 @@ export async function createOrder(
     const productIds = Array.from(new Set(parsedItems.map((item) => item.productId)))
     const dbProducts = await prisma.product.findMany({
       where: { id: { in: productIds }, isActive: true },
-      include: { variants: true },
+      include: { 
+        variants: true,
+        offers: {
+          where: {
+            isActive: true,
+            endDate: { gt: new Date() }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      },
     })
 
     if (dbProducts.length !== productIds.length) {
@@ -138,6 +148,11 @@ export async function createOrder(
         if (!variant) return { success: false, error: `الخيار المحدد لمنتج "${dbProduct.name}" غير موجود.` }
         stockToCheck = variant.stock
         itemPrice = Number(variant.price)
+      }
+
+      // Apply Offer Price if valid (Overriding product and variant prices)
+      if (dbProduct.offers && dbProduct.offers.length > 0) {
+        itemPrice = Number(dbProduct.offers[0].offerPrice)
       }
 
       if (!Number.isFinite(itemPrice) || itemPrice < 0 || stockToCheck < item.quantity) {
@@ -240,7 +255,7 @@ export async function createOrder(
     }
 
     const finalTotal = discountedCartTotal + shippingFee - pointsDiscountValue
-    const paymentStatus = 'PENDING'
+    const paymentStatus = checkoutData.paymentMethod === 'customer_service' ? 'AWAITING_CUSTOMER_SERVICE' : 'PENDING'
     const transaction = normalizeText(transactionId, 100) || null
     const year = new Date().getFullYear()
     const orderNumber = `${getOrderPrefix(storeSettings?.storeNameLatin || storeSettings?.storeName)}-${year}-${crypto.randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase()}`
@@ -269,6 +284,16 @@ export async function createOrder(
           items: { create: orderItemsData },
         },
       })
+
+      if (authenticatedUser) {
+        await tx.user.updateMany({
+          where: { id: authenticatedUser.id },
+          data: {
+            name: normalizeText(checkoutData.fullName, 120),
+            phone: normalizeText(checkoutData.phone, 32)
+          }
+        })
+      }
 
       if (pointsToUse > 0 && authenticatedUser) {
         const userAccount = await tx.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
@@ -453,10 +478,12 @@ export async function getPaymentMethods() {
   })
 
   let loyaltyInfo = null
+  let userInfo = null
   try {
     const { getCurrentUser } = await import('@/lib/user-auth')
     const user = await getCurrentUser()
     if (user) {
+      userInfo = { name: user.name, phone: user.phone }
       const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
       if (loyaltySettings?.isEnabled && loyaltySettings?.redeemEnabled) {
         const account = await prisma.loyaltyAccount.findUnique({ where: { userId: user.id } })
@@ -480,6 +507,7 @@ export async function getPaymentMethods() {
       codFee: Number(settings.codFee),
       codInstructions: settings.codInstructions,
       currency: settings.currency,
+      customerServiceEnabled: true,
     },
     storeSettings: {
       shippingFee: Number(storeSettings?.shippingFee || 0),
@@ -495,12 +523,17 @@ export async function getPaymentMethods() {
       bankName: account.bankName,
       accountName: account.accountName,
       accountNumber: account.accountNumber,
+      logoUrl: account.logoUrl,
+      colorHex: account.colorHex,
     })),
     digitalWallets: digitalWallets.map((wallet) => ({
       id: wallet.id,
       walletName: wallet.walletName,
       accountNumber: wallet.accountNumber,
+      logoUrl: wallet.logoUrl,
+      colorHex: wallet.colorHex,
     })),
     loyaltyInfo,
+    userInfo,
   }
 }

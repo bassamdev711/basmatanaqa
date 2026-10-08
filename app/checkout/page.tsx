@@ -6,7 +6,7 @@ import { getStoreConfig } from '@/lib/store-config'
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreConfig()
-  return { title: `إتمام الطلب | ${store.name}` }
+  return { title: `اعتماد الطلب | ${store.name}` }
 }
 
 export default function CheckoutPage() {

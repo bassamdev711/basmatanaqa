@@ -42,7 +42,7 @@ export default function Hero({ data = {}, brandName = 'بصمة أناقة' }: {
           <p className="mb-6 text-2xl font-light leading-snug text-brand sm:text-3xl">{subtitle}</p>
           <p className="mx-auto mb-10 max-w-xl whitespace-pre-line text-base leading-8 text-foreground/65 lg:mx-0">{description}</p>
           <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-            <button onClick={scrollToProducts} className="btn btn-primary btn-lg">{data.heroPrimaryButton || "اكتشف التشكيلة"}</button>
+            <button onClick={scrollToProducts} className="btn btn-primary btn-lg">{data.heroPrimaryButton || "تسوّق أحدث التشكيلات"}</button>
             <a href="#about" className="btn btn-outline btn-lg">{data.heroSecondaryButton || "قصتنا"}</a>
           </div>
         </motion.div>

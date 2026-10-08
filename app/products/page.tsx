@@ -9,6 +9,7 @@ import { getSiteUrl, getStoreConfig } from '@/lib/store-config'
 import ProductDiscoveryFilters from '@/components/ProductDiscoveryFilters'
 import PaginationControls from '@/components/PaginationControls'
 import { Prisma } from '@prisma/client'
+import { unstable_cache } from 'next/cache'
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreConfig()
@@ -89,58 +90,76 @@ export default async function ProductsPage({
       orderByClause = { createdAt: 'desc' };
     }
 
-    const [productsResult, countResult] = await Promise.all([
-      prisma.product.findMany({
-        where: whereClause,
-        orderBy: orderByClause,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          brand: true,
-          price: true,
-          compareAtPrice: true,
-          imageUrl: true,
-          featured: true,
-        },
-      }),
-      prisma.product.count({ where: whereClause })
-    ]);
+    const getCachedProducts = unstable_cache(
+      async (where: Prisma.ProductWhereInput, orderBy: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[], skip: number, take: number) => {
+        const [productsResult, countResult] = await Promise.all([
+          prisma.product.findMany({
+            where,
+            orderBy,
+            skip,
+            take,
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              brand: true,
+              price: true,
+              compareAtPrice: true,
+              imageUrl: true,
+              featured: true,
+            },
+          }),
+          prisma.product.count({ where })
+        ]);
+        return { productsResult, countResult }
+      },
+      [`products-page-${collection}-${subcategory}-${minPrice}-${maxPrice}-${brands.join(',')}-${sort}-${page}`],
+      { revalidate: 1800, tags: ['products'] }
+    )
+
+    const { productsResult, countResult } = await getCachedProducts(whereClause, orderByClause, (page - 1) * pageSize, pageSize)
+
     
     products = productsResult;
     totalCount = countResult;
 
-    // fetch distinct brands for filters
-    const distinctBrandsResult = await prisma.product.findMany({
-      where: { 
-        isActive: true, 
-        stock: { gt: 0 },
-        ...(collection ? { collection: { slug: collection } } : {}),
-        ...(subcategory ? { subCategory: { slug: subcategory } } : {})
+    const getCachedBrands = unstable_cache(
+      async (where: Prisma.ProductWhereInput) => {
+        const distinctBrandsResult = await prisma.product.findMany({
+          where,
+          select: { brand: true },
+          distinct: ['brand']
+        });
+        return distinctBrandsResult.map(b => b.brand).filter(Boolean) as string[];
       },
-      select: { brand: true },
-      distinct: ['brand']
-    });
-    availableBrands = distinctBrandsResult.map(b => b.brand).filter(Boolean) as string[];
-
-    dbCollections = await prisma.collection.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: 'desc' }
-    })
+      [`brands-filter-${collection}-${subcategory}`],
+      { revalidate: 1800, tags: ['products'] }
+    )
     
-    if (collection) {
-      dbSubCategories = await prisma.subCategory.findMany({
-        where: { isActive: true, collection: { slug: collection } },
+    availableBrands = await getCachedBrands({
+      isActive: true, 
+      stock: { gt: 0 },
+      ...(collection ? { collection: { slug: collection } } : {}),
+      ...(subcategory ? { subCategory: { slug: subcategory } } : {})
+    });
+
+    const getCachedCollections = unstable_cache(
+      async () => prisma.collection.findMany({ where: { isActive: true }, orderBy: { createdAt: 'desc' } }),
+      ['collections-list'],
+      { revalidate: 3600, tags: ['collections'] }
+    )
+    dbCollections = await getCachedCollections()
+    
+    const getCachedSubcategories = unstable_cache(
+      async (col?: string) => prisma.subCategory.findMany({
+        where: col ? { isActive: true, collection: { slug: col } } : { isActive: true },
         orderBy: { createdAt: 'desc' }
-      })
-    } else {
-      dbSubCategories = await prisma.subCategory.findMany({
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' }
-      })
-    }
+      }),
+      [`subcategories-list-${collection}`],
+      { revalidate: 3600, tags: ['subcategories'] }
+    )
+    dbSubCategories = await getCachedSubcategories(collection)
+
   } catch (error) {
     console.error('Failed to load products page data:', error)
     dataLoadFailed = true

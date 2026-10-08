@@ -37,8 +37,45 @@ interface ProductItem {
   slug: string
   rawPrice?: number
   compareAtPrice?: number
+  offerEndDate?: string
   stock: number
   variants: ProductVariant[]
+}
+
+/* ─── Countdown Timer ───────────────────────────────────────── */
+function Countdown({ targetDate }: { targetDate: string }) {
+  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 })
+
+  React.useEffect(() => {
+    const target = new Date(targetDate).getTime()
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const diff = target - now
+      
+      if (diff <= 0) {
+        clearInterval(interval)
+        setTimeLeft({ d: 0, h: 0, m: 0, s: 0 })
+      } else {
+        setTimeLeft({
+          d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          h: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+          s: Math.floor((diff % (1000 * 60)) / 1000),
+        })
+      }
+    }, 1000)
+    
+    return () => clearInterval(interval)
+  }, [targetDate])
+
+  return (
+    <div className="absolute top-2 left-2 z-10 flex gap-1 items-center bg-black/80 text-white px-2 py-1 rounded-md shadow backdrop-blur text-[10px] font-bold" dir="ltr">
+      <span>{timeLeft.d}d</span> :
+      <span>{timeLeft.h.toString().padStart(2, '0')}h</span> :
+      <span>{timeLeft.m.toString().padStart(2, '0')}m</span> :
+      <span className="text-brand">{timeLeft.s.toString().padStart(2, '0')}s</span>
+    </div>
+  )
 }
 
 /* ─── Detail Modal ─────────────────────────────────────────── */
@@ -463,6 +500,12 @@ export default function ProductsClient({
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-accent/30 text-4xl">متجرنا</div>
                     )}
+                    {product.compareAtPrice && product.rawPrice && (
+                      <div className="absolute top-2 right-2 bg-red-600 text-white font-bold text-[10px] px-2 py-0.5 rounded shadow z-10">
+                        خصم {Math.round(((product.compareAtPrice - product.rawPrice) / product.compareAtPrice) * 100)}%
+                      </div>
+                    )}
+                    {product.offerEndDate && <Countdown targetDate={product.offerEndDate} />}
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center p-3 text-center bg-white z-10 border-t border-black/10">
                     <h3 className="text-base font-black text-foreground mb-0.5">{product.name}</h3>
@@ -535,11 +578,12 @@ export default function ProductsClient({
                         متجرنا
                       </div>
                     )}
-                    {product.compareAtPrice && (
-                      <div className="absolute top-3 right-3 bg-red-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow z-10">
-                        خصم
+                    {product.compareAtPrice && product.rawPrice && (
+                      <div className="absolute top-4 right-4 bg-red-600 text-white font-bold text-xs px-3 py-1 rounded-full shadow z-10">
+                        خصم {Math.round(((product.compareAtPrice - product.rawPrice) / product.compareAtPrice) * 100)}%
                       </div>
                     )}
+                    {product.offerEndDate && <Countdown targetDate={product.offerEndDate} />}
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white z-10 border-t border-black/10">
                     <h3 className="text-2xl font-black text-foreground mb-2">{product.name}</h3>

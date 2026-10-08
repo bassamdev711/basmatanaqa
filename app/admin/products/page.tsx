@@ -18,13 +18,30 @@ type ProductRow = {
 
 export const dynamic = 'force-dynamic'
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const searchParamsResolved = await searchParams;
+  const page = parseInt(searchParamsResolved.page || '1', 10);
+  const limit = 50;
+  const skip = (page - 1) * limit;
+
   let products: ProductRow[] = []
+  let totalCount = 0;
   
   try {
-    products = await prisma.product.findMany({
-      orderBy: { createdAt: 'desc' }
-    })
+    const [fetchedProducts, count] = await Promise.all([
+      prisma.product.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.product.count()
+    ]);
+    products = fetchedProducts;
+    totalCount = count;
   } catch (error) {
     console.error("Database connection error:", error)
   }
@@ -117,6 +134,29 @@ export default async function ProductsPage() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {totalCount > limit && (
+          <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-sm text-gray-500 font-medium">
+              صفحة {page} من {Math.ceil(totalCount / limit)} ({totalCount} منتج)
+            </span>
+            <div className="flex gap-2">
+              <Link
+                href={`/admin/products?page=${page - 1}`}
+                className={`px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 ${page <= 1 ? 'pointer-events-none opacity-50' : ''}`}
+              >
+                السابق
+              </Link>
+              <Link
+                href={`/admin/products?page=${page + 1}`}
+                className={`px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 ${page >= Math.ceil(totalCount / limit) ? 'pointer-events-none opacity-50' : ''}`}
+              >
+                التالي
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

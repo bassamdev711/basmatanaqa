@@ -8,6 +8,7 @@ import OrderActionsClient from './OrderActionsClient'
 import { getCurrency } from '@/lib/currency'
 import { getOrderConfirmedMessage, getOrderShippedMessage, getOrderCompletedMessage } from '@/lib/whatsapp/templates'
 import WhatsAppActionsClient from './WhatsAppActionsClient'
+import PaymentActionsClient from './PaymentActionsClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -196,6 +197,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 </div>
               </div>
             ) : null}
+
+            <PaymentActionsClient orderId={order.id} currentPaymentStatus={order.paymentStatus} />
           </div>
         </div>
       </div>

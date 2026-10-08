@@ -8,6 +8,7 @@ import {
   Eye, SplitSquareHorizontal,
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 
@@ -78,11 +79,39 @@ function OrderBadge({ status }: { status: string }) {
 
 
 // ─── Main ────────────────────────────────────────────────────────────────────
-export default function OrdersClient({ orders: initialOrders, stats }: { orders: OrderRow[]; stats: OrderStats }) {
+export default function OrdersClient({ 
+  orders, 
+  stats,
+  pagination,
+  initialStatus,
+  initialSearch
+}: { 
+  orders: OrderRow[]; 
+  stats: OrderStats;
+  pagination: { totalCount: number; totalPages: number; currentPage: number };
+  initialStatus: string;
+  initialSearch: string;
+}) {
   const { showToast } = useToast()
-  const orders = initialOrders
-  const [filterStatus, setFilterStatus] = useState('الكل')
-  const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const [filterStatus, setFilterStatus] = useState(initialStatus)
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
+
+  const updateFilters = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) params.set(key, value)
+    else params.delete(key)
+    params.set('page', '1') // Reset to page 1 on filter change
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    updateFilters('search', searchQuery)
+  }
 
   const handleExportCSV = () => {
     if (orders.length === 0) { showToast('error', 'لا يوجد طلبات لتصديرها'); return }
@@ -96,9 +125,8 @@ export default function OrdersClient({ orders: initialOrders, stats }: { orders:
   }
 
 
-  const filtered = orders
-    .filter(o => filterStatus === 'الكل' || (filterStatus === 'جديد' && o.status === 'NEW') || (filterStatus === 'قيد التجهيز' && o.status === 'PROCESSING') || (filterStatus === 'مشحون' && o.status === 'SHIPPED') || (filterStatus === 'مكتمل' && o.status === 'COMPLETED') || (filterStatus === 'ملغى' && o.status === 'CANCELLED'))
-    .filter(o => searchQuery === '' || o.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) || o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) || o.customerPhone.includes(searchQuery))
+  // Removed client-side filtered logic. Data is already paginated and filtered from server.
+  const filtered = orders;
 
   return (
     <div className="space-y-6">
@@ -135,11 +163,26 @@ export default function OrdersClient({ orders: initialOrders, stats }: { orders:
       <section className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         {/* Filters */}
         <div className="p-3 md:p-4 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input type="text" placeholder="البحث باسم العميل، الهاتف..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-white border border-gray-200 rounded-lg py-2 pr-9 pl-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" />
-          </div>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-white border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-600 focus:outline-none focus:border-emerald-500 cursor-pointer">
+          <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[200px]">
+            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-500">
+              <Search size={16} />
+            </button>
+            <input 
+              type="text" 
+              placeholder="البحث برقم الطلب، اسم العميل، الهاتف..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              className="w-full bg-white border border-gray-200 rounded-lg py-2 pr-9 pl-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" 
+            />
+          </form>
+          <select 
+            value={filterStatus} 
+            onChange={e => {
+              setFilterStatus(e.target.value)
+              updateFilters('status', e.target.value === 'الكل' ? '' : e.target.value)
+            }} 
+            className="bg-white border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-600 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
             {['الكل', 'جديد', 'قيد التجهيز', 'مشحون', 'مكتمل', 'ملغى'].map(s => <option key={s} value={s}>{s === 'الكل' ? 'حالة الطلب: الكل' : s}</option>)}
           </select>
         </div>
@@ -205,6 +248,31 @@ export default function OrdersClient({ orders: initialOrders, stats }: { orders:
           ))}
           {filtered.length === 0 && <div className="py-16 text-center text-gray-400 font-bold">لا توجد طلبات</div>}
         </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-sm text-gray-500 font-medium">
+              صفحة {pagination.currentPage} من {pagination.totalPages} ({pagination.totalCount} طلب)
+            </span>
+            <div className="flex gap-2">
+              <button 
+                disabled={pagination.currentPage <= 1}
+                onClick={() => updateFilters('page', String(pagination.currentPage - 1))}
+                className="px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                السابق
+              </button>
+              <button 
+                disabled={pagination.currentPage >= pagination.totalPages}
+                onClick={() => updateFilters('page', String(pagination.currentPage + 1))}
+                className="px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                التالي
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
 

@@ -9,9 +9,9 @@ import { awardOrderPoints, reverseOrderPoints } from '@/lib/loyalty/service'
 import { createUserNotification } from '@/lib/notifications/service'
 
 const ORDER_STATUSES = new Set(['NEW', 'PROCESSING', 'SHIPPED', 'COMPLETED', 'CANCELLED', 'REFUNDED'])
-const PAYMENT_STATUSES = new Set(['PENDING', 'AWAITING_CONFIRMATION', 'PAID', 'FAILED'])
+const PAYMENT_STATUSES = new Set(['PENDING', 'AWAITING_CONFIRMATION', 'PAID', 'FAILED', 'AWAITING_CUSTOMER_SERVICE', 'REJECTED'])
 
-export async function getOrders(statusFilter?: string, timeFilter?: string, search?: string) {
+export async function getOrders(statusFilter?: string, timeFilter?: string, search?: string, page = 1, limit = 50) {
   await verifyAdmin();
 
   const whereClause: Prisma.OrderWhereInput = {}
@@ -43,32 +43,35 @@ export async function getOrders(statusFilter?: string, timeFilter?: string, sear
     ]
   }
 
-  const orders = await prisma.order.findMany({
-    where: whereClause,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      items: {
-        include: { product: true }
-      },
-      coupon: true
-    }
-  })
+  const skip = (page - 1) * limit;
 
-  // Serialize Decimal fields → plain numbers (Client Components don't accept Decimal objects)
-  return orders.map((order) => ({
+  const [orders, totalCount] = await Promise.all([
+    prisma.order.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+      include: {
+        items: { include: { product: true } },
+        coupon: true
+      }
+    }),
+    prisma.order.count({ where: whereClause })
+  ]);
+
+  // Serialize Decimal fields
+  const serializedOrders = orders.map((order) => ({
     ...order,
     totalAmount: order.totalAmount.toNumber(),
     shippingFee: order.shippingFee.toNumber(),
     items: order.items.map((item) => ({
       ...item,
       price: item.price.toNumber(),
-      product: item.product
-        ? {
-            ...item.product,
-            price: item.product.price.toNumber(),
-            compareAtPrice: item.product.compareAtPrice?.toNumber() ?? null,
-          }
-        : null,
+      product: item.product ? {
+        ...item.product,
+        price: item.product.price.toNumber(),
+        compareAtPrice: item.product.compareAtPrice?.toNumber() ?? null,
+      } : null,
     })),
     coupon: order.coupon ? {
       ...order.coupon,
@@ -76,6 +79,13 @@ export async function getOrders(statusFilter?: string, timeFilter?: string, sear
       minOrderAmount: order.coupon.minOrderAmount?.toNumber() ?? null,
     } : null,
   }))
+
+  return { 
+    orders: serializedOrders, 
+    totalCount, 
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: page
+  }
 }
 
 export async function getOrdersStats() {

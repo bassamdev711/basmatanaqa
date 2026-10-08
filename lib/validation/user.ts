@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const phoneSchema = z.string().trim().regex(/^\+9677[0-9]{8}$/, 'رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 7 (مع المفتاح +967)')
+export const phoneSchema = z.string().trim().regex(/^(?:\+967)?7[0-9]{8}$/, 'رقم الهاتف يجب أن يبدأ بـ 7 ويتكون من 9 أرقام')
 export const emailSchema = z.string().trim().toLowerCase().email().max(254).nullable().optional()
 export const passwordSchema = z.string()
   .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
@@ -10,8 +10,10 @@ export const passwordSchema = z.string()
     { message: 'كلمة المرور يجب أن تحتوي على أحرف وأرقام معاً لحماية حسابك' }
   )
 
+export const nameSchema = z.string().trim().min(2, 'الاسم يجب أن يكون حرفين على الأقل').max(120, 'الاسم طويل جداً').regex(/^[\p{L}\s]+$/u, 'الاسم يجب أن يحتوي على أحرف ومسافات فقط')
+
 export const registerSchema = z.object({
-  name: z.string().trim().min(2).max(120),
+  name: nameSchema,
   phone: phoneSchema,
   email: emailSchema,
   password: passwordSchema,
@@ -23,7 +25,7 @@ export const loginSchema = z.object({
 })
 
 export const profileSchema = z.object({
-  name: z.string().trim().min(2).max(120).optional(),
+  name: nameSchema.optional(),
   email: emailSchema,
 })
 

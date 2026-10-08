@@ -5,6 +5,7 @@ import { ArrowRight, User, Mail, Phone, Calendar, Star, ShoppingCart, Clock, Che
 import { getCustomerDetails } from '../actions'
 import PointsManager from './PointsManager'
 import CustomerSettings from './CustomerSettings'
+import CustomerActions from './CustomerActions'
 
 export const metadata: Metadata = {
   title: 'تفاصيل العميل | لوحة التحكم',
@@ -120,6 +121,9 @@ export default async function CustomerDetailsPage({ params }: { params: Promise<
 
           {/* Account Settings */}
           <CustomerSettings userId={customer.id} isActive={customer.isActive} />
+
+          {/* Customer Actions */}
+          <CustomerActions customerId={customer.id} customerPhone={customer.phone} />
 
           {/* Points History */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">

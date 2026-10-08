@@ -45,6 +45,7 @@ model Product {
   addToCartCount   Int              @default(0)
   salesCount       Int              @default(0)
   reviews          Review[]
+  offers           ProductOffer[]
 
   @@index([isActive, featured])
   @@index([isActive, bestseller])
@@ -288,6 +289,8 @@ model BankAccount {
   bankName      String
   accountName   String
   accountNumber String
+  logoUrl       String?
+  colorHex      String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -297,6 +300,8 @@ model DigitalWallet {
   id            String   @id @default(cuid())
   walletName    String
   accountNumber String
+  logoUrl       String?
+  colorHex      String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -382,6 +387,24 @@ model Campaign {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   products           Product[] // المنتجات المرتبطة بالحملة
+}
+
+model ProductOffer {
+  id              String   @id @default(cuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  offerPrice      Decimal  @db.Decimal(10, 2)
+  originalPrice   Decimal  @db.Decimal(10, 2)
+  startDate       DateTime @default(now())
+  endDate         DateTime
+  isActive        Boolean  @default(true)
+  showInHomepage  Boolean  @default(false)
+  imageUrl        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive, showInHomepage, endDate])
+  @@index([productId])
 }
 
 model AnnouncementBar {

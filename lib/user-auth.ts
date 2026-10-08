@@ -8,7 +8,12 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30
 const BCRYPT_ROUNDS = 12
 
 export function normalizePhone(value: unknown): string {
-  return typeof value === 'string' ? value.trim().replace(/[\s().-]/g, '') : ''
+  if (typeof value !== 'string') return ''
+  let cleaned = value.trim().replace(/[\s().-]/g, '')
+  if (cleaned.length === 9 && cleaned.startsWith('7')) {
+    cleaned = '+967' + cleaned
+  }
+  return cleaned
 }
 
 export function normalizeEmail(value: unknown): string | null {

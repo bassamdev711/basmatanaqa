@@ -42,13 +42,28 @@ export default async function AccountOrdersPage() {
                   <span className={`px-3 py-1 text-xs font-bold rounded-full ${
                     order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
                     order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-700' :
-                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                    order.status === 'CANCELLED' || order.status === 'REFUNDED' ? 'bg-red-100 text-red-700' :
                     'bg-orange-100 text-orange-700'
                   }`}>
                     {order.status === 'COMPLETED' ? 'مكتمل' :
                      order.status === 'SHIPPED' ? 'تم الشحن' :
-                     order.status === 'CANCELLED' ? 'ملغي' : 'قيد المعالجة'}
+                     order.status === 'CANCELLED' ? 'ملغي' : 
+                     order.status === 'REFUNDED' ? 'مسترجع' : 'قيد المعالجة'}
                   </span>
+                  
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                    order.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' :
+                    order.paymentStatus === 'AWAITING_CONFIRMATION' ? 'bg-blue-100 text-blue-700' :
+                    order.paymentStatus === 'REJECTED' || order.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>
+                    {order.paymentStatus === 'PAID' ? 'مدفوع' :
+                     order.paymentStatus === 'AWAITING_CONFIRMATION' ? 'قيد مراجعة الدفع' :
+                     order.paymentStatus === 'REJECTED' ? 'الإيصال مرفوض' : 
+                     order.paymentStatus === 'AWAITING_CUSTOMER_SERVICE' ? 'تواصل مع الدعم' : 
+                     order.paymentStatus === 'FAILED' ? 'فشل الدفع' : 'غير مدفوع'}
+                  </span>
+
                 </div>
                 <div className="text-sm text-foreground/60 flex items-center gap-4">
                   <span>التاريخ: {new Date(order.createdAt).toLocaleDateString('ar-SA')}</span>
@@ -57,11 +72,10 @@ export default async function AccountOrdersPage() {
               </div>
               <div className="flex items-center justify-between md:flex-col md:items-end gap-2 border-t md:border-t-0 border-foreground/5 pt-4 md:pt-0">
                 <span className="font-black text-xl text-brand" dir="ltr">{Number(order.totalAmount.toString()).toLocaleString()} ر.ي</span>
-                {/* Currently, detailed order view is not fully implemented on customer side, so we can just show this summary */}
-                <button className="text-sm font-bold text-accent hover:text-brand flex items-center gap-1 transition-colors" disabled>
+                <Link href={`/account/orders/${order.id}`} className="text-sm font-bold text-accent hover:text-brand flex items-center gap-1 transition-colors">
                   التفاصيل
                   <ArrowLeft size={16} />
-                </button>
+                </Link>
               </div>
             </div>
           ))}

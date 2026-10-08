@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useCart } from "./CartProvider";
 import SearchModal from "./SearchModal";
 import { useCartAnimation } from "./CartAnimationProvider";
+import NotificationBadge from "./NotificationBadge";
 
 export default function Navbar({
   storeName = 'بصمة أناقة',
@@ -119,10 +120,11 @@ export default function Navbar({
           </Link>
           <Link 
             href="/account" 
-            className="text-accent hover:text-surface transition-colors hidden sm:block" 
+            className="text-accent hover:text-surface transition-colors hidden sm:block relative" 
             aria-label="حسابي"
           >
             <UserCircle2 className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={1.5} />
+            <NotificationBadge />
           </Link>
           <Link 
             href="/favorites" 

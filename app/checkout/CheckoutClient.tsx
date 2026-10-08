@@ -11,22 +11,25 @@ import { getPaymentMethods } from './actions'
 import { createOrder } from './actions'
 import { useCurrency } from '@/components/CurrencyProvider'
 import { compressImageClientSide } from '@/lib/compress'
+import { PhoneInput } from '@/components/PhoneInput'
 
 type ShippingCity = { id: string; name: string; shippingFee: number }
-type BankAccount = { id: string; bankName: string; accountName: string; accountNumber: string }
-type DigitalWallet = { id: string; walletName: string; accountNumber: string }
+type BankAccount = { id: string; bankName: string; accountName: string; accountNumber: string; logoUrl?: string | null; colorHex?: string | null }
+type DigitalWallet = { id: string; walletName: string; accountNumber: string; logoUrl?: string | null; colorHex?: string | null }
 type PaymentSettingsResponse = {
   settings: {
     codEnabled: boolean
     bankTransferEnabled: boolean
     walletsEnabled: boolean
     codFee: number
+    customerServiceEnabled: boolean
   } | null
   storeSettings: { shippingFee: number; freeShippingThreshold: number }
   shippingCities: ShippingCity[]
   bankAccounts: BankAccount[]
   digitalWallets: DigitalWallet[]
   loyaltyInfo: { balance: number; pointsValue: number } | null
+  userInfo: { name: string; phone: string } | null
 }
 
 const emptySubscribe = () => () => {}
@@ -74,10 +77,13 @@ export default function CheckoutClient() {
           data.settings?.bankTransferEnabled && data.bankAccounts.length > 0 ? 'bank_transfer' : null,
           data.settings?.walletsEnabled && data.digitalWallets.length > 0 ? 'wallets' : null,
           data.settings?.codEnabled ? 'cod' : null,
+          data.settings?.customerServiceEnabled ? 'customer_service' : null,
         ].filter((method): method is string => Boolean(method))
 
         return {
           ...prev,
+          fullName: data.userInfo?.name || prev.fullName,
+          phone: data.userInfo?.phone ? data.userInfo.phone.replace('+967', '') : prev.phone,
           city: data.shippingCities.find((city) => city.name === prev.city)?.name || '',
           paymentMethod: availableMethods.includes(prev.paymentMethod) ? prev.paymentMethod : (availableMethods[0] || ''),
         }
@@ -87,12 +93,13 @@ export default function CheckoutClient() {
       setError('حدث خطأ أثناء تحميل إعدادات الدفع. يرجى تحديث الصفحة أو المحاولة لاحقاً.');
       // Provide fallback so it doesn't stay blank
       setPaymentSettings({
-        settings: { codEnabled: false, bankTransferEnabled: false, walletsEnabled: false, codFee: 0 },
+        settings: { codEnabled: false, bankTransferEnabled: false, walletsEnabled: false, codFee: 0, customerServiceEnabled: true },
         storeSettings: { shippingFee: 0, freeShippingThreshold: 0 },
         shippingCities: [],
         bankAccounts: [],
         digitalWallets: [],
-        loyaltyInfo: null
+        loyaltyInfo: null,
+        userInfo: null
       });
     })
   }, [formData.paymentMethod])
@@ -127,7 +134,8 @@ export default function CheckoutClient() {
   const hasAvailablePaymentMethod = Boolean(
     (paymentSettings.settings?.bankTransferEnabled && paymentSettings.bankAccounts.length > 0) ||
     (paymentSettings.settings?.walletsEnabled && paymentSettings.digitalWallets.length > 0) ||
-    paymentSettings.settings?.codEnabled
+    paymentSettings.settings?.codEnabled ||
+    paymentSettings.settings?.customerServiceEnabled
   )
   const hasAvailableCity = shippingCities.length > 0
   
@@ -179,12 +187,17 @@ export default function CheckoutClient() {
     e.preventDefault()
     if (isSubmitting) return
 
+    if (formData.phone.length !== 9 || !formData.phone.startsWith('7')) {
+      setError('رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 7')
+      return
+    }
+
     if (!hasAvailableCity) {
       setError('لا توجد منطقة توصيل متاحة حالياً. يرجى التواصل مع المتجر أو المحاولة لاحقاً.')
       return
     }
     if (!hasAvailablePaymentMethod) {
-      setError('لا توجد طريقة دفع متاحة حالياً. يرجى التواصل مع المتجر أو المحاولة لاحقاً.')
+      setError('عذراً، نواجه مشكلة في طرق الدفع حالياً. نسعد بخدمتك عبر الواتساب لإكمال طلبك.')
       return
     }
 
@@ -206,7 +219,7 @@ export default function CheckoutClient() {
       window.sessionStorage.setItem('tif_checkout_request', requestKey)
 
       const result = await createOrder(
-        { ...formData, shippingFee },
+        { ...formData, phone: `+967${formData.phone}`, shippingFee },
         cartItems,
         cartTotal,
         appliedCoupon?.code,
@@ -266,7 +279,7 @@ export default function CheckoutClient() {
           </Link>
         </div>
         
-        <h1 className="text-xl md:text-5xl font-black text-foreground mb-5 md:mb-10">إتمام الطلب</h1>
+        <h1 className="text-xl md:text-5xl font-black text-foreground mb-5 md:mb-10">اعتماد الطلب</h1>
         
         {error && (
           <div className="bg-red-50 text-red-600 p-4 rounded-md mb-8 border border-red-200 font-bold flex items-center gap-3">
@@ -302,24 +315,11 @@ export default function CheckoutClient() {
                   
                   <div className="flex flex-col">
                     <label htmlFor="phone" className="text-sm font-bold text-foreground/70 mb-2">رقم الهاتف</label>
-                    <div className="flex items-center border-b border-black/20 pb-3 focus-within:border-brand transition-colors bg-transparent" dir="ltr">
-                      <span className="text-foreground/70 pr-2 font-bold select-none">+967</span>
-                      <input 
-                        type="tel" 
-                        name="phone"
-                        value={formData.phone.replace('+967', '')}
-                        onChange={(e) => {
-                          let digits = e.target.value.replace(/\D/g, '');
-                          digits = digits.replace(/^[^7]+/, '');
-                          setFormData(prev => ({ ...prev, phone: '+967' + digits.slice(0, 9) }))
-                        }}
-                        required
-                        minLength={9}
-                        maxLength={9}
-                        placeholder="7XXXXXXXX"
-                        className="bg-transparent outline-none w-full text-left"
-                      />
-                    </div>
+                    <PhoneInput 
+                      value={formData.phone}
+                      onChange={(val) => setFormData(prev => ({ ...prev, phone: val }))}
+                      required
+                    />
                   </div>
 
                   <div className="flex flex-col">
@@ -350,7 +350,7 @@ export default function CheckoutClient() {
                       value={formData.address}
                       onChange={handleChange}
                       required
-                      placeholder="اسم الشارع، رقم المبنى، الحي"
+                      placeholder={formData.city === 'أخرى' ? "أدخل عنوانك بالتفصيل هنا..." : "اسم الشارع، رقم المبنى، الحي"}
                       className="bg-transparent border-b border-black/20 pb-3 outline-none focus:border-brand transition-colors"
                     />
                   </div>
@@ -366,7 +366,7 @@ export default function CheckoutClient() {
                 <div className="space-y-3 md:space-y-4">
                   {!hasAvailablePaymentMethod && (
                     <div className="bg-amber-50 text-amber-800 border border-amber-200 rounded-md p-4 text-sm font-bold">
-                      لا توجد طرق دفع متاحة حالياً. يرجى التواصل مع المتجر لإتمام الطلب.
+                      عذراً، نواجه مشكلة في طرق الدفع حالياً. نسعد بخدمتك عبر الواتساب لإكمال طلبك.
                     </div>
                   )}
                   {paymentSettings.settings?.bankTransferEnabled && paymentSettings.bankAccounts.length > 0 && (
@@ -391,7 +391,11 @@ export default function CheckoutClient() {
                                 <div key={bank.id} className="bg-surface-alt p-3 rounded-md border border-black/5">
                                   <div className="flex justify-between items-center mb-1">
                                     <span className="text-xs text-foreground/70">اسم البنك</span>
-                                    <span className="font-bold text-sm">{bank.bankName}</span>
+                                    <div className="flex items-center gap-2">
+                                      {bank.logoUrl && <Image src={bank.logoUrl} alt={bank.bankName} width={20} height={20} className="object-contain" />}
+                                      {bank.colorHex && !bank.logoUrl && <span className="w-3 h-3 rounded-full" style={{ backgroundColor: bank.colorHex }} />}
+                                      <span className="font-bold text-sm">{bank.bankName}</span>
+                                    </div>
                                   </div>
                                   <div className="flex justify-between items-center mb-1">
                                     <span className="text-xs text-foreground/70">اسم الحساب</span>
@@ -415,7 +419,7 @@ export default function CheckoutClient() {
                             
                             <div className="space-y-4">
                               <div>
-                                <label className="block text-sm font-bold text-foreground mb-2">صورة إشعار التحويل <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-bold text-foreground mb-2">إيصال التحويل (صورة الشاشة) <span className="text-red-500">*</span></label>
                                 {previewUrl ? (
                                   <div className="relative border-2 border-brand/20 rounded-md p-2 bg-brand/5 flex flex-col items-center justify-center">
                                     <div className="relative w-full aspect-[4/3] rounded-sm overflow-hidden mb-3 bg-black/5">
@@ -492,7 +496,11 @@ export default function CheckoutClient() {
                                 <div key={wallet.id} className="bg-surface-alt p-3 rounded-md border border-black/5">
                                   <div className="flex justify-between items-center mb-1">
                                     <span className="text-xs text-foreground/70">المحفظة</span>
-                                    <span className="font-bold text-sm">{wallet.walletName}</span>
+                                    <div className="flex items-center gap-2">
+                                      {wallet.logoUrl && <Image src={wallet.logoUrl} alt={wallet.walletName} width={20} height={20} className="object-contain" />}
+                                      {wallet.colorHex && !wallet.logoUrl && <span className="w-3 h-3 rounded-full" style={{ backgroundColor: wallet.colorHex }} />}
+                                      <span className="font-bold text-sm">{wallet.walletName}</span>
+                                    </div>
                                   </div>
                                   <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">
                                     <span className="text-xs text-foreground/70">رقم الجوال / الحساب</span>
@@ -512,7 +520,7 @@ export default function CheckoutClient() {
                             
                             <div className="space-y-4">
                               <div>
-                                <label className="block text-sm font-bold text-foreground mb-2">صورة إشعار التحويل <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-bold text-foreground mb-2">إيصال التحويل (صورة الشاشة) <span className="text-red-500">*</span></label>
                                 {previewUrl ? (
                                   <div className="relative border-2 border-brand/20 rounded-md p-2 bg-brand/5 flex flex-col items-center justify-center">
                                     <div className="relative w-full aspect-[4/3] rounded-sm overflow-hidden mb-3 bg-black/5">
@@ -586,6 +594,33 @@ export default function CheckoutClient() {
                       </div>
                     </label>
                   )}
+
+                  {paymentSettings.settings?.customerServiceEnabled && (
+                    <label className={`flex items-start p-3 md:p-6 border ${formData.paymentMethod === 'customer_service' ? 'border-brand bg-white shadow-sm' : 'border-black/10'} cursor-pointer transition-all hover:bg-black/5`}>
+                      <input 
+                        type="radio" 
+                        name="paymentMethod" 
+                        value="customer_service"
+                        checked={formData.paymentMethod === 'customer_service'}
+                        onChange={handleChange}
+                        className="mt-0.5 accent-brand w-4 h-4 md:w-5 md:h-5"
+                      />
+                      <div className="mr-3 md:mr-4 w-full">
+                        <div className="text-sm md:text-lg font-bold text-foreground">حجز الطلب (والدفع لاحقاً عبر خدمة العملاء)</div>
+                        <div className="text-xs md:text-sm text-foreground/70 mt-0.5">
+                          سيتم حفظ طلبك وسنتواصل معك لاختيار طريقة الدفع الأنسب لك.
+                        </div>
+                        {formData.paymentMethod === 'customer_service' && (
+                          <div className="mt-4 pt-4 border-t border-black/10 animate-in fade-in slide-in-from-top-2">
+                            <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-sm border border-blue-100 flex items-start gap-2">
+                              <AlertCircle className="w-5 h-5 shrink-0 text-blue-600" />
+                              <p>اكتمل حجز طلبك. بانتظار تواصل خدمة العملاء لاعتماده.</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  )}
                 </div>
               </section>
 
@@ -594,7 +629,7 @@ export default function CheckoutClient() {
                 disabled={isSubmitting || !hasAvailablePaymentMethod || !hasAvailableCity}
                 className="btn btn-primary w-full btn-lg gap-3 group !bg-accent !text-foreground hover:!bg-accent/90 border border-black/10 disabled:opacity-50 disabled:cursor-not-allowed md:h-16 h-14 md:text-lg"
               >
-                {isSubmitting ? 'جاري تأكيد الطلب...' : 'تأكيد الطلب الآن'}
+                {isSubmitting ? 'جاري اعتماد الطلب...' : 'اعتماد الطلب الآن'}
                 {!isSubmitting && <ArrowLeft size={20} className="group-hover:-translate-x-2 transition-transform" />}
               </button>
             </form>
@@ -658,7 +693,7 @@ export default function CheckoutClient() {
 
               <div className="border-t border-black/5 pt-6 space-y-4">
                 <div className="flex justify-between text-foreground text-sm">
-                  <span>المجموع الفرعي</span>
+                  <span>قيمة المشتريات</span>
                   <span className="font-bold">{cartTotal.toLocaleString('ar-SA')} {currency}</span>
                 </div>
                 {appliedCoupon && (
@@ -684,7 +719,7 @@ export default function CheckoutClient() {
                 
                 {pointsUsed > 0 && (
                   <div className="flex justify-between text-brand text-sm font-bold">
-                    <span>خصم نقاط الولاء</span>
+                    <span>خصم مكافآتي</span>
                     <span>- {maxUsablePointsValue.toLocaleString('ar-SA')} {currency}</span>
                   </div>
                 )}
@@ -697,9 +732,9 @@ export default function CheckoutClient() {
 
               {paymentSettings.loyaltyInfo && paymentSettings.loyaltyInfo.balance > 0 && (
                 <div className="mt-8 border border-brand/20 bg-brand/5 p-4 rounded-lg">
-                  <h3 className="font-bold text-brand mb-2">نقاط الولاء</h3>
+                  <h3 className="font-bold text-brand mb-2">مكافآتي</h3>
                   <p className="text-sm text-foreground/80 mb-4">
-                    رصيدك الحالي: <strong className="text-brand">{paymentSettings.loyaltyInfo.balance}</strong> نقطة
+                    رصيد مكافآتك الحالي: <strong className="text-brand">{paymentSettings.loyaltyInfo.balance}</strong> نقطة
                     (تعادل {(paymentSettings.loyaltyInfo.balance * paymentSettings.loyaltyInfo.pointsValue).toLocaleString('ar-SA')} {currency})
                   </p>
                   

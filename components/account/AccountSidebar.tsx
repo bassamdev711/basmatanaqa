@@ -1,7 +1,8 @@
 import React from 'react'
 import Link from 'next/link'
-import { UserCircle, ShoppingBag, Star, LogOut, ArrowRight } from 'lucide-react'
+import { UserCircle, ShoppingBag, Star, LogOut, ArrowRight, Bell } from 'lucide-react'
 import { logoutCustomer } from '@/app/account/actions'
+import NotificationBadge from '@/components/NotificationBadge'
 
 export default function AccountSidebar() {
   return (
@@ -18,11 +19,20 @@ export default function AccountSidebar() {
         </Link>
         <Link href="/account/orders" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface smooth-transition font-semibold text-foreground/80 hover:text-brand">
           <ShoppingBag size={20} className="text-brand" />
-          الطلبات السابقة
+          سجل الطلبات
         </Link>
         <Link href="/account/points" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface smooth-transition font-semibold text-foreground/80 hover:text-brand">
           <Star size={20} className="text-brand" />
-          نقاط الولاء
+          رصيدي / مكافآتي
+        </Link>
+        <Link href="/account/notifications" className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-surface smooth-transition font-semibold text-foreground/80 hover:text-brand">
+          <div className="flex items-center gap-3">
+            <Bell size={20} className="text-brand" />
+            الإشعارات
+          </div>
+          <div className="relative w-4 h-4">
+            <NotificationBadge />
+          </div>
         </Link>
         
         <div className="h-px bg-foreground/5 my-2 w-full"></div>

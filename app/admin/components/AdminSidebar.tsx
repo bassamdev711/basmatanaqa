@@ -52,6 +52,7 @@ export default function AdminSidebar({
     { href: '/admin/reviews', icon: MessageSquare, label: 'المراجعات' },
     { href: '/admin/legal-pages', icon: FileText, label: 'الصفحات القانونية' },
     { href: '/admin/marketing', icon: Megaphone, label: 'التسويق' },
+    { href: '/admin/marketing/push-notifications', icon: Bell, label: 'رسائل العملاء' },
     { href: '/admin/marketing/loyalty', icon: Star, label: 'نقاط الولاء' },
     { href: '/admin/store-visibility', icon: Search, label: 'تحسين ظهور المتجر' },
     { href: '/admin/homepage-content', icon: LayoutDashboard, label: 'محتوى الرئيسية' },

@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma'
 import ProductsClient from './ProductsClient'
 import { getCurrency } from '@/lib/currency'
 import { Prisma } from '@prisma/client'
+import { unstable_cache } from 'next/cache'
 
 type ProductVariantRecord = {
   id: string
@@ -57,57 +58,84 @@ export default async function ProductsServer({ type, title, subtitle }: Products
       whereClause.bestseller = true
     }
 
-    let fetchedProducts = await prisma.product.findMany({
-      where: whereClause,
-      orderBy: orderByClause,
-      take: type === 'offers' ? 20 : 8,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        brand: true,
-        description: true,
-        price: true,
-        compareAtPrice: true,
-        sku: true,
-        category: true,
-        size: true,
-        gender: true,
-        imageUrl: true,
-        images: true,
-        stock: true,
-        variants: {
+    const getCachedProducts = unstable_cache(
+      async () => {
+        let fetchedProducts = await prisma.product.findMany({
+          where: type === 'offers' ? {
+            isActive: true,
+            offers: {
+              some: {
+                isActive: true,
+                endDate: { gt: new Date() }
+              }
+            }
+          } : whereClause,
+          orderBy: type === 'offers' ? undefined : orderByClause,
+          take: type === 'offers' ? 20 : 8,
           select: {
             id: true,
-            size: true,
+            slug: true,
+            name: true,
+            brand: true,
+            description: true,
             price: true,
             compareAtPrice: true,
+            sku: true,
+            category: true,
+            size: true,
+            gender: true,
+            imageUrl: true,
+            images: true,
             stock: true,
+            variants: {
+              select: {
+                id: true,
+                size: true,
+                price: true,
+                compareAtPrice: true,
+                stock: true,
+              },
+            },
+            offers: {
+              where: {
+                isActive: true,
+                endDate: { gt: new Date() }
+              },
+              orderBy: { createdAt: 'desc' },
+              take: 1
+            }
           },
-        },
+        })
+
+        if (type === 'offers') {
+          fetchedProducts = fetchedProducts.slice(0, 8) // Take top 8 offers
+        }
+        return fetchedProducts
       },
-    })
+      [`products-${type}`],
+      { revalidate: 1800, tags: ['products'] }
+    )
 
-    if (type === 'offers') {
-      fetchedProducts = fetchedProducts.filter((p: ProductRecord) => p.compareAtPrice && Number(p.compareAtPrice) > Number(p.price))
-      fetchedProducts = fetchedProducts.slice(0, 8) // Take top 8
-    }
-
-    products = fetchedProducts
+    products = await getCachedProducts()
 
   } catch (e) {
     console.error('Could not load products from DB', e)
   }
 
-  // Map DB products to the shape ProductsClient expects
-  const mapped = products.map((p) => ({
+  const mapped = products.map((p: any) => {
+    const activeOffer = p.offers?.[0]
+    const price = activeOffer ? Number(activeOffer.offerPrice) : Number(p.price)
+    const compareAtPrice = activeOffer ? Number(activeOffer.originalPrice) : (p.compareAtPrice ? Number(p.compareAtPrice) : undefined)
+    
+    return {
     id: p.slug,
     name: p.name,
     engName: p.brand || '',
     description: p.description || '',
-    price: `${Number(p.price).toLocaleString('ar-SA')} ${currency}`,
-    rawPrice: Number(p.price),
-    compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : undefined,
+    price: `${price.toLocaleString('ar-SA')} ${currency}`,
+    rawPrice: price,
+    compareAtPrice: compareAtPrice,
+    offerEndDate: activeOffer ? activeOffer.endDate.toISOString() : undefined,
     code: p.sku || p.id.slice(0, 8).toUpperCase(),
     color: p.category || '',
     size: p.size || '',
@@ -117,14 +145,14 @@ export default async function ProductsServer({ type, title, subtitle }: Products
     images: p.images || [],
     stock: p.stock ?? 0,
     slug: p.slug,
-    variants: (p.variants || []).map((v) => ({
+    variants: (p.variants || []).map((v: ProductVariantRecord) => ({
       id: v.id,
       size: v.size || '',
       price: Number(v.price),
       compareAtPrice: v.compareAtPrice ? Number(v.compareAtPrice) : null,
       stock: v.stock,
     })),
-  }))
+  }})
 
   if (mapped.length === 0) return null
 

@@ -36,15 +36,15 @@ export default function CartClient() {
       <div className="flex-grow pt-20 pb-16 md:pt-32 md:pb-24 px-4 md:px-6 max-w-7xl mx-auto w-full">
         
         <div className="mb-6 md:mb-12">
-          <h1 className="text-xl md:text-5xl font-black text-foreground mb-1.5 md:mb-3">حقيبة التسوق</h1>
-          <p className="text-sm md:text-lg text-foreground/70">لديك {cartItems.length} عنصر في حقيبتك</p>
+          <h1 className="text-xl md:text-5xl font-black text-foreground mb-1.5 md:mb-3">سلة المشتريات</h1>
+          <p className="text-sm md:text-lg text-foreground/70">لديك {cartItems.length} عنصر في سلتك</p>
         </div>
 
         {cartItems.length === 0 ? (
           <div className="text-center py-20 bg-white border border-black/5 flex flex-col items-center">
-            <p className="text-xl text-foreground/50 mb-6">حقيبة التسوق فارغة</p>
+            <p className="text-xl text-foreground/50 mb-6">سلة مشترياتك بانتظار اختياراتك الأنيقة</p>
             <Link href="/products" className="btn btn-primary btn-lg rounded-sm">
-              متابعة التسوق
+              استكشف المزيد
             </Link>
           </div>
         ) : (
@@ -156,7 +156,7 @@ export default function CartClient() {
 
                 <div className="space-y-3 md:space-y-4 mb-6 md:mb-8 text-sm md:text-base">
                   <div className="flex justify-between text-foreground">
-                    <span>المجموع الفرعي</span>
+                    <span>قيمة المشتريات</span>
                     <span className="font-bold">{cartTotal.toLocaleString('ar-SA')} {currency}</span>
                   </div>
                   {appliedCoupon && (
@@ -185,7 +185,7 @@ export default function CartClient() {
                 </div>
 
                 <Link href="/checkout" className="btn btn-primary w-full btn-lg gap-2 group !bg-accent !text-foreground hover:!bg-accent/90 border border-black/10">
-                  <span>إتمام الطلب</span>
+                  <span>اعتماد الطلب</span>
                   <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                 </Link>
 

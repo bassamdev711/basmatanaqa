@@ -6,6 +6,7 @@ import { Home, LayoutGrid, Heart, ShoppingCart, UserCircle2 } from "lucide-react
 import { useCart } from "./CartProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartAnimation } from "./CartAnimationProvider";
+import NotificationBadge from "./NotificationBadge";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
@@ -39,6 +40,7 @@ export default function MobileBottomNav() {
       name: "حسابي",
       href: "/account",
       icon: UserCircle2,
+      hasNotificationBadge: true,
     },
   ];
 
@@ -101,6 +103,9 @@ export default function MobileBottomNav() {
                     </motion.span>
                   ) : null}
                 </AnimatePresence>
+                
+                {/* Account Notification Badge */}
+                {item.hasNotificationBadge && <NotificationBadge />}
               </div>
               
               <span

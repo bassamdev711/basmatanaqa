@@ -3,13 +3,15 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, Phone, ArrowRight, UserCircle2, Mail, User } from 'lucide-react'
+import { Lock, ArrowRight, UserCircle2, Mail, User } from 'lucide-react'
+import { PhoneInput } from '@/components/PhoneInput'
 
 export default function CustomerRegisterPage() {
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('+967')
+  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
   
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,13 +21,18 @@ export default function CustomerRegisterPage() {
     e.preventDefault()
     setError('')
     
-    if (password.length < 10) {
-      setError('كلمة المرور يجب أن تكون 10 أحرف على الأقل')
+    if (password.length < 8) {
+      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل')
       return
     }
 
-    if (phone.length !== 13) {
-      setError('رقم الهاتف يجب أن يتكون من 9 أرقام بعد الرمز +967')
+    if (phone.length !== 9 || !phone.startsWith('7')) {
+      setError('رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 7')
+      return
+    }
+
+    if (!agreeToTerms) {
+      setError('يجب الموافقة على سياسة الخصوصية وشروط الاستخدام لإنشاء الحساب')
       return
     }
 
@@ -101,24 +108,11 @@ export default function CustomerRegisterPage() {
             <label className="block text-sm font-semibold text-foreground mb-1">
               رقم الهاتف
             </label>
-            <div className="relative flex items-center bg-surface/50 border border-foreground/10 rounded-xl focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all overflow-hidden" dir="ltr">
-              <span className="pl-4 pr-3 font-bold text-foreground/70 select-none border-r border-foreground/10 py-3 flex items-center justify-center bg-black/5">+967</span>
-              <input
-                type="tel"
-                value={phone.replace('+967', '')}
-                onChange={(e) => {
-                  let digits = e.target.value.replace(/\D/g, '');
-                  digits = digits.replace(/^[^7]+/, '');
-                  setPhone('+967' + digits.slice(0, 9));
-                }}
-                className="w-full pl-3 pr-12 py-3 bg-transparent outline-none text-foreground"
-                placeholder="7XXXXXXXX"
-                minLength={9}
-                maxLength={9}
-                required
-              />
-              <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-            </div>
+            <PhoneInput 
+              value={phone}
+              onChange={setPhone}
+              required
+            />
           </div>
 
           <div>
@@ -160,6 +154,27 @@ export default function CustomerRegisterPage() {
               {error}
             </div>
           )}
+
+          <div className="flex items-start gap-3 mt-4">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={agreeToTerms}
+              onChange={(e) => setAgreeToTerms(e.target.checked)}
+              className="mt-1 shrink-0 w-4 h-4 text-accent border-foreground/20 rounded focus:ring-accent"
+            />
+            <label htmlFor="terms" className="text-sm text-foreground/80 leading-relaxed">
+              أوافق على{' '}
+              <Link href="/policies/privacy-policy" className="font-semibold text-brand hover:underline" target="_blank">
+                سياسة الخصوصية
+              </Link>{' '}
+              و{' '}
+              <Link href="/policies/terms-of-service" className="font-semibold text-brand hover:underline" target="_blank">
+                شروط الاستخدام
+              </Link>{' '}
+              الخاصة بالمتجر.
+            </label>
+          </div>
 
           <button
             type="submit"
