@@ -257,8 +257,18 @@ export async function createOrder(
     const finalTotal = discountedCartTotal + shippingFee - pointsDiscountValue
     const paymentStatus = checkoutData.paymentMethod === 'customer_service' ? 'AWAITING_CUSTOMER_SERVICE' : 'PENDING'
     const transaction = normalizeText(transactionId, 100) || null
-    const year = new Date().getFullYear()
-    const orderNumber = `${getOrderPrefix(storeSettings?.storeNameLatin || storeSettings?.storeName)}-${year}-${crypto.randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase()}`
+    
+    // Generate a simple 7-digit numeric order number
+    let orderNumber = ''
+    let isUnique = false
+    let attempts = 0
+    while (!isUnique && attempts < 5) {
+      orderNumber = Math.floor(1000000 + Math.random() * 9000000).toString()
+      const exists = await prisma.order.findUnique({ where: { orderNumber } })
+      if (!exists) isUnique = true
+      attempts++
+    }
+    if (!isUnique) orderNumber = Date.now().toString().slice(-8)
 
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({

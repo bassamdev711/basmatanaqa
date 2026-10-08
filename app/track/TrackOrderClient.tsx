@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
-import { trackOrderByOrderId, trackOrdersByPhone } from './actions'
+import { trackOrderByOrderId, trackOrdersByReference } from './actions'
 import { Package, Truck, CheckCircle2, Search, Clock, ShieldCheck, XCircle, AlertCircle, Phone, ArrowRight } from 'lucide-react'
 import { useCurrency } from '@/components/CurrencyProvider'
 
@@ -32,9 +32,7 @@ export default function TrackOrderClient() {
   const searchParams = useSearchParams()
   const trackingToken = searchParams.get('token') || ''
 
-  const [method, setMethod] = useState<TrackingMethod>(trackingToken ? 'ORDER_ID' : 'PHONE')
   const [orderId, setOrderId] = useState(() => searchParams.get('orderId') || '')
-  const [phone, setPhone] = useState('')
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -50,7 +48,8 @@ export default function TrackOrderClient() {
     setOrder(null)
     setOrdersList([])
     
-    if (method === 'ORDER_ID') {
+    // If we have a tracking token, use it. Otherwise just use orderReference
+    if (trackingToken) {
       const res = await trackOrderByOrderId(orderId, trackingToken)
       if (res.success && res.order) {
         setOrder(res.order)
@@ -59,17 +58,17 @@ export default function TrackOrderClient() {
         setError(res.error || 'حدث خطأ غير متوقع')
       }
     } else {
-      const res = await trackOrdersByPhone(phone, orderId)
+      const res = await trackOrdersByReference(orderId)
       if (res.success && res.orders) {
         const firstOrder = res.orders[0]
         if (res.orders.length === 1 && firstOrder) {
-          // If only 1 order, go straight to detail
           setOrder(firstOrder)
           setViewState('DETAIL')
-        } else {
-          // Show list of orders
+        } else if (res.orders.length > 1) {
           setOrdersList(res.orders)
           setViewState('LIST')
+        } else {
+          setError('لم يتم العثور على الطلب.')
         }
       } else {
         setError(res.error || 'حدث خطأ غير متوقع')
@@ -85,7 +84,7 @@ export default function TrackOrderClient() {
   }
 
   const handleBack = () => {
-    if (method === 'PHONE' && ordersList.length > 1) {
+    if (ordersList.length > 1) {
       setViewState('LIST')
     } else {
       setViewState('FORM')
@@ -133,82 +132,32 @@ export default function TrackOrderClient() {
       {viewState === 'FORM' && (
         <div className="bg-white p-4 md:p-10 shadow-sm border border-black/5 mb-6 md:mb-12">
           
-          <div className="flex justify-center mb-5 md:mb-8 border-b border-black/10 gap-2">
-            <button 
-              type="button"
-              onClick={() => { setMethod('PHONE'); setError(''); }}
-              className={`pb-3 md:pb-4 px-4 md:px-6 font-bold text-base md:text-lg transition-colors border-b-2 flex items-center gap-1.5 md:gap-2 ${method === 'PHONE' ? 'border-accent text-foreground' : 'border-transparent text-gray-600 hover:text-foreground'}`}
-            >
-              <Phone size={17} className="md:w-5 md:h-5" /> بالهاتف ورقم الطلب
-            </button>
-            <button 
-              type="button"
-              onClick={() => { setMethod('ORDER_ID'); setError(''); }}
-              className={`pb-3 md:pb-4 px-4 md:px-6 font-bold text-base md:text-lg transition-colors border-b-2 flex items-center gap-1.5 md:gap-2 ${method === 'ORDER_ID' ? 'border-accent text-foreground' : 'border-transparent text-gray-600 hover:text-foreground'}`}
-            >
-              <Search size={17} className="md:w-5 md:h-5" /> برقم الطلب
-            </button>
-          </div>
+          {error && (
+            <div className="mb-6 p-4 md:p-4 text-red-700 bg-red-50 border border-red-200 rounded-sm flex items-start gap-3 max-w-2xl mx-auto">
+              <AlertCircle className="shrink-0 w-5 h-5 text-red-500 mt-0.5" />
+              <p className="text-sm md:text-base font-bold leading-relaxed">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="max-w-2xl mx-auto flex flex-col gap-6">
-            
-            {method === 'PHONE' ? (
-              <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <label className="text-sm font-bold text-foreground mb-2">رقم الجوال</label>
-                <div className="relative flex items-center bg-surface/50 border border-black/10 rounded-none focus-within:border-accent transition-colors overflow-hidden" dir="ltr">
-                  <span className="pl-4 pr-3 font-bold text-foreground/70 select-none border-r border-black/10 py-3 md:py-4 flex items-center justify-center bg-black/5 text-base md:text-lg">+967</span>
-                  <input 
-                    type="tel" 
-                    value={phone.replace('+967', '')}
-                    onChange={(e) => {
-                      let digits = e.target.value.replace(/\D/g, '');
-                      digits = digits.replace(/^[^7]+/, '');
-                      setPhone('+967' + digits.slice(0, 9));
-                    }}
-                    placeholder="7XXXXXXXX"
-                    minLength={9}
-                    maxLength={9}
-                    required
-                    className="w-full bg-transparent outline-none py-3 md:py-4 pr-11 pl-3 text-base md:text-lg text-left"
-                  />
-                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-                </div>
-                    <p className="text-xs text-gray-500 mt-2">أدخل رقم الهاتف ورقم الطلب معًا للتحقق من ملكية الطلب.</p>
-                <div className="flex flex-col mt-4">
-                  <label className="text-sm font-bold text-foreground mb-2">رقم الطلب</label>
-                  <div className="relative">
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-                    <input
-                      type="text"
-                      value={orderId}
-                      onChange={(e) => setOrderId(e.target.value)}
-                      placeholder="أدخل رقم الطلب"
-                      required
-                      className="w-full bg-surface/50 border border-black/10 rounded-none py-3 md:py-4 pr-11 pl-4 focus:outline-none focus:border-accent transition-colors text-right text-base md:text-lg"
-                    />
-                  </div>
-                </div>
+            <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <label className="text-sm font-bold text-foreground mb-2">رقم الطلب</label>
+              <div className="relative">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
+                <input 
+                  type="text" 
+                  value={orderId}
+                  onChange={(e) => setOrderId(e.target.value)}
+                  placeholder="أدخل رقم الطلب (مثال: 8867665)"
+                  required
+                  className="w-full bg-surface/50 border border-black/10 rounded-none py-3 md:py-4 pr-11 pl-4 focus:outline-none focus:border-accent transition-colors text-right text-base md:text-lg"
+                />
               </div>
-            ) : (
-              <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <label className="text-sm font-bold text-foreground mb-2">رقم الطلب</label>
-                <div className="relative">
-                  <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-                  <input 
-                    type="text" 
-                    value={orderId}
-                    onChange={(e) => setOrderId(e.target.value)}
-                    placeholder="أدخل رقم الطلب (مثال: STORE-2026-ABC123)"
-                    required
-                    className="w-full bg-surface/50 border border-black/10 rounded-none py-3 md:py-4 pr-11 pl-4 focus:outline-none focus:border-accent transition-colors text-right text-base md:text-lg"
-                  />
-                </div>
-              </div>
-            )}
+            </div>
 
             <button 
               type="submit"
-              disabled={loading}
+              disabled={loading || !orderId}
               className="btn btn-primary w-full btn-lg !bg-accent !text-foreground hover:!bg-accent/90 border border-black/10 disabled:opacity-50 disabled:cursor-not-allowed md:h-16 h-14 md:text-lg"
             >
               {loading ? 'جاري البحث...' : 'تتبع الآن'}

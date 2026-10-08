@@ -85,23 +85,21 @@ export async function trackOrderByOrderId(orderId: string, trackingToken?: strin
   }
 }
 
-export async function trackOrdersByPhone(phone: string, orderReference: string) {
+export async function trackOrdersByReference(orderReference: string) {
   try {
     const headersList = await headers()
     const ip = getClientIp(headersList)
-    if (!checkRateLimit(`track_phone_${ip}`, 5, 15 * 60 * 1000)) {
+    if (!checkRateLimit(`track_ref_${ip}`, 10, 15 * 60 * 1000)) {
       return { success: false, error: 'تم تجاوز الحد المسموح. يرجى المحاولة بعد 15 دقيقة.' }
     }
 
-    const cleanPhone = normalizeInput(phone, 32)
     const cleanOrderReference = normalizeInput(orderReference, 100)
-    if (!isValidPhone(cleanPhone) || !isValidOrderReference(cleanOrderReference)) {
+    if (!isValidOrderReference(cleanOrderReference)) {
       return genericNotFound()
     }
 
     const order = await prisma.order.findFirst({
       where: {
-        customerPhone: cleanPhone,
         OR: [{ id: cleanOrderReference }, { orderNumber: cleanOrderReference }],
       },
       include: {
