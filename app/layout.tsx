@@ -32,29 +32,29 @@ export async function generateMetadata(): Promise<Metadata> {
   ]
 
   return {
-    metadataBase: siteUrl,
+    metadataBase: new URL('https://shahrazadstore.com'),
     title: {
-      default: `${store.name} | متجر إلكتروني متنوع`,
-      template: `%s | ${store.name}`,
+      default: `شهرزاد | التسوق أونلاين في اليمن`,
+      template: `%s | شهرزاد`,
     },
-    description: 'شهرزاد متجر إلكتروني متنوع للملابس والأحذية والحقائب والإكسسوارات والعطور والتجميل والعناية والهدايا.',
+    description: 'اكتشف عالم شهرزاد وتسوّق عبر الإنترنت في اليمن. تصفّح المنتجات والفئات المتاحة واستمتع بتجربة تسوق سهلة عبر موقعنا الإلكتروني.',
     keywords,
-    alternates: { canonical: siteUrl.toString() },
-    authors: [{ name: store.name }],
-    creator: store.name,
-    publisher: store.name,
+    alternates: { canonical: 'https://shahrazadstore.com/' },
+    authors: [{ name: 'شهرزاد' }],
+    creator: 'شهرزاد',
+    publisher: 'شهرزاد',
     openGraph: {
-      title,
-      description: store.description,
-      url: siteUrl.toString(),
-      siteName: store.name,
+      title: 'شهرزاد | Shahrazad',
+      description: 'اكتشف عالم شهرزاد وتسوّق عبر الإنترنت في اليمن. تصفّح المنتجات والفئات المتاحة واستمتع بتجربة تسوق سهلة عبر موقعنا الإلكتروني.',
+      url: 'https://shahrazadstore.com/',
+      siteName: 'شهرزاد | Shahrazad',
       type: 'website',
       images: [{ url: shareImage, width: 1200, height: 630, alt: 'شهرزاد' }],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
-      description: store.description,
+      title: 'شهرزاد | Shahrazad',
+      description: 'اكتشف عالم شهرزاد وتسوّق عبر الإنترنت في اليمن. تصفّح المنتجات والفئات المتاحة واستمتع بتجربة تسوق سهلة عبر موقعنا الإلكتروني.',
       images: [twitterImage],
     },
     robots: {
@@ -98,20 +98,20 @@ export default async function RootLayout({
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: store.name,
-    alternateName: store.nameLatin,
-    url: siteUrl.toString(),
-    logo: new URL('/logo.webp', siteUrl).toString(),
+    name: 'شهرزاد',
+    alternateName: 'Shahrazad',
+    url: 'https://shahrazadstore.com',
+    logo: 'https://shahrazadstore.com/logo.webp',
   }
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: store.name,
-    alternateName: store.nameLatin,
-    url: siteUrl.toString(),
+    name: 'شهرزاد',
+    alternateName: 'Shahrazad',
+    url: 'https://shahrazadstore.com',
     potentialAction: {
       '@type': 'SearchAction',
-      target: `${siteUrl.toString().replace(/\/$/, '')}/search?q={search_term_string}`,
+      target: `https://shahrazadstore.com/search?q={search_term_string}`,
       'query-input': 'required name=search_term_string',
     },
   }

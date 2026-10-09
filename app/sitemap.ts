@@ -4,13 +4,7 @@ import prisma from '@/lib/prisma'
 type SitemapRecord = { slug: string; updatedAt: Date }
 
 function getBaseUrl(): string {
-  try {
-    const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL
-    if (!configuredUrl) throw new Error('NEXT_PUBLIC_SITE_URL is not configured')
-    return new URL(configuredUrl.startsWith('http') ? configuredUrl : `https://${configuredUrl}`).origin
-  } catch {
-    return 'http://localhost:3000'
-  }
+  return 'https://shahrazadstore.com'
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
