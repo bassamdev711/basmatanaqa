@@ -131,8 +131,8 @@ export default function CheckoutClient() {
       setPaymentSettings(data)
       setFormData(prev => {
         const availableMethods = [
-          data.settings?.bankTransferEnabled && data.bankAccounts.length > 0 ? 'bank_transfer' : null,
-          data.settings?.walletsEnabled && data.digitalWallets.length > 0 ? 'wallets' : null,
+          data.settings?.bankTransferEnabled ? 'bank_transfer' : null,
+          data.settings?.walletsEnabled ? 'wallets' : null,
           data.settings?.codEnabled ? 'cod' : null,
           data.settings?.customerServiceEnabled ? 'customer_service' : null,
         ].filter((method): method is string => Boolean(method))
@@ -189,8 +189,8 @@ export default function CheckoutClient() {
   const storeSettings = paymentSettings.storeSettings;
   const shippingCities = paymentSettings.shippingCities || [];
   const hasAvailablePaymentMethod = Boolean(
-    (paymentSettings.settings?.bankTransferEnabled && paymentSettings.bankAccounts.length > 0) ||
-    (paymentSettings.settings?.walletsEnabled && paymentSettings.digitalWallets.length > 0) ||
+    paymentSettings.settings?.bankTransferEnabled ||
+    paymentSettings.settings?.walletsEnabled ||
     paymentSettings.settings?.codEnabled ||
     paymentSettings.settings?.customerServiceEnabled
   )
@@ -490,7 +490,7 @@ export default function CheckoutClient() {
                       عذراً، نواجه مشكلة في طرق الدفع حالياً. نسعد بخدمتك عبر الواتساب لإكمال طلبك.
                     </div>
                   )}
-                  {paymentSettings.settings?.bankTransferEnabled && paymentSettings.bankAccounts.length > 0 && (
+                  {paymentSettings.settings?.bankTransferEnabled && (
                     <label className={`flex items-start p-3 md:p-6 border ${formData.paymentMethod === 'bank_transfer' ? 'border-brand bg-white shadow-sm' : 'border-black/10'} cursor-pointer transition-all hover:bg-black/5`}>
                       <input 
                         type="radio" 
@@ -612,7 +612,7 @@ export default function CheckoutClient() {
                     </label>
                   )}
 
-                  {paymentSettings.settings?.walletsEnabled && paymentSettings.digitalWallets.length > 0 && (
+                  {paymentSettings.settings?.walletsEnabled && (
                     <label className={`flex items-start p-3 md:p-6 border ${formData.paymentMethod === 'wallets' ? 'border-brand bg-white shadow-sm' : 'border-black/10'} cursor-pointer transition-all hover:bg-black/5`}>
                       <input 
                         type="radio" 

@@ -232,18 +232,10 @@ export async function createOrder(
       if (!paymentSettings.bankTransferEnabled) {
         return { success: false, error: 'التحويل البنكي غير متاح حالياً.' }
       }
-      const bankAccountCount = await prisma.bankAccount.count({ where: { isActive: true } })
-      if (bankAccountCount === 0) {
-        return { success: false, error: 'لا توجد حسابات بنكية متاحة حالياً.' }
-      }
     }
     if (checkoutData.paymentMethod === 'wallets') {
       if (!paymentSettings.walletsEnabled) {
         return { success: false, error: 'المحافظ الإلكترونية غير متاحة حالياً.' }
-      }
-      const walletCount = await prisma.digitalWallet.count({ where: { isActive: true } })
-      if (walletCount === 0) {
-        return { success: false, error: 'لا توجد محافظ إلكترونية متاحة حالياً.' }
       }
     }
     if (checkoutData.paymentMethod === 'cod') {
