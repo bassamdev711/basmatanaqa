@@ -3,7 +3,7 @@
 'use server';
 import prisma from '@/lib/prisma';
 import { putTrackedBlob } from '@/lib/usage';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { verifyAdmin } from '@/lib/auth';
@@ -110,6 +110,9 @@ export async function createProduct(formData: FormData) {
     
     revalidatePath('/admin/products');
     revalidatePath(`/products/${product.slug}`);
+    revalidatePath('/');
+    revalidatePath('/products');
+    revalidateTag('products', 'max');
     
     redirect('/admin/products');
   } catch (err: any) {
@@ -130,6 +133,9 @@ export async function deleteProduct(productId: string) {
   try {
     await prisma.product.delete({ where: { id: productId } });
     revalidatePath('/admin/products');
+    revalidatePath('/');
+    revalidatePath('/products');
+    revalidateTag('products', 'max');
     return { success: true };
   } catch (err) {
     console.error('Delete product error:', err);
@@ -233,6 +239,9 @@ export async function updateProduct(formData: FormData) {
 
     revalidatePath('/admin/products');
     revalidatePath(`/products/${product.slug}`);
+    revalidatePath('/');
+    revalidatePath('/products');
+    revalidateTag('products', 'max');
 
     redirect('/admin/products');
   } catch (err: any) {

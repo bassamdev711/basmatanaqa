@@ -39,7 +39,7 @@ const getServerHydrationSnapshot = () => false
 export default function CheckoutClient() {
   const currency = useCurrency()
 
-  const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart, appliedCoupon } = useCart()
+  const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart, appliedCoupon, syncCartPrices } = useCart()
   const { checkoutData, setCheckoutData } = useCheckout()
   const router = useRouter()
   const mounted = useSyncExternalStore(
@@ -50,12 +50,19 @@ export default function CheckoutClient() {
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettingsResponse | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
   
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [transactionId, setTransactionId] = useState('')
   const idempotencyKeyRef = useRef<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const phoneContainerRef = useRef<HTMLDivElement>(null)
+  const [receiptError, setReceiptError] = useState('')
+  const receiptContainerRef = useRef<HTMLDivElement>(null)
+  
+  const [priceChanges, setPriceChanges] = useState<{id: string, name: string, oldPrice: number, newPrice: number}[] | null>(null)
+  const [priceChangesTotal, setPriceChangesTotal] = useState<number | null>(null)
 
   useEffect(() => {
     return () => {
@@ -166,6 +173,7 @@ export default function CheckoutClient() {
       const selectedFile = e.target.files[0]
       setFile(selectedFile)
       setPreviewUrl(URL.createObjectURL(selectedFile))
+      if (receiptError) setReceiptError('')
     }
   }
 
@@ -188,8 +196,11 @@ export default function CheckoutClient() {
     if (isSubmitting) return
 
     if (formData.phone.length !== 9 || !formData.phone.startsWith('7')) {
-      setError('رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 7')
+      setPhoneError('رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 7')
+      phoneContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
+    } else {
+      setPhoneError('')
     }
 
     if (!hasAvailableCity) {
@@ -203,8 +214,11 @@ export default function CheckoutClient() {
 
     const requiresReceipt = ['bank_transfer', 'wallets'].includes(formData.paymentMethod)
     if (requiresReceipt && !file) {
-      setError('الرجاء إرفاق صورة إشعار التحويل لإتمام الطلب')
+      setReceiptError('الرجاء إرفاق صورة إشعار التحويل لإتمام الطلب')
+      receiptContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
+    } else {
+      setReceiptError('')
     }
 
     setIsSubmitting(true)
@@ -230,7 +244,13 @@ export default function CheckoutClient() {
       )
 
       if (!result.success || !result.orderId) {
-        setError(result.error || 'حدث خطأ ما أثناء إنشاء الطلب')
+        if ((result as any).errorType === 'PRICE_CHANGED') {
+          setPriceChanges((result as any).changes)
+          setPriceChangesTotal((result as any).newTotal)
+          setError('')
+        } else {
+          setError(result.error || 'حدث خطأ ما أثناء إنشاء الطلب')
+        }
         setIsSubmitting(false)
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
@@ -288,6 +308,45 @@ export default function CheckoutClient() {
           </div>
         )}
 
+        {priceChanges && priceChanges.length > 0 && (
+          <div className="bg-amber-50 text-amber-800 p-4 rounded-md mb-8 border border-amber-200 animate-in fade-in slide-in-from-top-4" dir="rtl">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 shrink-0 text-amber-600 mt-0.5" />
+              <div>
+                <h3 className="font-black text-lg">تنبيه: تغيرت أسعار بعض المنتجات</h3>
+                <p className="text-sm mt-1">لقد تغيرت أسعار المنتجات الموضحة أدناه بناءً على آخر تحديثات المتجر أو انتهاء العروض. يرجى مراجعتها وتأكيد السلة بالمبالغ الجديدة للمتابعة.</p>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded border border-amber-200 divide-y divide-amber-100 mb-4">
+              {priceChanges.map(change => (
+                <div key={change.id} className="p-3 flex justify-between items-center text-sm">
+                  <span className="font-bold">{change.name}</span>
+                  <div className="flex items-center gap-3 font-bold" dir="ltr">
+                    <span className="line-through text-black/40">{change.oldPrice.toLocaleString()} {currency}</span>
+                    <ArrowRight className="w-3 h-3 text-amber-500 mx-1" />
+                    <span className={change.newPrice > change.oldPrice ? 'text-red-600' : 'text-green-600'}>
+                      {change.newPrice.toLocaleString()} {currency}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <button 
+              type="button"
+              onClick={() => {
+                syncCartPrices(priceChanges)
+                setPriceChanges(null)
+                setPriceChangesTotal(null)
+              }}
+              className="w-full btn bg-amber-600 hover:bg-amber-700 text-white font-bold h-12"
+            >
+              أوافق على الأسعار الجديدة، قم بتحديث السلة للمتابعة
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-16">
           
           {/* Right Column: Form */}
@@ -313,13 +372,21 @@ export default function CheckoutClient() {
                     />
                   </div>
                   
-                  <div className="flex flex-col">
+                  <div className="flex flex-col" ref={phoneContainerRef}>
                     <label htmlFor="phone" className="text-sm font-bold text-foreground/70 mb-2">رقم الهاتف</label>
                     <PhoneInput 
                       value={formData.phone}
-                      onChange={(val) => setFormData(prev => ({ ...prev, phone: val }))}
+                      onChange={(val) => {
+                        setFormData(prev => ({ ...prev, phone: val }))
+                        if (phoneError) setPhoneError('')
+                      }}
                       required
                     />
+                    {phoneError && (
+                      <span className="text-red-500 text-xs mt-1.5 font-bold animate-in slide-in-from-top-1 fade-in">
+                        {phoneError}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-col">
@@ -417,7 +484,7 @@ export default function CheckoutClient() {
                               )}
                             </div>
                             
-                            <div className="space-y-4">
+                            <div className="space-y-4" ref={receiptContainerRef}>
                               <div>
                                 <label className="block text-sm font-bold text-foreground mb-2">إيصال التحويل (صورة الشاشة) <span className="text-red-500">*</span></label>
                                 {previewUrl ? (
@@ -456,6 +523,11 @@ export default function CheckoutClient() {
                                   ref={fileInputRef}
                                   onChange={handleFileChange}
                                 />
+                                {receiptError && (
+                                  <div className="mt-2 text-red-500 text-sm font-bold animate-in slide-in-from-top-1 fade-in">
+                                    {receiptError}
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <label className="block text-sm font-bold text-foreground mb-1">رقم العملية (اختياري)</label>
@@ -557,6 +629,11 @@ export default function CheckoutClient() {
                                   ref={fileInputRef}
                                   onChange={handleFileChange}
                                 />
+                                {receiptError && (
+                                  <div className="mt-2 text-red-500 text-sm font-bold animate-in slide-in-from-top-1 fade-in">
+                                    {receiptError}
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <label className="block text-sm font-bold text-foreground mb-1">رقم العملية (اختياري)</label>
@@ -626,7 +703,7 @@ export default function CheckoutClient() {
 
               <button 
                 type="submit" 
-                disabled={isSubmitting || !hasAvailablePaymentMethod || !hasAvailableCity}
+                disabled={isSubmitting || !hasAvailablePaymentMethod || !hasAvailableCity || priceChanges !== null}
                 className="btn btn-primary w-full btn-lg gap-3 group !bg-accent !text-foreground hover:!bg-accent/90 border border-black/10 disabled:opacity-50 disabled:cursor-not-allowed md:h-16 h-14 md:text-lg"
               >
                 {isSubmitting ? 'جاري اعتماد الطلب...' : 'اعتماد الطلب الآن'}

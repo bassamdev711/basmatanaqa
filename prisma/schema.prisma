@@ -67,6 +67,7 @@ model Supplier {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]
+  purchaseTasks PurchaseTask[]
 
   @@index([isActive])
 }
@@ -123,6 +124,9 @@ model Order {
   status              String               @default("NEW") // NEW, PROCESSING, SHIPPED, COMPLETED, CANCELLED
   totalAmount         Decimal              @db.Decimal(10, 2)
   shippingFee         Decimal              @default(0) @db.Decimal(10, 2)
+  agreedAmount        Decimal?             @db.Decimal(10, 2)
+  paidAmount          Decimal              @default(0) @db.Decimal(10, 2)
+  procurementStatus   String               @default("PENDING") // PENDING, READY_FOR_PURCHASE, PURCHASING, PARTIALLY_PURCHASED, PURCHASED
   paymentProofUrl     String?
   transactionId       String?
   couponId            String?
@@ -134,6 +138,7 @@ model Order {
   idempotencyKey      String?              @unique
   items               OrderItem[]
   loyaltyTransactions LoyaltyTransaction[]
+  purchaseTasks       PurchaseTask[]
 
   @@index([status, createdAt])
   @@index([paymentStatus, createdAt])
@@ -154,6 +159,7 @@ model OrderItem {
   variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  purchaseTaskItem PurchaseTaskItem?
 
   @@index([orderId])
   @@index([productId])
@@ -619,4 +625,37 @@ model InAppNotification {
 
   @@index([readAt, createdAt])
   @@index([type, createdAt])
+}
+
+model PurchaseTask {
+  id          String   @id @default(cuid())
+  taskNumber  String   @unique
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  status      String   @default("PENDING") // PENDING, CONTACTED, CONFIRMED, PURCHASED, PARTIAL, FAILED, PAUSED
+  notes       String?  @db.Text
+  estimatedCost Decimal? @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  purchasedAt DateTime?
+  items       PurchaseTaskItem[]
+  
+  @@index([orderId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model PurchaseTaskItem {
+  id             String         @id @default(cuid())
+  purchaseTaskId String
+  purchaseTask   PurchaseTask   @relation(fields: [purchaseTaskId], references: [id], onDelete: Cascade)
+  orderItemId    String         @unique
+  orderItem      OrderItem      @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  status         String         @default("PENDING") // PENDING, AVAILABLE, PURCHASED, UNAVAILABLE
+  actualCost     Decimal?       @db.Decimal(10, 2)
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }

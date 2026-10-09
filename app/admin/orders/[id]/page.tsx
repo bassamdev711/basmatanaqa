@@ -114,7 +114,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
 
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">الإجراءات</h2>
-            <OrderActionsClient orderId={order.id} currentStatus={order.status} />
+            <OrderActionsClient orderId={order.id} currentStatus={order.status} procurementStatus={order.procurementStatus} />
           </div>
         </div>
 

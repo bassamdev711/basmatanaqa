@@ -37,6 +37,7 @@ interface CartContextType {
   applyCoupon: (code: string) => Promise<void>
   removeCoupon: () => void
   finalTotal: number  // cartTotal بعد تطبيق الخصم
+  syncCartPrices: (changes: { id: string, newPrice: number }[]) => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -195,6 +196,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const syncCartPrices = (changes: { id: string, newPrice: number }[]) => {
+    setCartItems(prev => prev.map(item => {
+      const change = changes.find(c => c.id === item.id)
+      if (change) {
+        return { ...item, price: change.newPrice }
+      }
+      return item
+    }))
+  }
+
   const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0)
 
   // تطبيق الكوبون
@@ -247,6 +258,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       applyCoupon,
       removeCoupon,
       finalTotal,
+      syncCartPrices,
     }}>
       {children}
     </CartContext.Provider>

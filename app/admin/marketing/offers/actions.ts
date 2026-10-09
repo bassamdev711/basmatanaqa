@@ -2,7 +2,7 @@
 
 import { verifyAdmin } from '@/lib/auth'
 import prisma from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 export async function getOffers() {
   await verifyAdmin()
@@ -55,6 +55,7 @@ export async function createOffer(data: OfferInput) {
     })
     revalidatePath('/')
     revalidatePath('/admin/marketing/offers')
+    revalidateTag('products', 'max')
     return { success: true }
   } catch (error: any) {
     console.error(error)
@@ -75,6 +76,7 @@ export async function updateOffer(id: string, data: OfferInput) {
     })
     revalidatePath('/')
     revalidatePath('/admin/marketing/offers')
+    revalidateTag('products', 'max')
     return { success: true }
   } catch (error: any) {
     console.error(error)
@@ -88,6 +90,7 @@ export async function deleteOffer(id: string) {
     await prisma.productOffer.delete({ where: { id } })
     revalidatePath('/')
     revalidatePath('/admin/marketing/offers')
+    revalidateTag('products', 'max')
     return { success: true }
   } catch (error) {
     return { success: false, error: 'تعذر حذف العرض' }

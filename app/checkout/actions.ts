@@ -110,6 +110,8 @@ export async function createOrder(
         variantId: isVariant ? parts.slice(1).join('-') : null,
         quantity: item.quantity,
         selectedSize: item.selectedSize || null,
+        clientPrice: item.price,
+        name: item.name,
       }
     })
 
@@ -135,6 +137,7 @@ export async function createOrder(
 
     let calculatedCartTotal = 0
     const orderItemsData: { productId: string; variantId?: string | null; quantity: number; price: number; selectedSize?: string | null }[] = []
+    const priceChanges: { id: string; name: string; oldPrice: number; newPrice: number }[] = []
 
     for (const item of parsedItems) {
       const dbProduct = dbProducts.find((product) => product.id === item.productId)
@@ -159,6 +162,15 @@ export async function createOrder(
         return { success: false, error: `الكمية المطلوبة من "${dbProduct.name}" غير متوفرة.` }
       }
 
+      if (Math.abs(item.clientPrice - itemPrice) > 0.01) {
+        priceChanges.push({
+          id: item.originalId,
+          name: item.name,
+          oldPrice: item.clientPrice,
+          newPrice: itemPrice,
+        })
+      }
+
       calculatedCartTotal += itemPrice * item.quantity
       orderItemsData.push({
         productId: item.productId,
@@ -167,6 +179,16 @@ export async function createOrder(
         price: itemPrice,
         selectedSize: item.selectedSize,
       })
+    }
+
+    if (priceChanges.length > 0) {
+      return { 
+        success: false, 
+        errorType: 'PRICE_CHANGED',
+        error: 'تغيرت أسعار بعض المنتجات أو توفرها منذ إضافتها للسلة. يرجى مراجعة التحديثات.',
+        changes: priceChanges,
+        newTotal: calculatedCartTotal
+      }
     }
 
     const storeSettings = await prisma.storeSettings.findUnique({ where: { id: 'singleton' } })
