@@ -25,8 +25,9 @@ export async function compressImageClientSide(
   try {
     const compressedBlob = await imageCompression(file, defaultOptions);
     // تحويل Blob إلى File
-    return new File([compressedBlob], file.name.replace(/\.[^/.]+$/, '.webp'), {
-      type: 'image/webp',
+    const fileExt = compressedBlob.type === 'image/jpeg' ? '.jpg' : compressedBlob.type === 'image/png' ? '.png' : '.webp';
+    return new File([compressedBlob], file.name.replace(/\.[^/.]+$/, fileExt), {
+      type: compressedBlob.type,
     });
   } catch (error) {
     console.error('فشل ضغط الصورة:', error);

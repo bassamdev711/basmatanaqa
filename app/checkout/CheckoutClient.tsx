@@ -327,7 +327,12 @@ export default function CheckoutClient() {
           body: uploadFormData,
         })
         if (!uploadRes.ok) {
-          throw new Error('تم إنشاء الطلب، لكن تعذر رفع الإيصال. أعد المحاولة لإرفاقه بالطلب.')
+          let errorMsg = 'تم إنشاء الطلب، لكن تعذر رفع الإيصال. أعد المحاولة لإرفاقه بالطلب.'
+          try {
+            const errorData = await uploadRes.json()
+            if (errorData.error) errorMsg = errorData.error
+          } catch (e) {}
+          throw new Error(errorMsg)
         }
       }
 
