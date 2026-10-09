@@ -36,6 +36,55 @@ const emptySubscribe = () => () => {}
 const getClientHydrationSnapshot = () => true
 const getServerHydrationSnapshot = () => false
 
+const TEST_ACCOUNT_NUMBER = '87669876576';
+
+const LOCAL_PAYMENT_METHODS = [
+  {
+    id: 'krimi',
+    name: 'بنك الكريمي',
+    description: 'التحويل البنكي',
+    logo: '/krimi.webp',
+    type: 'bank_transfer',
+    bgClass: 'bg-[#fdf4ff]',
+    borderClass: 'border-[#9333ea]',
+    textClass: 'text-[#7e22ce]',
+    btnClass: 'bg-[#9333ea] text-white hover:bg-[#7e22ce]',
+  },
+  {
+    id: 'jaib',
+    name: 'جيب Jaib',
+    description: 'التحويل إلى المحفظة',
+    logo: '/jip.webp',
+    type: 'wallets',
+    bgClass: 'bg-[#fef2f2]',
+    borderClass: 'border-[#dc2626]',
+    textClass: 'text-[#b91c1c]',
+    btnClass: 'bg-[#dc2626] text-white hover:bg-[#b91c1c]',
+  },
+  {
+    id: 'jawali',
+    name: 'جوالي JAWALI',
+    description: 'التحويل إلى المحفظة',
+    logo: '/jwali.webp',
+    type: 'wallets',
+    bgClass: 'bg-[#eff6ff]',
+    borderClass: 'border-[#1e3a8a]',
+    textClass: 'text-[#1e3a8a]',
+    btnClass: 'bg-[#1e3a8a] text-white hover:bg-[#1e40af]',
+  },
+  {
+    id: 'onecash',
+    name: 'ون كاش ONE Cash',
+    description: 'التحويل إلى المحفظة',
+    logo: '/oncach.webp',
+    type: 'wallets',
+    bgClass: 'bg-[#fffbeb]',
+    borderClass: 'border-[#d97706]',
+    textClass: 'text-[#b45309]',
+    btnClass: 'bg-[#d97706] text-white hover:bg-[#b45309]',
+  }
+];
+
 export default function CheckoutClient() {
   const currency = useCurrency()
 
@@ -70,6 +119,7 @@ export default function CheckoutClient() {
     }
   }, [previewUrl])
 
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [formData, setFormData] = useState(checkoutData)
   const [pointsUsed, setPointsUsed] = useState(0)
 
@@ -186,9 +236,13 @@ export default function CheckoutClient() {
     }
   }
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text)
-    // Optional: Add a small local toast or indication
+  const handleCopy = (text: string, id?: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      if (id) {
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 2000)
+      }
+    }).catch(() => alert('تعذر الوصول إلى الحافظة. يرجى النسخ يدوياً.'))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -454,28 +508,40 @@ export default function CheckoutClient() {
                           <div className="mt-4 pt-4 border-t border-black/10 animate-in fade-in slide-in-from-top-2">
                             <h4 className="text-sm font-bold text-brand mb-3 uppercase">الحسابات البنكية المتاحة</h4>
                             <div className="space-y-4 mb-6">
-                              {paymentSettings.bankAccounts.map((bank: BankAccount) => (
-                                <div key={bank.id} className="bg-surface-alt p-3 rounded-md border border-black/5">
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs text-foreground/70">اسم البنك</span>
-                                    <div className="flex items-center gap-2">
-                                      {bank.logoUrl && <Image src={bank.logoUrl} alt={bank.bankName} width={20} height={20} className="object-contain" />}
-                                      {bank.colorHex && !bank.logoUrl && <span className="w-3 h-3 rounded-full" style={{ backgroundColor: bank.colorHex }} />}
-                                      <span className="font-bold text-sm">{bank.bankName}</span>
+                              {LOCAL_PAYMENT_METHODS.filter(m => m.type === 'bank_transfer').map((method) => (
+                                <div key={method.id} className={`relative overflow-hidden p-4 rounded-xl border ${method.borderClass} ${method.bgClass} shadow-sm transition-all hover:shadow-md`}>
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-12 h-12 bg-white rounded-lg p-1.5 shadow-sm border border-black/5 flex items-center justify-center shrink-0">
+                                        <Image src={method.logo} alt={method.name} width={40} height={40} className="object-contain" />
+                                      </div>
+                                      <div>
+                                        <h5 className={`font-black text-lg ${method.textClass}`}>{method.name}</h5>
+                                        <span className="text-xs text-black/60 font-bold">{method.description}</span>
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs text-foreground/70">اسم الحساب</span>
-                                    <span className="font-bold text-sm">{bank.accountName}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">
-                                    <span className="text-xs text-foreground/70">رقم الحساب / الآيبان</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-bold text-sm tracking-wider" dir="ltr">{bank.accountNumber}</span>
-                                      <button type="button" onClick={(e) => { e.preventDefault(); handleCopy(bank.accountNumber); }} className="text-brand hover:text-foreground transition-colors" title="نسخ">
-                                        <Copy size={14} />
-                                      </button>
+                                  <div className="flex items-center justify-between bg-white/60 p-3 rounded-lg border border-black/5">
+                                    <div>
+                                      <span className="text-xs text-black/50 block mb-0.5 font-bold">رقم الحساب</span>
+                                      <span className="font-bold tracking-wider" dir="ltr">{TEST_ACCOUNT_NUMBER}</span>
                                     </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.preventDefault(); handleCopy(TEST_ACCOUNT_NUMBER, method.id); }}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold transition-all ${copiedId === method.id ? 'bg-green-500 text-white' : method.btnClass}`}
+                                    >
+                                      {copiedId === method.id ? (
+                                        <>
+                                          <span>تم النسخ</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>نسخ</span>
+                                          <Copy size={14} />
+                                        </>
+                                      )}
+                                    </button>
                                   </div>
                                 </div>
                               ))}
@@ -564,27 +630,45 @@ export default function CheckoutClient() {
                           <div className="mt-4 pt-4 border-t border-black/10 animate-in fade-in slide-in-from-top-2">
                             <h4 className="text-sm font-bold text-brand mb-3 uppercase">المحافظ المتاحة</h4>
                             <div className="space-y-4 mb-6">
-                              {paymentSettings.digitalWallets.map((wallet: DigitalWallet) => (
-                                <div key={wallet.id} className="bg-surface-alt p-3 rounded-md border border-black/5">
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs text-foreground/70">المحفظة</span>
-                                    <div className="flex items-center gap-2">
-                                      {wallet.logoUrl && <Image src={wallet.logoUrl} alt={wallet.walletName} width={20} height={20} className="object-contain" />}
-                                      {wallet.colorHex && !wallet.logoUrl && <span className="w-3 h-3 rounded-full" style={{ backgroundColor: wallet.colorHex }} />}
-                                      <span className="font-bold text-sm">{wallet.walletName}</span>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {LOCAL_PAYMENT_METHODS.filter(m => m.type === 'wallets').map((method) => (
+                                <div key={method.id} className={`relative overflow-hidden p-4 rounded-xl border ${method.borderClass} ${method.bgClass} shadow-sm transition-all hover:shadow-md`}>
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-12 h-12 bg-white rounded-lg p-1.5 shadow-sm border border-black/5 flex items-center justify-center shrink-0">
+                                        <Image src={method.logo} alt={method.name} width={40} height={40} className="object-contain" />
+                                      </div>
+                                      <div>
+                                        <h5 className={`font-black text-base ${method.textClass}`}>{method.name}</h5>
+                                        <span className="text-xs text-black/60 font-bold">{method.description}</span>
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">
-                                    <span className="text-xs text-foreground/70">رقم الجوال / الحساب</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-bold text-sm tracking-wider" dir="ltr">{wallet.accountNumber}</span>
-                                      <button type="button" onClick={(e) => { e.preventDefault(); handleCopy(wallet.accountNumber); }} className="text-brand hover:text-foreground transition-colors" title="نسخ">
-                                        <Copy size={14} />
-                                      </button>
+                                  <div className="flex items-center justify-between bg-white/60 p-2.5 rounded-lg border border-black/5">
+                                    <div>
+                                      <span className="text-[10px] text-black/50 block mb-0.5 font-bold">رقم الحساب</span>
+                                      <span className="font-bold tracking-wider text-sm" dir="ltr">{TEST_ACCOUNT_NUMBER}</span>
                                     </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.preventDefault(); handleCopy(TEST_ACCOUNT_NUMBER, method.id); }}
+                                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-all ${copiedId === method.id ? 'bg-green-500 text-white' : method.btnClass}`}
+                                    >
+                                      {copiedId === method.id ? (
+                                        <>
+                                          <span>تم النسخ</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>نسخ</span>
+                                          <Copy size={12} />
+                                        </>
+                                      )}
+                                    </button>
                                   </div>
                                 </div>
                               ))}
+                              </div>
                               {paymentSettings.digitalWallets.length === 0 && (
                                 <p className="text-xs text-red-500">لا توجد محافظ إلكترونية مضافة حالياً.</p>
                               )}
