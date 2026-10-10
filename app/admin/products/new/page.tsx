@@ -281,6 +281,27 @@ export default function NewProductPage() {
           />
         </div>
 
+        {/* --- حالة الظهور والتمييز --- */}
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 border-b pb-3">
+            حالة الظهور والتمييز
+          </h3>
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="isActive" value="on" defaultChecked className="h-4 w-4 rounded text-black focus:ring-black" />
+              <span className="text-sm font-bold text-gray-700">فعال (يظهر في المتجر)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="featured" value="on" className="h-4 w-4 rounded text-black focus:ring-black" />
+              <span className="text-sm font-bold text-gray-700">منتج مميز (يظهر في الصفحة الرئيسية)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="bestseller" value="on" className="h-4 w-4 rounded text-black focus:ring-black" />
+              <span className="text-sm font-bold text-gray-700">الأكثر مبيعاً</span>
+            </label>
+          </div>
+        </div>
+
         {/* --- الإعدادات المتقدمة (قابلة للطي) --- */}
         <div className="bg-gray-50 shadow-sm rounded-lg border border-gray-200 overflow-hidden">
           <button 
@@ -294,8 +315,7 @@ export default function NewProductPage() {
             {showAdvanced ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
           </button>
           
-          {showAdvanced && (
-            <div className="p-6 space-y-8 bg-white border-t border-gray-200">
+          <div className={`p-6 space-y-8 bg-white border-t border-gray-200 ${showAdvanced ? 'block' : 'hidden'}`}>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
@@ -342,21 +362,7 @@ export default function NewProductPage() {
                 </div>
               </div>
 
-              <div className="border-t pt-4 space-y-3">
-                <h4 className="font-bold text-gray-700 mb-3">حالة الظهور والتمييز</h4>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="isActive" defaultChecked className="h-4 w-4 rounded text-black focus:ring-black" />
-                  <span className="text-sm text-gray-700">فعال (يظهر في المتجر)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="featured" className="h-4 w-4 rounded text-black focus:ring-black" />
-                  <span className="text-sm text-gray-700">منتج مميز (يظهر في الصفحة الرئيسية)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="bestseller" className="h-4 w-4 rounded text-black focus:ring-black" />
-                  <span className="text-sm text-gray-700">الأكثر مبيعاً</span>
-                </label>
-              </div>
+
 
               {/* SEO Optimization Section inside Advanced */}
               <div className="border-t pt-4 -mx-6 -mb-6">
@@ -380,8 +386,7 @@ export default function NewProductPage() {
               </div>
 
             </div>
-          )}
-        </div>
+          </div>
 
         <div className="flex justify-end gap-3 pb-6">
           <Link href="/admin/products" className="btn btn-outline text-sm font-bold">

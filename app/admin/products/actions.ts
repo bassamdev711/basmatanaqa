@@ -242,13 +242,19 @@ export async function updateProduct(formData: FormData) {
       },
     });
 
+    const addAnother = formData.get('addAnother') === 'true';
+
     revalidatePath('/admin/products');
     revalidatePath(`/products/${product.slug}`);
     revalidatePath('/');
     revalidatePath('/products');
     revalidateTag('products', 'max');
 
-    redirect('/admin/products');
+    if (addAnother) {
+      redirect('/admin/products/new?success=true');
+    } else {
+      redirect('/admin/products');
+    }
   } catch (err: any) {
     if (isNextRedirectError(err)) throw err;
     // We don't have id available outside the try, wait, let's keep id extract outside or move it above.
