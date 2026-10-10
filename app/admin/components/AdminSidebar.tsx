@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, Layers, CreditCard, ArrowRight, ShoppingCart, Truck, FileText, Megaphone, Search, Menu, X, Phone, Inbox, MessageSquare, Activity, Palette, Settings, User, Users, Bell, Star, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Package, Layers, CreditCard, ArrowRight, ShoppingCart, Truck, FileText, Megaphone, Search, Menu, X, Phone, Inbox, MessageSquare, Activity, Palette, Settings, User, Users, Bell, Star, ClipboardList, Archive } from 'lucide-react'
 import LogoutButton from './LogoutButton'
 import type { StoreConfig } from '@/lib/store-config'
 
@@ -46,6 +46,7 @@ export default function AdminSidebar({
     { href: '/admin/collections', icon: Layers, label: 'المجموعات (Collections)' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'الطلبات' },
     { href: '/admin/procurement', icon: ClipboardList, label: 'إدارة المشتريات' },
+    { href: '/admin/fulfillment', icon: Archive, label: 'محطة التغليف (تجميع)' },
     { href: '/admin/payment-settings', icon: CreditCard, label: 'إعدادات الدفع' },
     { href: '/admin/shipping-settings', icon: Truck, label: 'إعدادات الشحن' },
     { href: '/admin/contact-settings', icon: Phone, label: 'إعدادات التواصل' },
