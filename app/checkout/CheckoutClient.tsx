@@ -264,8 +264,12 @@ export default function CheckoutClient() {
       setError('لا توجد منطقة توصيل متاحة حالياً.')
       return
     }
-    if (!formData.fullName || !formData.address || !formData.city) {
-      setError('يرجى تعبئة جميع الحقول المطلوبة')
+    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.address || !formData.city) {
+      setError('يرجى تعبئة جميع الحقول المطلوبة (الاسم الكامل يجب أن يكون حرفين على الأقل)')
+      return
+    }
+    if (formData.address.trim().length < 5) {
+      setError('تفاصيل العنوان يجب أن تكون 5 أحرف على الأقل')
       return
     }
     setError('')
@@ -283,6 +287,19 @@ export default function CheckoutClient() {
       return
     } else {
       setPhoneError('')
+    }
+
+    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.address || !formData.city) {
+      setError('يرجى تعبئة جميع الحقول المطلوبة (الاسم الكامل يجب أن يكون حرفين على الأقل)')
+      setStep(1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+    if (formData.address.trim().length < 5) {
+      setError('تفاصيل العنوان يجب أن تكون 5 أحرف على الأقل')
+      setStep(1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
     }
 
     if (!hasAvailableCity) {
@@ -629,7 +646,7 @@ export default function CheckoutClient() {
                                   </div>
                                 </div>
                               ))}
-                              {paymentSettings.bankAccounts.length === 0 && LOCAL_PAYMENT_METHODS.filter(m => m.type === 'bank_transfer').length === 0 && (
+                              {(paymentSettings.bankAccounts.length === 0 && LOCAL_PAYMENT_METHODS.filter(m => m.type === 'bank_transfer').length === 0) && (
                                 <p className="text-xs text-red-500">لا توجد حسابات بنكية مضافة حالياً.</p>
                               )}
                             </div>
@@ -779,7 +796,7 @@ export default function CheckoutClient() {
                                 </div>
                               ))}
                               </div>
-                              {paymentSettings.digitalWallets.length === 0 && LOCAL_PAYMENT_METHODS.filter(m => m.type === 'wallets').length === 0 && (
+                              {(paymentSettings.digitalWallets.length === 0 && LOCAL_PAYMENT_METHODS.filter(m => m.type === 'wallets').length === 0) && (
                                 <p className="text-xs text-red-500">لا توجد محافظ إلكترونية مضافة حالياً.</p>
                               )}
                             </div>
