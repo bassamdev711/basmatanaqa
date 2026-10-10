@@ -182,3 +182,87 @@ export async function updatePurchaseTaskItemStatus(
     return { success: false, error: 'حدث خطأ أثناء تحديث القطعة' }
   }
 }
+
+export async function updateAggregatedProductStatus(
+  supplierId: string | null,
+  productId: string,
+  variantId: string | null,
+  selectedSize: string | null,
+  status: string
+) {
+  try {
+    await verifyAdmin()
+    
+    // Find all matching pending items for this supplier and product config
+    const matchingItems = await prisma.purchaseTaskItem.findMany({
+      where: {
+        status: { in: ['PENDING', 'UNAVAILABLE'] }, // Can overwrite UNAVAILABLE, or just PENDING
+        purchaseTask: {
+          supplierId: supplierId === 'unknown' ? null : supplierId,
+          status: { in: ['PENDING', 'PARTIAL'] }
+        },
+        orderItem: {
+          productId: productId,
+          variantId: variantId,
+          selectedSize: selectedSize
+        }
+      },
+      include: {
+        purchaseTask: {
+          include: { items: true }
+        }
+      }
+    })
+
+    if (matchingItems.length === 0) return { success: true }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update all matching items
+      await tx.purchaseTaskItem.updateMany({
+        where: { id: { in: matchingItems.map(i => i.id) } },
+        data: { status }
+      })
+
+      // 2. Re-evaluate parent PurchaseTasks
+      // We grouped them by task in memory to avoid multiple DB queries
+      const uniqueTaskIds = new Set(matchingItems.map(i => i.purchaseTaskId))
+      
+      for (const tId of uniqueTaskIds) {
+        const task = await tx.purchaseTask.findUnique({
+          where: { id: tId },
+          include: { items: true }
+        })
+        if (!task) continue
+
+        const allItems = task.items
+        const allProcessed = allItems.every(i => i.status === 'PURCHASED' || i.status === 'UNAVAILABLE')
+        
+        if (allProcessed) {
+          const hasUnavailable = allItems.some(i => i.status === 'UNAVAILABLE')
+          const allUnavailable = allItems.every(i => i.status === 'UNAVAILABLE')
+          
+          let newTaskStatus = 'PURCHASED'
+          if (allUnavailable) newTaskStatus = 'FAILED'
+          else if (hasUnavailable) newTaskStatus = 'PARTIAL'
+
+          if (task.status !== newTaskStatus) {
+            await tx.purchaseTask.update({
+              where: { id: task.id },
+              data: { 
+                status: newTaskStatus,
+                purchasedAt: new Date()
+              }
+            })
+          }
+        }
+      }
+    })
+
+    revalidatePath('/admin/procurement')
+    if (supplierId) revalidatePath(`/admin/procurement/suppliers/${supplierId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating aggregated items:', error)
+    return { success: false, error: 'حدث خطأ أثناء تحديث القطع المجمعة' }
+  }
+}
