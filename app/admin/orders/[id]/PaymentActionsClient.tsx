@@ -1,23 +1,34 @@
 'use client'
 
 import React, { useState } from 'react'
-import { updatePaymentStatus } from '../actions'
+import { updatePaymentStatus, updateOrderStatus } from '../actions'
+import { generatePurchaseTasks } from '../../procurement/actions'
 import { useToast } from '@/components/ToastProvider'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, Factory } from 'lucide-react'
 
 export default function PaymentActionsClient({ orderId, currentPaymentStatus }: { orderId: string, currentPaymentStatus: string }) {
   const { showToast } = useToast()
   const [isUpdating, setIsUpdating] = useState(false)
 
-  const handleUpdate = async (status: string) => {
+  const handleConfirmAll = async () => {
     setIsUpdating(true)
-    const res = await updatePaymentStatus(orderId, status)
-    setIsUpdating(false)
-    if (res.success) {
-      showToast('success', 'تم تحديث حالة الدفع بنجاح')
-    } else {
-      alert(res.error)
+    
+    // 1. Update Payment Status to PAID
+    const paymentRes = await updatePaymentStatus(orderId, 'PAID')
+    if (!paymentRes.success) {
+      alert(paymentRes.error)
+      setIsUpdating(false)
+      return
     }
+
+    // 2. Update Order Status to PROCESSING
+    await updateOrderStatus(orderId, 'PROCESSING')
+
+    // 3. Generate Purchase Tasks
+    await generatePurchaseTasks(orderId)
+
+    setIsUpdating(false)
+    showToast('success', 'تم تأكيد الدفع وإصدار مهام المشتريات بنجاح!')
   }
 
   const getStatusLabel = (status: string) => {
@@ -50,12 +61,12 @@ export default function PaymentActionsClient({ orderId, currentPaymentStatus }: 
       {currentPaymentStatus !== 'PAID' && (
         <div className="flex gap-2">
           <button 
-            onClick={() => handleUpdate('PAID')}
+            onClick={handleConfirmAll}
             disabled={isUpdating}
-            className="w-full bg-green-600 text-white px-4 py-3 rounded-md font-bold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 text-white px-4 py-3 rounded-md font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <CheckCircle2 size={18} />
-            تأكيد الدفع (تحويل حالة الطلب إلى مدفوع)
+            <Factory size={18} />
+            {isUpdating ? 'جاري المعالجة...' : 'تأكيد الدفع وإصدار مهام المشتريات التلقائية'}
           </button>
         </div>
       )}

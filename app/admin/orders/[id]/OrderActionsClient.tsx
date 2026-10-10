@@ -69,22 +69,6 @@ export default function OrderActionsClient({
         </button>
       </div>
 
-      {procurementStatus === 'PENDING' && (
-        <div className="flex items-end justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div>
-            <label className="block text-sm font-bold text-blue-900 mb-1">إدارة المشتريات</label>
-            <p className="text-xs text-blue-700">هذا الطلب لم يتم إصدار مهام شراء له بعد.</p>
-          </div>
-          <button 
-            onClick={handleGenerateTasks}
-            disabled={isGenerating}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            <Factory size={16} />
-            {isGenerating ? 'جاري الإصدار...' : 'إصدار مهام المشتريات'}
-          </button>
-        </div>
-      )}
     </div>
   )
 }
