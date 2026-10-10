@@ -4,7 +4,7 @@ import React, { useEffect, useState, useSyncExternalStore, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, Minus, Plus, Trash2, AlertCircle, UploadCloud, Copy } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Minus, Plus, Trash2, AlertCircle, UploadCloud, Copy, CheckCircle2 } from 'lucide-react'
 import { useCart } from '@/components/CartProvider'
 import { useCheckout } from '@/components/CheckoutProvider'
 import { getPaymentMethods } from './actions'
@@ -122,7 +122,6 @@ export default function CheckoutClient() {
 
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [formData, setFormData] = useState(checkoutData)
-  const [pointsUsed, setPointsUsed] = useState(0)
   const [step, setStep] = useState(1)
 
   useEffect(() => {
@@ -137,6 +136,7 @@ export default function CheckoutClient() {
           data.settings?.walletsEnabled ? 'wallets' : null,
           data.settings?.codEnabled ? 'cod' : null,
           data.settings?.customerServiceEnabled ? 'customer_service' : null,
+          data.loyaltyInfo && data.loyaltyInfo.balance > 0 ? 'points' : null,
         ].filter((method): method is string => Boolean(method))
 
         return {
@@ -217,6 +217,11 @@ export default function CheckoutClient() {
 
   const preLoyaltyTotal = Math.max(0, cartTotal - (appliedCoupon?.discountAmount || 0)) + shippingFee;
   const loyaltyPointsValue = paymentSettings.loyaltyInfo ? paymentSettings.loyaltyInfo.pointsValue : 1;
+  const pointsNeededForFullPayment = Math.ceil(preLoyaltyTotal / loyaltyPointsValue);
+  const maxAllowedPoints = paymentSettings.loyaltyInfo?.maxPointsPerOrder;
+  const exceedsMaxPoints = maxAllowedPoints !== null && maxAllowedPoints !== undefined && maxAllowedPoints > 0 && pointsNeededForFullPayment > maxAllowedPoints;
+  const hasEnoughPoints = paymentSettings.loyaltyInfo && paymentSettings.loyaltyInfo.balance >= pointsNeededForFullPayment;
+  const pointsUsed = (formData.paymentMethod === 'points' && hasEnoughPoints && !exceedsMaxPoints) ? pointsNeededForFullPayment : 0;
   const maxUsablePointsValue = Math.min(preLoyaltyTotal, pointsUsed * loyaltyPointsValue);
   const finalTotal = preLoyaltyTotal - maxUsablePointsValue;
 
@@ -806,6 +811,56 @@ export default function CheckoutClient() {
                     </label>
                   )}
 
+                  {paymentSettings.loyaltyInfo && paymentSettings.loyaltyInfo.balance > 0 && (
+                    <label className={`flex items-start p-3 md:p-6 border ${formData.paymentMethod === 'points' ? 'border-brand bg-white shadow-sm' : 'border-black/10'} ${(!hasEnoughPoints || exceedsMaxPoints) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-black/5'} transition-all`}>
+                      <input 
+                        type="radio" 
+                        name="paymentMethod" 
+                        value="points"
+                        checked={formData.paymentMethod === 'points'}
+                        onChange={handleChange}
+                        disabled={!hasEnoughPoints || exceedsMaxPoints}
+                        className="mt-0.5 accent-brand w-4 h-4 md:w-5 md:h-5"
+                      />
+                      <div className="mr-3 md:mr-4 w-full">
+                        <div className="text-sm md:text-lg font-bold text-foreground flex justify-between items-center">
+                          <span>الدفع بالنقاط (مكافآتي)</span>
+                        </div>
+                        <div className="text-xs md:text-sm text-foreground/70 mt-0.5">
+                          رصيدك الحالي: <span className="font-bold text-brand">{paymentSettings.loyaltyInfo.balance}</span> نقطة 
+                          (تعادل {(paymentSettings.loyaltyInfo.balance * loyaltyPointsValue).toLocaleString('ar-SA')} {currency})
+                        </div>
+                        
+                        {formData.paymentMethod === 'points' && hasEnoughPoints && !exceedsMaxPoints && (
+                          <div className="mt-4 pt-4 border-t border-black/10 animate-in fade-in slide-in-from-top-2">
+                            <div className="bg-brand/5 border border-brand/20 p-3 rounded-md">
+                              <div className="text-brand text-sm font-bold flex items-center gap-2">
+                                <CheckCircle2 size={16} />
+                                سيتم خصم {pointsNeededForFullPayment.toLocaleString('ar-SA')} نقطة لتغطية هذا الطلب بالكامل.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {(!hasEnoughPoints) ? (
+                          <div className="mt-4 pt-4 border-t border-black/10">
+                            <div className="text-red-600 text-xs font-bold bg-red-50 p-3 rounded-md border border-red-100 flex gap-2">
+                              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                              نقاطك لا تكفي لتغطية إجمالي الطلب ({pointsNeededForFullPayment.toLocaleString('ar-SA')} نقطة مطلوبة).
+                            </div>
+                          </div>
+                        ) : exceedsMaxPoints ? (
+                          <div className="mt-4 pt-4 border-t border-black/10">
+                            <div className="text-red-600 text-xs font-bold bg-red-50 p-3 rounded-md border border-red-100 flex gap-2">
+                              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                              الحد الأقصى المسموح هو {maxAllowedPoints?.toLocaleString('ar-SA')} نقطة في الطلب الواحد.
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </label>
+                  )}
+
                   {paymentSettings.settings?.customerServiceEnabled && (
                     <label className={`flex items-start p-3 md:p-6 border ${formData.paymentMethod === 'customer_service' ? 'border-brand bg-white shadow-sm' : 'border-black/10'} cursor-pointer transition-all hover:bg-black/5`}>
                       <input 
@@ -963,71 +1018,7 @@ export default function CheckoutClient() {
                 </div>
               </div>
 
-              {paymentSettings.loyaltyInfo && paymentSettings.loyaltyInfo.balance > 0 && (
-                <div className="mt-8 border border-brand/20 bg-brand/5 p-4 rounded-lg">
-                  <h3 className="font-bold text-brand mb-2">مكافآتي</h3>
-                  <p className="text-sm text-foreground/80 mb-2">
-                    رصيد مكافآتك الحالي: <strong className="text-brand">{paymentSettings.loyaltyInfo.balance}</strong> نقطة
-                    (تعادل {(paymentSettings.loyaltyInfo.balance * paymentSettings.loyaltyInfo.pointsValue).toLocaleString('ar-SA')} {currency})
-                  </p>
-                  <p className="text-xs text-brand/80 mb-4 font-bold">
-                    * يتم اكتساب نقطة واحدة لكل {paymentSettings.loyaltyInfo.pointsPerUnit} {currency} مشتريات.
-                    كل نقطة تعادل خصماً بقيمة {paymentSettings.loyaltyInfo.pointsValue} {currency}.
-                  </p>
-                  
-                  <div className="flex flex-col gap-2 mt-4">
-                    {(() => {
-                      const pointsNeededForFullPayment = Math.ceil(preLoyaltyTotal / paymentSettings.loyaltyInfo.pointsValue);
-                      const maxAllowed = paymentSettings.loyaltyInfo.maxPointsPerOrder;
-                      
-                      const hasEnoughPoints = paymentSettings.loyaltyInfo.balance >= pointsNeededForFullPayment;
-                      const exceedsMaxPoints = maxAllowed !== null && maxAllowed > 0 && pointsNeededForFullPayment > maxAllowed;
 
-                      if (!hasEnoughPoints) {
-                        return (
-                          <div className="text-red-500 text-sm font-bold bg-red-50 p-3 rounded-md border border-red-100">
-                            رصيد نقاطك ({paymentSettings.loyaltyInfo.balance.toLocaleString('ar-SA')}) لا يكفي لتغطية إجمالي الطلب ({preLoyaltyTotal.toLocaleString('ar-SA')} {currency}). لا يمكن الدفع بجزء من النقاط وجزء نقدي وفقاً لسياسة المتجر.
-                          </div>
-                        )
-                      }
-                      
-                      if (exceedsMaxPoints) {
-                        return (
-                          <div className="text-red-500 text-sm font-bold bg-red-50 p-3 rounded-md border border-red-100">
-                            الحد الأقصى المسموح باستخدامه في الطلب الواحد هو {maxAllowed.toLocaleString('ar-SA')} نقطة. النقاط المطلوبة لتغطية الطلب ({pointsNeededForFullPayment.toLocaleString('ar-SA')}) تتجاوز هذا الحد، يرجى الدفع نقداً.
-                          </div>
-                        )
-                      }
-
-                      return (
-                        <label className="flex items-center gap-3 cursor-pointer p-3 bg-white border border-brand/20 rounded-md hover:bg-brand/5 transition-colors">
-                          <input 
-                            type="checkbox"
-                            checked={pointsUsed > 0}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setPointsUsed(pointsNeededForFullPayment);
-                              } else {
-                                setPointsUsed(0);
-                              }
-                            }}
-                            className="w-5 h-5 text-brand focus:ring-brand rounded border-black/20"
-                          />
-                          <div>
-                            <div className="font-bold text-foreground">الدفع بالكامل باستخدام النقاط</div>
-                            <div className="text-xs text-foreground/60">سيتم خصم {pointsNeededForFullPayment.toLocaleString('ar-SA')} نقطة لتغطية إجمالي الطلب.</div>
-                          </div>
-                        </label>
-                      )
-                    })()}
-                  </div>
-                  {pointsUsed > 0 && (
-                    <p className="text-xs text-brand mt-2 font-bold">
-                      سيتم خصم {(pointsUsed * paymentSettings.loyaltyInfo.pointsValue).toLocaleString('ar-SA')} {currency} من إجمالي الطلب.
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           </aside>
 

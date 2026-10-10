@@ -13,7 +13,7 @@ import { createOrderTrackingToken } from '@/lib/order-tracking-token'
 import { requireCurrentUser, getCurrentUser } from '@/lib/user-auth'
 import { createUserNotification } from '@/lib/notifications/service'
 
-const PAYMENT_METHODS = new Set(['cod', 'bank_transfer', 'wallets', 'customer_service'])
+const PAYMENT_METHODS = new Set(['cod', 'bank_transfer', 'wallets', 'customer_service', 'points'])
 const RECEIPT_PAYMENT_METHODS = new Set(['bank_transfer', 'wallets'])
 
 function getClientIp(value: string | null): string {
