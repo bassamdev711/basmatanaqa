@@ -159,7 +159,7 @@ export default function CheckoutClient() {
         userInfo: null
       });
     })
-  }, [formData.paymentMethod])
+  }, [])
 
   if (!mounted || !paymentSettings) {
     return (
