@@ -5,6 +5,7 @@ import Footer from '@/components/Footer'
 import { getCurrency } from '@/lib/currency'
 import ProductCard from '@/components/ProductCard'
 import CategoryFilterChips from '@/components/CategoryFilterChips'
+import CategoryScrollWrapper from '@/components/CategoryScrollWrapper'
 import { getSiteUrl, getStoreConfig } from '@/lib/store-config'
 import ProductDiscoveryFilters from '@/components/ProductDiscoveryFilters'
 import PaginationControls from '@/components/PaginationControls'
@@ -179,7 +180,7 @@ export default async function ProductsPage({
       <Navbar />
 
       <div className="flex-grow pt-16 md:pt-20 pb-24 relative">
-        <div className="flex flex-col border-b border-black/5 bg-surface/95 backdrop-blur-md sticky top-14 md:top-[68px] z-40">
+        <CategoryScrollWrapper>
           <CategoryFilterChips filters={chipFilters} activeSlug={collection} paramKey="collection" />
           
           {dbSubCategories.length > 0 && (
@@ -197,7 +198,7 @@ export default async function ProductsPage({
               variant="pills"
             />
           )}
-        </div>
+        </CategoryScrollWrapper>
 
         <ProductDiscoveryFilters totalProducts={totalCount} availableBrands={availableBrands} />
 

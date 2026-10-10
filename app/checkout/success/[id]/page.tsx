@@ -5,6 +5,8 @@ import Footer from '@/components/Footer'
 import prisma from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { verifyOrderTrackingToken } from '@/lib/order-tracking-token'
+import { createOrderUploadToken } from '@/lib/order-upload-token'
+import PaymentProofUploader from './PaymentProofUploader'
 
 export default async function SuccessPage({
   params,
@@ -23,7 +25,7 @@ export default async function SuccessPage({
 
   const order = await prisma.order.findUnique({
     where: { id },
-    select: { id: true, orderNumber: true },
+    select: { id: true, orderNumber: true, paymentMethod: true, paymentProofUrl: true, paymentStatus: true, totalAmount: true },
   })
 
   if (!order) {
@@ -51,7 +53,14 @@ export default async function SuccessPage({
             سنقوم بمراجعة طلبك وتجهيزه بأسرع وقت ممكن. يمكنك تتبع حالة طلبك في أي وقت من خلال صفحة تتبع الطلبات. شكرًا لثقتك بنا!
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {(!order.paymentProofUrl && ['bank_transfer', 'wallets'].includes(order.paymentMethod) && Number(order.totalAmount) > 0) && (
+            <PaymentProofUploader 
+              orderId={order.id} 
+              uploadToken={await createOrderUploadToken(order.id)} 
+            />
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
             <Link
               href={trackingHref}
               className="btn btn-outline btn-lg"
