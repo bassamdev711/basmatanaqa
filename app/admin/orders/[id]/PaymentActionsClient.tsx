@@ -5,9 +5,11 @@ import { updatePaymentStatus, updateOrderStatus } from '../actions'
 import { generatePurchaseTasks } from '../../procurement/actions'
 import { useToast } from '@/components/ToastProvider'
 import { CheckCircle2, Factory } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function PaymentActionsClient({ orderId, currentPaymentStatus }: { orderId: string, currentPaymentStatus: string }) {
   const { showToast } = useToast()
+  const router = useRouter()
   const [isUpdating, setIsUpdating] = useState(false)
 
   const handleConfirmAll = async () => {
@@ -29,6 +31,7 @@ export default function PaymentActionsClient({ orderId, currentPaymentStatus }: 
 
     setIsUpdating(false)
     showToast('success', 'تم تأكيد الدفع وإصدار مهام المشتريات بنجاح!')
+    router.refresh()
   }
 
   const getStatusLabel = (status: string) => {
