@@ -23,6 +23,7 @@ export async function getLoyaltySettings() {
     welcomeBonus: settings.welcomeBonus,
     expiryEnabled: settings.expiryEnabled,
     pointsExpiryDays: settings.pointsExpiryDays,
+    maxPointsPerOrder: settings.maxPointsPerOrder,
   }
 }
 
@@ -38,6 +39,12 @@ export async function updateLoyaltySettings(formData: FormData) {
     const welcomeBonus = Number(formData.get('welcomeBonus')) || 0
     const expiryEnabled = formData.get('expiryEnabled') === 'on'
     const pointsExpiryDays = Number(formData.get('pointsExpiryDays')) || 30
+    
+    let maxPointsPerOrder = null
+    const maxPointsInput = formData.get('maxPointsPerOrder')
+    if (maxPointsInput && Number(maxPointsInput) > 0) {
+      maxPointsPerOrder = Number(maxPointsInput)
+    }
 
     await prisma.loyaltySettings.update({
       where: { id: 'singleton' },
@@ -50,6 +57,7 @@ export async function updateLoyaltySettings(formData: FormData) {
         welcomeBonus,
         expiryEnabled,
         pointsExpiryDays: expiryEnabled ? pointsExpiryDays : null,
+        maxPointsPerOrder,
       }
     })
 

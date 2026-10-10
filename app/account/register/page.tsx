@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, ArrowRight, UserCircle2, Mail, User } from 'lucide-react'
+import { Lock, ArrowRight, UserCircle2, Mail, User, Eye, EyeOff } from 'lucide-react'
 import { PhoneInput } from '@/components/PhoneInput'
 
 export default function CustomerRegisterPage() {
@@ -11,6 +11,7 @@ export default function CustomerRegisterPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   
   const [error, setError] = useState('')
@@ -139,13 +140,20 @@ export default function CustomerRegisterPage() {
             <div className="relative">
               <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all"
+                className="w-full pl-12 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all"
                 placeholder="10 أحرف على الأقل"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 

@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Share2 } from 'lucide-react';
 import FavoriteButton from './FavoriteButton';
 import { useCart } from './CartProvider';
 import { useToast } from './ToastProvider';
@@ -27,6 +27,26 @@ interface ProductCardProps {
 export default function ProductCard({ product, currency, priority = false }: ProductCardProps) {
   const { addToCart } = useCart();
   const { showToast } = useToast();
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/products/${product.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `شاهد ${product.name} على متجرنا!`,
+          url: url,
+        });
+      } catch (err) {
+        console.log('Error sharing', err);
+      }
+    } else {
+      navigator.clipboard.writeText(url);
+      showToast('success', 'تم نسخ الرابط بنجاح!');
+    }
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,11 +74,22 @@ export default function ProductCard({ product, currency, priority = false }: Pro
           </div>
         ) : <div />}
         
-        {/* Wishlist Button */}
-        <FavoriteButton 
-          product={product}
-          className="pointer-events-auto bg-white/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
-        />
+        {/* Buttons Wrapper */}
+        <div className="flex flex-col gap-2 pointer-events-auto">
+          {/* Wishlist Button */}
+          <FavoriteButton 
+            product={product}
+            className="bg-white/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
+          />
+          {/* Share Button */}
+          <button
+            onClick={handleShare}
+            className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform flex items-center justify-center text-black/60 hover:text-black"
+            title="مشاركة"
+          >
+            <Share2 size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="relative w-full aspect-[3/4] bg-[#f9f9f9] transition-colors duration-500 flex items-center justify-center overflow-hidden">

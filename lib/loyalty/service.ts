@@ -30,20 +30,19 @@ export async function awardOrderPoints(orderId: string) {
     if (existing) return existing
 
     const order = await tx.order.findUnique({ where: { id: orderId } })
-    if (!order || order.status !== 'COMPLETED' || !order.userId) return null
+    if (!order || !order.userId) return null
     const paymentEligible = order.paymentStatus === 'PAID' || (order.paymentMethod === 'cod' && order.paymentStatus === 'PENDING')
     if (!paymentEligible) return null
 
+    const loyaltySettings = await tx.loyaltySettings.findUnique({ where: { id: 'singleton' } })
+    if (!loyaltySettings || !loyaltySettings.isEnabled) return null
 
-    const settings = await tx.loyaltySettings.upsert({
-      where: { id: 'singleton' },
-      update: {},
-      create: { id: 'singleton' },
-    })
-    if (!settings.isEnabled || order.totalAmount.lt(settings.minimumOrderAmount)) return null
-
-    const pointsPerUnit = Number(settings.pointsPerUnit)
-    const points = Math.floor(Number(order.totalAmount) / pointsPerUnit)
+    // Points are calculated on the actual paid amount (totalAmount - pointsDiscount)
+    const eligibleAmount = Number(order.totalAmount) - Number(order.pointsDiscount || 0)
+    if (eligibleAmount <= 0) return null
+    
+    const pointsPerUnit = Number(loyaltySettings.pointsPerUnit) || 1
+    const points = Math.floor(eligibleAmount / pointsPerUnit)
     if (!Number.isFinite(points) || points <= 0) return null
 
     const account = await tx.loyaltyAccount.upsert({
@@ -56,6 +55,18 @@ export async function awardOrderPoints(orderId: string) {
       where: { id: account.id },
       data: { balance, lifetimeEarned: { increment: points } },
     })
+    
+    // Create atomic notification
+    const rewardValue = points * (Number(loyaltySettings.pointsValue) || 1)
+    await tx.notification.create({
+      data: {
+        userId: order.userId,
+        type: 'LOYALTY_EARNED',
+        title: 'نقاط مكافأة جديدة!',
+        message: `مبروك! تمت إضافة ${points.toLocaleString('ar-EG')} نقطة إلى رصيد مكافآتك، بقيمة شرائية تعادل ${rewardValue.toLocaleString('ar-EG')} ريال يمني. استمري في التسوق واجمعي المزيد من النقاط للاستفادة منها في طلباتك القادمة.`,
+      }
+    })
+
     return tx.loyaltyTransaction.create({
       data: {
         userId: order.userId,
@@ -97,6 +108,15 @@ export async function reverseOrderPoints(orderId: string) {
               referenceKey,
               description: 'عكس نقاط الطلب بعد الاسترجاع',
             },
+          })
+          
+          await tx.notification.create({
+            data: {
+              userId: reward.userId,
+              type: 'POINTS_REVERSED',
+              title: 'تحديث رصيد النقاط',
+              message: `تم خصم ${reward.points} نقطة إثر إلغاء/استرجاع الطلب.`,
+            }
           })
         }
       }

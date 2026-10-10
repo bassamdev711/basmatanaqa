@@ -121,7 +121,6 @@ export async function getCustomerDetails(id: string) {
   })
 
   const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
-
   return { customer, pointsValue: Number(loyaltySettings?.pointsValue) || 1 }
 }
 

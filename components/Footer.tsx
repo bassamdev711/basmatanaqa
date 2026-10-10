@@ -66,7 +66,7 @@ export default async function Footer({
 
   const phone = contactSettings?.phoneNumber || null;
   const showPhone = Boolean(phone && contactSettings?.showPhoneNumber !== false);
-  const email = contactSettings?.emailAddress || null;
+  const email = contactSettings?.emailAddress || 'shahrazadstore.online@gmail.com';
   const showEmail = Boolean(email && contactSettings?.showEmailAddress !== false);
   const address = contactSettings?.address || null;
   const showAddress = Boolean(address && contactSettings?.showAddress !== false);
@@ -193,6 +193,16 @@ export default async function Footer({
                 </li>
               )}
               <li>
+                <Link href="/policies/privacy-policy" className="text-sm text-surface/80 hover:text-accent transition-colors">
+                  سياسة الخصوصية
+                </Link>
+              </li>
+              <li>
+                <Link href="/policies/terms-of-service" className="text-sm text-surface/80 hover:text-accent transition-colors">
+                  الشروط والأحكام
+                </Link>
+              </li>
+              <li>
                 <Link href="/track" className="text-sm text-surface/80 hover:text-accent transition-colors">
                   تتبع الطلب
                 </Link>
@@ -248,6 +258,12 @@ export default async function Footer({
                 سياسة الاسترجاع
               </Link>
             )}
+            <Link href="/policies/privacy-policy" className="hover:text-accent transition-colors">
+              سياسة الخصوصية
+            </Link>
+            <Link href="/policies/terms-of-service" className="hover:text-accent transition-colors">
+              الشروط والأحكام
+            </Link>
           </div>
         </div>
       </div>

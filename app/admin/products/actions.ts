@@ -48,6 +48,7 @@ export async function createProduct(formData: FormData) {
     const subCategoryId = formData.get('subCategoryId') as string | null;
     const hasSizes = formData.get('hasSizes') === 'true';
     const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
+    const addAnother = formData.get('addAnother') === 'true';
 
     if (collectionId && subCategoryId) {
       const subCat = await prisma.subCategory.findUnique({ where: { id: subCategoryId } });
@@ -114,7 +115,11 @@ export async function createProduct(formData: FormData) {
     revalidatePath('/products');
     revalidateTag('products', 'max');
     
-    redirect('/admin/products');
+    if (addAnother) {
+      redirect('/admin/products/new?success=true');
+    } else {
+      redirect('/admin/products');
+    }
   } catch (err: any) {
     if (isNextRedirectError(err)) throw err;
     if (err.message === 'INVALID_SUBCATEGORY') {

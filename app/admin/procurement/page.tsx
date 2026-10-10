@@ -14,6 +14,8 @@ export default async function ProcurementDashboard() {
     where: {
       status: { in: ['PENDING', 'PARTIAL'] }
     },
+    take: 500, // حد أقصى للتحكم في استهلاك الذاكرة
+    orderBy: { createdAt: 'desc' },
     include: {
       supplier: true,
       items: {

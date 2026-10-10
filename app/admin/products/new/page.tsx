@@ -15,12 +15,17 @@ import { toast } from 'react-hot-toast'
 type CollectionOption = { id: string; name: string }
 type CategoryOption = { id: string; name: string }
 
-function SubmitButton() {
+function SubmitButtons() {
   const { pending } = useFormStatus()
   return (
-    <button type="submit" disabled={pending} className="btn btn-primary btn-lg disabled:opacity-50">
-      {pending ? 'جاري الحفظ...' : 'حفظ وإضافة المنتج'}
-    </button>
+    <div className="flex gap-3">
+      <button type="submit" name="addAnother" value="true" disabled={pending} className="btn btn-secondary btn-lg disabled:opacity-50 text-sm font-bold bg-gray-200 text-gray-800 hover:bg-gray-300">
+        {pending ? 'جاري الحفظ...' : 'حفظ وإضافة منتج آخر'}
+      </button>
+      <button type="submit" disabled={pending} className="btn btn-primary btn-lg disabled:opacity-50 text-sm font-bold">
+        {pending ? 'جاري الحفظ...' : 'حفظ وإضافة المنتج'}
+      </button>
+    </div>
   )
 }
 
@@ -93,10 +98,15 @@ export default function NewProductPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       const error = params.get('error')
+      const success = params.get('success')
       if (error === 'duplicate_slug') {
         toast.error('عفواً، اسم المنتج أو الرابط مستخدم لمنتج آخر. يرجى تغييره وحاول مرة أخرى.', { duration: 5000 })
       } else if (error) {
         toast.error('حدث خطأ غير متوقع أثناء الحفظ.')
+      } else if (success === 'true') {
+        toast.success('تمت الإضافة بنجاح! يمكنك إدخال بيانات المنتج التالي الآن.', { duration: 5000 })
+        // Remove the query param to prevent toast on refresh
+        window.history.replaceState({}, '', '/admin/products/new')
       }
     }
   }, [])
@@ -142,6 +152,16 @@ export default function NewProductPage() {
                 setSlug(generateSlug(e.target.value))
               }}
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">رابط المشاركة للمنتج (يعبأ تلقائياً) *</label>
+              <div className="flex rounded-md shadow-sm" dir="ltr">
+                <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm bg-gray-50">
+                  /products/
+                </span>
+                <input type="text" name="slug" required value={slug} onChange={(e) => setSlug(e.target.value)}
+                  className="w-full min-w-0 flex-1 rounded-none rounded-r-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
@@ -278,16 +298,6 @@ export default function NewProductPage() {
             <div className="p-6 space-y-8 bg-white border-t border-gray-200">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">نهاية رابط المنتج (Slug) *</label>
-                  <div className="flex rounded-md shadow-sm" dir="ltr">
-                    <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm bg-gray-50">
-                      https://example-store.com/products/
-                    </span>
-                    <input type="text" name="slug" required value={slug} onChange={(e) => setSlug(e.target.value)}
-                      className="w-full min-w-0 flex-1 rounded-none rounded-r-md border-gray-300 border p-2 text-sm text-gray-900 bg-white focus:border-black focus:outline-none" />
-                  </div>
-                </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">رمز التخزين (SKU)</label>
@@ -374,10 +384,10 @@ export default function NewProductPage() {
         </div>
 
         <div className="flex justify-end gap-3 pb-6">
-          <Link href="/admin/products" className="btn btn-outline">
+          <Link href="/admin/products" className="btn btn-outline text-sm font-bold">
             إلغاء
           </Link>
-          <SubmitButton />
+          <SubmitButtons />
         </div>
       </form>
     </div>

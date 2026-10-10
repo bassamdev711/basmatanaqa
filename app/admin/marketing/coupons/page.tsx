@@ -23,7 +23,7 @@ export default async function CouponsPage() {
 
   let coupons: Coupon[] = []
   try {
-    const dbCoupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } })
+    const dbCoupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' }, take: 200 })
     coupons = dbCoupons.map((coupon) => ({
       ...coupon,
       value: coupon.value.toNumber(),

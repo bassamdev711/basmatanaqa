@@ -26,27 +26,33 @@ export async function dispatchNotification(data: {
         }
       })
     } else {
-      // Get all active users
-      const users = await prisma.user.findMany({
-        where: { isActive: true },
-        select: { id: true }
-      })
-
-      // Batch create notifications
-      const notifications = users.map(user => ({
-        userId: user.id,
-        type: 'SYSTEM',
-        title: data.title,
-        message: data.message
-      }))
-
-      // Split into chunks if there are many users
+      let cursor: string | undefined = undefined
       const CHUNK_SIZE = 500
-      for (let i = 0; i < notifications.length; i += CHUNK_SIZE) {
-        const chunk = notifications.slice(i, i + CHUNK_SIZE)
+
+      while (true) {
+        const users = (await prisma.user.findMany({
+          where: { isActive: true },
+          select: { id: true },
+          take: CHUNK_SIZE,
+          skip: cursor ? 1 : undefined,
+          cursor: cursor ? { id: cursor } : undefined,
+          orderBy: { id: 'asc' }
+        })) as { id: string }[]
+
+        if (users.length === 0) break
+
+        const notifications = users.map((user: { id: string }) => ({
+          userId: user.id,
+          type: 'SYSTEM',
+          title: data.title,
+          message: data.message
+        }))
+
         await prisma.notification.createMany({
-          data: chunk
+          data: notifications
         })
+
+        cursor = users[users.length - 1].id
       }
     }
 

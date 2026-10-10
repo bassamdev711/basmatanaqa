@@ -19,7 +19,7 @@ export default async function AccountPointsPage() {
 
   const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
   const pointsValue = Number(loyaltySettings?.pointsValue) || 1
-
+  const pointsPerUnit = Number(loyaltySettings?.pointsPerUnit) || 10
 
   if (!loyaltyAccount) {
     return (
@@ -57,6 +57,9 @@ export default async function AccountPointsPage() {
               </div>
               <p className="text-accent text-sm mt-1 font-bold">
                 (تعادل {(loyaltyAccount.balance * pointsValue).toLocaleString('ar-SA')} ريال)
+              </p>
+              <p className="text-surface/80 text-xs mt-2 font-bold">
+                * يتم اكتساب نقطة واحدة لكل {pointsPerUnit} ريال مشتريات. كل نقطة تعادل خصماً بقيمة {pointsValue} ريال.
               </p>
             </div>
           </div>

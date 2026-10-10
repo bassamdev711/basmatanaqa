@@ -56,11 +56,11 @@ export async function createOrder(
   idempotencyKey?: string,
   pointsUsed?: number,
 ) {
+  const requestKey = typeof idempotencyKey === 'string' ? idempotencyKey.trim().slice(0, 128) : ''
   try {
     const authenticatedUser = await getCurrentUser()
     const headersList = await headers()
     const ip = getClientIp(headersList.get('x-forwarded-for'))
-    const requestKey = typeof idempotencyKey === 'string' ? idempotencyKey.trim().slice(0, 128) : ''
 
     if (!requestKey || !/^[A-Za-z0-9_-]{20,128}$/.test(requestKey)) {
       return { success: false, error: 'تعذر التحقق من جلسة الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.' }
@@ -251,25 +251,48 @@ export async function createOrder(
       }
       
       const loyaltySettings = await prisma.loyaltySettings.findUnique({ where: { id: 'singleton' } })
-      if (loyaltySettings?.isEnabled && loyaltySettings?.redeemEnabled) {
-        const userAccount = await prisma.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
-        if (userAccount && userAccount.balance >= pointsUsed) {
-          const pointVal = Number(loyaltySettings.pointsValue) || 1
-          const requestedDiscount = pointsUsed * pointVal
-          const preTotal = discountedCartTotal + shippingFee
-          
-          pointsDiscountValue = Math.min(requestedDiscount, preTotal)
-          pointsToUse = pointsDiscountValue / pointVal // only use what's actually discounted
-        } else {
-          return { success: false, error: 'رصيد نقاط الولاء غير كافٍ.' }
-        }
-      } else {
-        return { success: false, error: 'استخدام نقاط الولاء غير متاح حالياً.' }
+      if (!loyaltySettings || !loyaltySettings.isEnabled || !loyaltySettings.redeemEnabled) {
+        return { success: false, error: 'نظام النقاط غير متاح حالياً.' }
       }
+
+      const userAccount = await prisma.loyaltyAccount.findUnique({ where: { userId: authenticatedUser.id } })
+      if (!userAccount || userAccount.balance < pointsUsed) {
+        return { success: false, error: 'رصيد نقاط الولاء غير كافٍ.' }
+      }
+      
+      const pointVal = Number(loyaltySettings.pointsValue) || 1
+      const preTotal = discountedCartTotal + shippingFee
+      
+      // Calculate how many points are ACTUALLY needed to cover the preTotal
+      const pointsNeededForFullPayment = Math.ceil(preTotal / pointVal)
+      const maxAllowed = loyaltySettings.maxPointsPerOrder
+
+      // Rule: NO HYBRID PAYMENT
+      // The user must use enough points to cover the ENTIRE preTotal.
+      if (pointsUsed < pointsNeededForFullPayment) {
+        return { 
+          success: false, 
+          error: `لا يمكن الدفع بجزء من النقاط وجزء نقدي. نقاطك تغطي ${(pointsUsed * pointVal).toLocaleString('ar-SA')} ريال فقط، بينما الإجمالي ${preTotal.toLocaleString('ar-SA')} ريال. يرجى الدفع نقداً.` 
+        }
+      }
+      
+      // Rule: MAX POINTS PER ORDER
+      if (maxAllowed !== null && maxAllowed > 0 && pointsNeededForFullPayment > maxAllowed) {
+        return {
+          success: false,
+          error: `الحد الأقصى المسموح باستخدامه في الطلب الواحد هو ${maxAllowed.toLocaleString('ar-SA')} نقطة. النقاط المطلوبة لتغطية الطلب تتجاوز هذا الحد، يرجى الدفع نقداً.`
+        }
+      }
+
+      pointsDiscountValue = preTotal
+      pointsToUse = pointsNeededForFullPayment
     }
 
     const finalTotal = discountedCartTotal + shippingFee - pointsDiscountValue
-    const paymentStatus = checkoutData.paymentMethod === 'customer_service' ? 'AWAITING_CUSTOMER_SERVICE' : 'PENDING'
+    let paymentStatus = checkoutData.paymentMethod === 'customer_service' ? 'AWAITING_CUSTOMER_SERVICE' : 'PENDING'
+    if (finalTotal <= 0) {
+      paymentStatus = 'PAID'
+    }
     const transaction = normalizeText(transactionId, 100) || null
     
     // Generate a simple 7-digit numeric order number
@@ -412,7 +435,7 @@ export async function createOrder(
       })
     }
 
-    const paymentUploadToken = RECEIPT_PAYMENT_METHODS.has(checkoutData.paymentMethod)
+    const paymentUploadToken = RECEIPT_PAYMENT_METHODS.has(checkoutData.paymentMethod) && finalTotal > 0
       ? await createOrderUploadToken(order.id)
       : undefined
     const trackingToken = await createOrderTrackingToken(order.id)
@@ -425,11 +448,22 @@ export async function createOrder(
       if (error.message === 'STOCK_UNAVAILABLE') return { success: false, error: 'الكمية المطلوبة من بعض المنتجات لم تعد متوفرة.' }
       if (error.message === 'COUPON_UNAVAILABLE') return { success: false, error: 'الكوبون المستخدم لم يعد صالحاً أو تجاوز حد الاستخدام.' }
     }
-    const errorCode = typeof error === 'object' && error !== null && 'code' in error
-      ? (error as { code?: unknown }).code
-      : undefined
-    if (errorCode === 'P2002') {
-      return { success: false, error: 'تم استلام الطلب مسبقاً. يرجى تحديث الصفحة.' }
+    const prismaError = error as { code?: unknown, meta?: { target?: string[] } }
+    if (prismaError.code === 'P2002' && requestKey) {
+      const target = prismaError.meta?.target || []
+      if (target.includes('idempotencyKey')) {
+        const existingOrder = await prisma.order.findUnique({
+          where: { idempotencyKey: requestKey },
+          select: { id: true, paymentMethod: true },
+        })
+        if (existingOrder) {
+          const paymentUploadToken = RECEIPT_PAYMENT_METHODS.has(existingOrder.paymentMethod)
+            ? await createOrderUploadToken(existingOrder.id)
+            : undefined
+          const trackingToken = await createOrderTrackingToken(existingOrder.id)
+          return { success: true, orderId: existingOrder.id, paymentUploadToken, trackingToken }
+        }
+      }
     }
     console.error('Failed to create order:', error)
     return { success: false, error: 'حدث خطأ أثناء إنشاء الطلب.' }
@@ -514,6 +548,8 @@ export async function getPaymentMethods() {
         loyaltyInfo = {
           balance: account?.balance || 0,
           pointsValue: Number(loyaltySettings.pointsValue) || 1,
+          pointsPerUnit: Number(loyaltySettings.pointsPerUnit) || 10,
+          maxPointsPerOrder: loyaltySettings.maxPointsPerOrder,
         }
       }
     }

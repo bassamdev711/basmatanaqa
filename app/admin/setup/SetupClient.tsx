@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../products/ImageUpload'
 import { setupAdminProfile } from '../profile/actions'
-import { CheckCircle2, User, Lock, AlertCircle } from 'lucide-react'
+import { CheckCircle2, User, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 export default function SetupClient({ storeName }: { storeName: string }) {
   const router = useRouter()
@@ -12,7 +12,9 @@ export default function SetupClient({ storeName }: { storeName: string }) {
   const [name, setName] = useState('مدير المتجر')
   const [avatarUrl, setAvatarUrl] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -102,14 +104,21 @@ export default function SetupClient({ storeName }: { storeName: string }) {
               <div className="relative">
                 <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-deep-green/40 w-5 h-5" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-4 pr-12 py-4 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
+                  className="w-full pl-12 pr-12 py-4 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
                   placeholder="أدخل كلمة مرور قوية"
                   required
                   minLength={12}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-deep-green/40 hover:text-deep-green/70 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
               <p className="text-xs text-gray-500 mt-2">ستستخدم هذه الكلمة لتسجيل الدخول لاحقاً بدلاً من الكلمة الافتراضية.</p>
             </div>
@@ -119,14 +128,21 @@ export default function SetupClient({ storeName }: { storeName: string }) {
               <div className="relative">
                 <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-deep-green/40 w-5 h-5" />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-4 pr-12 py-4 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
+                  className="w-full pl-12 pr-12 py-4 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
                   placeholder="أعد إدخال كلمة المرور"
                   required
                   minLength={12}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-deep-green/40 hover:text-deep-green/70 focus:outline-none"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
           </div>

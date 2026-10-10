@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { changeCustomerPassword, toggleCustomerStatus } from '../actions'
-import { Lock, UserX, UserCheck, Loader2 } from 'lucide-react'
+import { Lock, UserX, UserCheck, Loader2, Eye, EyeOff } from 'lucide-react'
 
 interface CustomerSettingsProps {
   userId: string
@@ -12,7 +12,9 @@ interface CustomerSettingsProps {
 export default function CustomerSettings({ userId, isActive }: CustomerSettingsProps) {
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false)
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
@@ -119,29 +121,43 @@ export default function CustomerSettings({ userId, isActive }: CustomerSettingsP
           </button>
         ) : (
           <form onSubmit={handlePasswordSubmit} className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-100">
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور الجديدة</label>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-emerald outline-none transition-all"
+                className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-emerald outline-none transition-all"
                 placeholder="******"
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-3 top-9 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">تأكيد كلمة المرور</label>
               <input
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-emerald outline-none transition-all"
+                className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-emerald outline-none transition-all"
                 placeholder="******"
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute left-3 top-9 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
 
             {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}

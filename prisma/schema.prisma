@@ -51,22 +51,24 @@ model Product {
   @@index([isActive, bestseller])
   @@index([isActive, createdAt])
   @@index([supplierId])
+  @@index([price])
+  @@index([brand])
 }
 
 // ─── نظام الموردين ───────────────────────────────────────────
 
 model Supplier {
-  id        String    @id @default(cuid())
-  name      String // اسم المورد
-  phone     String? // هاتف التواصل
-  whatsapp  String? // واتساب
-  email     String? // بريد إلكتروني
-  address   String? // العنوان
-  notes     String?   @db.Text // ملاحظات
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
+  id            String         @id @default(cuid())
+  name          String // اسم المورد
+  phone         String? // هاتف التواصل
+  whatsapp      String? // واتساب
+  email         String? // بريد إلكتروني
+  address       String? // العنوان
+  notes         String?        @db.Text // ملاحظات
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  products      Product[]
   purchaseTasks PurchaseTask[]
 
   @@index([isActive])
@@ -113,7 +115,7 @@ model Order {
   id                  String               @id @default(cuid())
   orderNumber         String?              @unique
   userId              String?
-  user                User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user                User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
   customerName        String
   customerPhone       String
   governorate         String
@@ -147,18 +149,18 @@ model Order {
 }
 
 model OrderItem {
-  id           String          @id @default(cuid())
-  orderId      String
-  productId    String?
-  variantId    String?
-  quantity     Int
-  price        Decimal         @db.Decimal(10, 2)
-  selectedSize String?
-  order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product      Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
-  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id               String            @id @default(cuid())
+  orderId          String
+  productId        String?
+  variantId        String?
+  quantity         Int
+  price            Decimal           @db.Decimal(10, 2)
+  selectedSize     String?
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant          ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
   purchaseTaskItem PurchaseTaskItem?
 
   @@index([orderId])
@@ -239,6 +241,7 @@ model LoyaltySettings {
   welcomeBonus       Int      @default(0)
   expiryEnabled      Boolean  @default(false)
   pointsExpiryDays   Int?
+  maxPointsPerOrder  Int?
   updatedAt          DateTime @updatedAt
 }
 
@@ -314,14 +317,14 @@ model DigitalWallet {
 }
 
 model Collection {
-  id               String    @id @default(cuid())
+  id               String        @id @default(cuid())
   name             String
-  slug             String    @unique
+  slug             String        @unique
   description      String?
   imageUrl         String?
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
   products         Product[]
   subCategories    SubCategory[]
   seoSearchPhrases String[]
@@ -396,18 +399,18 @@ model Campaign {
 }
 
 model ProductOffer {
-  id              String   @id @default(cuid())
-  productId       String
-  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  offerPrice      Decimal  @db.Decimal(10, 2)
-  originalPrice   Decimal  @db.Decimal(10, 2)
-  startDate       DateTime @default(now())
-  endDate         DateTime
-  isActive        Boolean  @default(true)
-  showInHomepage  Boolean  @default(false)
-  imageUrl        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  offerPrice     Decimal  @db.Decimal(10, 2)
+  originalPrice  Decimal  @db.Decimal(10, 2)
+  startDate      DateTime @default(now())
+  endDate        DateTime
+  isActive       Boolean  @default(true)
+  showInHomepage Boolean  @default(false)
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([isActive, showInHomepage, endDate])
   @@index([productId])
@@ -628,34 +631,34 @@ model InAppNotification {
 }
 
 model PurchaseTask {
-  id          String   @id @default(cuid())
-  taskNumber  String   @unique
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  supplierId  String?
-  supplier    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  status      String   @default("PENDING") // PENDING, CONTACTED, CONFIRMED, PURCHASED, PARTIAL, FAILED, PAUSED
-  notes       String?  @db.Text
-  estimatedCost Decimal? @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  purchasedAt DateTime?
-  items       PurchaseTaskItem[]
-  
+  id            String             @id @default(cuid())
+  taskNumber    String             @unique
+  orderId       String
+  order         Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplierId    String?
+  supplier      Supplier?          @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  status        String             @default("PENDING") // PENDING, CONTACTED, CONFIRMED, PURCHASED, PARTIAL, FAILED, PAUSED
+  notes         String?            @db.Text
+  estimatedCost Decimal?           @db.Decimal(10, 2)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  purchasedAt   DateTime?
+  items         PurchaseTaskItem[]
+
   @@index([orderId])
   @@index([supplierId])
   @@index([status])
 }
 
 model PurchaseTaskItem {
-  id             String         @id @default(cuid())
+  id             String       @id @default(cuid())
   purchaseTaskId String
-  purchaseTask   PurchaseTask   @relation(fields: [purchaseTaskId], references: [id], onDelete: Cascade)
-  orderItemId    String         @unique
-  orderItem      OrderItem      @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  status         String         @default("PENDING") // PENDING, AVAILABLE, PURCHASED, UNAVAILABLE
-  actualCost     Decimal?       @db.Decimal(10, 2)
-  notes          String?        @db.Text
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  purchaseTask   PurchaseTask @relation(fields: [purchaseTaskId], references: [id], onDelete: Cascade)
+  orderItemId    String       @unique
+  orderItem      OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  status         String       @default("PENDING") // PENDING, AVAILABLE, PURCHASED, UNAVAILABLE
+  actualCost     Decimal?     @db.Decimal(10, 2)
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }

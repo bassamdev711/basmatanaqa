@@ -179,14 +179,9 @@ export async function updateOrderStatus(orderId: string, status: string) {
         dedupeKey: `ORDER_STATUS:${orderId}:${status}`,
       })
     }
-    if (status === 'COMPLETED' && previousStatus !== 'COMPLETED') {
-      const transaction = await awardOrderPoints(orderId)
-      if (transaction && currentOrder.userId) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_EARNED', title: 'تمت إضافة نقاط', message: `أضيفت ${transaction.points} نقطة لإكمال طلبك.`, dedupeKey: transaction.referenceKey })
-    }
+    // Points are now awarded automatically upon payment confirmation, not order completion.
     if ((status === 'REFUNDED' || status === 'CANCELLED') && previousStatus !== status) {
-      const transaction = await reverseOrderPoints(orderId)
-      const reason = status === 'CANCELLED' ? 'الإلغاء' : 'الاسترجاع'
-      if (transaction && currentOrder.userId) await createUserNotification({ userId: currentOrder.userId, type: 'POINTS_REVERSED', title: 'تم عكس نقاط الطلب', message: `تم عكس ${Math.abs(transaction.points)} نقطة بسبب ${reason}.`, dedupeKey: transaction.referenceKey })
+      await reverseOrderPoints(orderId)
     }
     revalidatePath('/admin/orders')
     return { success: true }
@@ -269,5 +264,116 @@ export async function deleteOrder(orderId: string) {
   } catch (error) {
     console.error('Failed to delete order:', error)
     return { success: false, error: 'Failed to delete order' }
+  }
+}
+
+export async function confirmPaymentAndProcessOrder(orderId: string) {
+  await verifyAdmin();
+  
+  try {
+    let shouldAwardPoints = false;
+
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { items: { include: { product: true } } }
+      });
+
+      if (!order) throw new Error('ORDER_NOT_FOUND');
+      if (['CANCELLED', 'REFUNDED'].includes(order.status)) throw new Error('INVALID_ORDER_STATUS');
+      if (order.paymentStatus === 'PAID') throw new Error('ALREADY_PAID');
+
+      // 1. Update Payment and Order Status
+      await tx.order.update({
+        where: { id: orderId },
+        data: { 
+          paymentStatus: 'PAID',
+          status: order.status === 'NEW' ? 'PROCESSING' : order.status
+        }
+      });
+
+      shouldAwardPoints = true;
+
+      // 2. Generate Purchase Tasks if not already generated
+      if (order.procurementStatus === 'PENDING') {
+        const itemsBySupplier: Record<string, typeof order.items> = {}
+        const noSupplierItems: typeof order.items = []
+
+        for (const item of order.items) {
+          const supplierId = item.product?.supplierId
+          if (supplierId) {
+            if (!itemsBySupplier[supplierId]) itemsBySupplier[supplierId] = []
+            itemsBySupplier[supplierId].push(item)
+          } else {
+            noSupplierItems.push(item)
+          }
+        }
+
+        let taskCounter = 1
+
+        for (const [supplierId, items] of Object.entries(itemsBySupplier)) {
+          const estimatedCost = items.reduce((acc, item) => {
+            return acc + (Number(item.product?.costPrice || 0) * item.quantity)
+          }, 0)
+
+          await tx.purchaseTask.create({
+            data: {
+              taskNumber: `PT-${order.orderNumber || order.id.slice(-6)}-${taskCounter++}`,
+              orderId,
+              supplierId,
+              status: 'PENDING',
+              estimatedCost,
+              items: {
+                create: items.map(item => ({
+                  orderItemId: item.id,
+                  status: 'PENDING'
+                }))
+              }
+            }
+          })
+        }
+
+        if (noSupplierItems.length > 0) {
+          await tx.purchaseTask.create({
+            data: {
+              taskNumber: `PT-${order.orderNumber || order.id.slice(-6)}-${taskCounter++}`,
+              orderId,
+              supplierId: null,
+              status: 'PENDING',
+              notes: 'منتجات تحتاج إلى تحديد مورد',
+              items: {
+                create: noSupplierItems.map(item => ({
+                  orderItemId: item.id,
+                  status: 'PENDING'
+                }))
+              }
+            }
+          })
+        }
+
+        await tx.order.update({
+          where: { id: orderId },
+          data: { procurementStatus: 'READY_FOR_PURCHASE' }
+        })
+      }
+    });
+
+    if (shouldAwardPoints) {
+      await awardOrderPoints(orderId);
+    }
+
+    revalidatePath('/admin/orders');
+    revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath('/admin/procurement');
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to confirm payment and process order:', error);
+    if (error instanceof Error && error.message === 'INVALID_ORDER_STATUS') {
+      return { success: false, error: 'لا يمكن تأكيد الدفع لطلب ملغى أو مسترد.' };
+    }
+    if (error instanceof Error && error.message === 'ALREADY_PAID') {
+      return { success: false, error: 'الطلب مدفوع مسبقاً.' };
+    }
+    return { success: false, error: 'حدث خطأ أثناء تأكيد الدفع ومعالجة الطلب.' };
   }
 }

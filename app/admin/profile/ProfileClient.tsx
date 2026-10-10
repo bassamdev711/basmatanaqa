@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../products/ImageUpload'
 import { updateAdminProfile } from './actions'
-import { CheckCircle2, User, Lock, AlertCircle, Image as ImageIcon } from 'lucide-react'
+import { CheckCircle2, User, Lock, AlertCircle, Image as ImageIcon, Eye, EyeOff } from 'lucide-react'
 
 type ProfileProps = {
   initialName: string
@@ -20,8 +20,11 @@ export default function ProfileClient({ initialName, initialAvatar, initialTheme
   const [themeBackground, setThemeBackground] = useState(initialTheme || '')
   
   const [currentPassword, setCurrentPassword] = useState('')
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -144,12 +147,19 @@ export default function ProfileClient({ initialName, initialAvatar, initialTheme
               <div className="relative">
                 <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-deep-green/40 w-5 h-5" />
                 <input
-                  type="password"
+                  type={showCurrentPassword ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
+                  className="w-full pl-12 pr-12 py-3 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
                   placeholder="مطلوبة فقط إذا أردت تغيير كلمة المرور"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-deep-green/40 hover:text-deep-green/70 focus:outline-none"
+                >
+                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 
@@ -159,13 +169,21 @@ export default function ProfileClient({ initialName, initialAvatar, initialTheme
                 <div className="relative">
                   <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-deep-green/40 w-5 h-5" />
                   <input
-                    type="password"
+                    type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full pl-4 pr-12 py-3 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
+                    className="w-full pl-12 pr-12 py-3 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
                     placeholder="لا تقل عن 6 أحرف"
                     disabled={!currentPassword}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-deep-green/40 hover:text-deep-green/70 focus:outline-none"
+                    disabled={!currentPassword}
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
 
@@ -174,13 +192,21 @@ export default function ProfileClient({ initialName, initialAvatar, initialTheme
                 <div className="relative">
                   <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-deep-green/40 w-5 h-5" />
                   <input
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-4 pr-12 py-3 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
+                    className="w-full pl-12 pr-12 py-3 bg-ivory/30 border border-black/10 rounded-xl focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-deep-green transition-all"
                     placeholder="أعد إدخال الكلمة الجديدة"
                     disabled={!currentPassword}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-deep-green/40 hover:text-deep-green/70 focus:outline-none"
+                    disabled={!currentPassword}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
             </div>

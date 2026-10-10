@@ -15,6 +15,7 @@ export default async function FulfillmentDashboard() {
     where: { 
       status: 'PROCESSING' 
     },
+    take: 100, // حد أقصى لتفادي استنزاف الذاكرة، يتم عرض الدفعة الأولى وعند معالجتها تظهر الطلبات التالية
     include: {
       items: {
         include: {

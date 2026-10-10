@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Minus, Plus, X, ShoppingBag, CreditCard } from 'lucide-react'
+import { Sparkles, Minus, Plus, X, ShoppingBag, CreditCard, Share2 } from 'lucide-react'
 import { useCart } from '@/components/CartProvider'
 import { getImageSizes } from '@/lib/image-utils'
 import { useRouter } from 'next/navigation'
@@ -142,6 +142,24 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     return true
   }
 
+  const handleShare = async () => {
+    const url = window.location.href
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `شاهد ${product.name} على متجرنا!`,
+          url: url,
+        })
+      } catch (err) {
+        console.log('Error sharing', err)
+      }
+    } else {
+      navigator.clipboard.writeText(url)
+      showToast('success', 'تم نسخ الرابط بنجاح!')
+    }
+  }
+
   const handleBuyNow = (e: React.MouseEvent<HTMLButtonElement>) => {
     const added = handleAddToCart(e)
     if (added) {
@@ -231,10 +249,21 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               transition={{ duration: 0.5 }}
             >
               <div className="mb-4">
-                <span className="text-accent font-bold text-[10px] tracking-widest uppercase mb-2 block">
-                  {product.engName || product.brand || 'Featured product'}
-                </span>
-                <h1 className="text-2xl md:text-4xl font-black text-foreground mb-2">{product.name}</h1>
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <span className="text-accent font-bold text-[10px] tracking-widest uppercase mb-2 block">
+                      {product.engName || product.brand || 'Featured product'}
+                    </span>
+                    <h1 className="text-2xl md:text-4xl font-black text-foreground mb-2">{product.name}</h1>
+                  </div>
+                  <button 
+                    onClick={handleShare}
+                    className="p-3 mt-1 bg-white border border-black/10 rounded-full text-foreground hover:bg-black/5 transition-colors shadow-sm shrink-0"
+                    title="مشاركة المنتج"
+                  >
+                    <Share2 size={20} />
+                  </button>
+                </div>
                 <div className="flex items-center gap-3 mt-4">
                   <span className="text-2xl md:text-3xl font-bold text-brand">
                     {Number(currentPrice).toLocaleString('ar-SA')} {currency}

@@ -199,7 +199,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               </div>
             ) : null}
 
-            <PaymentActionsClient orderId={order.id} currentPaymentStatus={order.paymentStatus} />
+            <PaymentActionsClient orderId={order.id} currentPaymentStatus={order.paymentStatus} orderStatus={order.status} />
           </div>
         </div>
       </div>

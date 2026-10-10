@@ -1,13 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { updatePaymentStatus, updateOrderStatus } from '../actions'
-import { generatePurchaseTasks } from '../../procurement/actions'
+import { confirmPaymentAndProcessOrder } from '../actions'
 import { useToast } from '@/components/ToastProvider'
 import { CheckCircle2, Factory } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-export default function PaymentActionsClient({ orderId, currentPaymentStatus }: { orderId: string, currentPaymentStatus: string }) {
+export default function PaymentActionsClient({ orderId, currentPaymentStatus, orderStatus }: { orderId: string, currentPaymentStatus: string, orderStatus: string }) {
   const { showToast } = useToast()
   const router = useRouter()
   const [isUpdating, setIsUpdating] = useState(false)
@@ -15,19 +14,12 @@ export default function PaymentActionsClient({ orderId, currentPaymentStatus }: 
   const handleConfirmAll = async () => {
     setIsUpdating(true)
     
-    // 1. Update Payment Status to PAID
-    const paymentRes = await updatePaymentStatus(orderId, 'PAID')
-    if (!paymentRes.success) {
-      alert(paymentRes.error)
+    const res = await confirmPaymentAndProcessOrder(orderId)
+    if (!res.success) {
+      alert(res.error)
       setIsUpdating(false)
       return
     }
-
-    // 2. Update Order Status to PROCESSING
-    await updateOrderStatus(orderId, 'PROCESSING')
-
-    // 3. Generate Purchase Tasks
-    await generatePurchaseTasks(orderId)
 
     setIsUpdating(false)
     showToast('success', 'تم تأكيد الدفع وإصدار مهام المشتريات بنجاح!')
@@ -61,7 +53,7 @@ export default function PaymentActionsClient({ orderId, currentPaymentStatus }: 
         </span>
       </div>
 
-      {currentPaymentStatus !== 'PAID' && (
+      {currentPaymentStatus !== 'PAID' && !['CANCELLED', 'REFUNDED'].includes(orderStatus) && (
         <div className="flex gap-2">
           <button 
             onClick={handleConfirmAll}
