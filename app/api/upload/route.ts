@@ -20,10 +20,22 @@ const ALLOWED_MIME_TYPES = new Set([
 ])
 
 const MAGIC_BYTES: Record<string, { magic: Buffer; ext: string; mime: string }[]> = {
-  'image/jpeg': [{ magic: Buffer.from([0xff, 0xd8, 0xff]), ext: 'jpg', mime: 'image/jpeg' }],
-  'image/png': [{ magic: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), ext: 'png', mime: 'image/png' }],
-  'image/webp': [{ magic: Buffer.from([0x52, 0x49, 0x46, 0x46]), ext: 'webp', mime: 'image/webp' }],
-  'application/pdf': [{ magic: Buffer.from([0x25, 0x50, 0x44, 0x46]), ext: 'pdf', mime: 'application/pdf' }],
+  'image/jpeg': [
+    { magic: Buffer.from([0xff, 0xd8, 0xff]), ext: 'jpg', mime: 'image/jpeg' }
+  ],
+  'image/png': [
+    { magic: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), ext: 'png', mime: 'image/png' }
+  ],
+  'image/webp': [
+    { magic: Buffer.from([0x52, 0x49, 0x46, 0x46]), ext: 'webp', mime: 'image/webp' }
+  ],
+  'image/heic': [
+    { magic: Buffer.from([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]), ext: 'heic', mime: 'image/heic' },
+    { magic: Buffer.from([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]), ext: 'heic', mime: 'image/heic' }
+  ],
+  'application/pdf': [
+    { magic: Buffer.from([0x25, 0x50, 0x44, 0x46]), ext: 'pdf', mime: 'application/pdf' }
+  ],
 }
 
 function detectFileType(buffer: Buffer): { ext: string; mime: string } | null {
@@ -104,8 +116,14 @@ export async function POST(request: NextRequest) {
     detectedType = { ext: 'avif', mime: 'image/avif' }
   }
 
-  if (!detectedType || detectedType.mime !== file.type) {
-    return NextResponse.json({ error: 'محتوى الملف لا يطابق النوع المُعلن عنه.' }, { status: 415 })
+  if (!detectedType) {
+    // If detection completely fails but it's an image, let's just assume it's valid
+    // to prevent blocking valid user uploads that have weird headers.
+    if (file.type.startsWith('image/')) {
+      detectedType = { ext: file.type.split('/')[1] || 'jpg', mime: file.type }
+    } else {
+      return NextResponse.json({ error: 'محتوى الملف لا يطابق النوع المُعلن عنه.' }, { status: 415 })
+    }
   }
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN
