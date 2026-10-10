@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { verifyAdmin } from '@/lib/auth'
 import { ArrowRight, MessageCircle } from 'lucide-react'
+import PurchaseTaskItemsClient from './PurchaseTaskItemsClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,31 +99,7 @@ export default async function PurchaseTaskDetail({ params }: { params: Promise<{
 
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">المنتجات المطلوب شراؤها</h2>
-        <div className="space-y-6">
-          {task.items.map(item => (
-            <div key={item.id} className="flex gap-4 p-4 border border-gray-100 rounded-lg bg-gray-50">
-              <div className="w-20 h-20 bg-white border border-gray-200 rounded-md relative flex-shrink-0 flex items-center justify-center">
-                {item.orderItem.product?.imageUrl ? (
-                  <Image src={item.orderItem.product.imageUrl} alt="" fill className="object-contain p-2 mix-blend-multiply" />
-                ) : (
-                  <span className="text-gray-300 text-xs">لا توجد صورة</span>
-                )}
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 text-lg mb-1">{item.orderItem.product?.name || 'منتج محذوف'}</h3>
-                <p className="text-sm text-gray-600 mb-1"><span className="font-bold">الكمية المطلوبة:</span> {item.orderItem.quantity}</p>
-                {item.orderItem.selectedSize && (
-                  <p className="text-sm text-gray-600 mb-1"><span className="font-bold">المقاس / الخيار:</span> {item.orderItem.selectedSize}</p>
-                )}
-                {item.orderItem.product?.slug && (
-                  <a href={`/products/${item.orderItem.product.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-brand hover:underline mt-2 inline-block">
-                    عرض المنتج في المتجر
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <PurchaseTaskItemsClient items={task.items as any} />
       </div>
     </div>
   )

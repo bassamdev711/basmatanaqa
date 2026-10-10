@@ -61,26 +61,47 @@ export default async function FulfillmentDashboard() {
             <div className="flex-1 space-y-4 mb-6">
               <h3 className="text-sm font-bold text-gray-700">المنتجات المطلوب تجميعها:</h3>
               <div className="space-y-3">
-                {order.items.map(item => (
-                  <div key={item.id} className="flex gap-3 items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
-                    <div className="w-12 h-12 bg-white rounded flex items-center justify-center relative flex-shrink-0 border border-gray-100">
-                      {item.product?.imageUrl ? (
-                        <Image src={item.product.imageUrl} alt={item.product.name} fill className="object-contain p-1" />
-                      ) : (
-                        <span className="text-[10px] text-gray-400">لا صورة</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate" title={item.product?.name}>{item.product?.name || 'منتج محذوف'}</p>
-                      <div className="flex justify-between text-xs mt-1">
-                        <span className="text-gray-500 font-bold">الكمية: {item.quantity} {item.selectedSize ? `| مقاس: ${item.selectedSize}` : ''}</span>
-                        <span className="text-brand font-bold bg-brand/10 px-2 rounded">
-                          {item.purchaseTaskItem?.purchaseTask?.supplier?.name || 'متجرنا'}
-                        </span>
+                {order.items.map(item => {
+                  const status = item.purchaseTaskItem?.status
+                  
+                  return (
+                    <div key={item.id} className={`flex gap-3 items-center p-2 rounded-lg border ${
+                      status === 'UNAVAILABLE' ? 'bg-red-50 border-red-100 opacity-60' : 
+                      status === 'PENDING' ? 'bg-orange-50 border-orange-100' :
+                      status === 'PURCHASED' ? 'bg-emerald-50 border-emerald-100' :
+                      'bg-gray-50 border-gray-100'
+                    }`}>
+                      <div className="w-12 h-12 bg-white rounded flex items-center justify-center relative flex-shrink-0 border border-gray-100">
+                        {item.product?.imageUrl ? (
+                          <Image src={item.product.imageUrl} alt={item.product.name} fill className={`object-contain p-1 ${status === 'UNAVAILABLE' ? 'grayscale' : ''}`} />
+                        ) : (
+                          <span className="text-[10px] text-gray-400">لا صورة</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-bold truncate ${status === 'UNAVAILABLE' ? 'text-red-700 line-through' : 'text-gray-900'}`} title={item.product?.name}>
+                          {item.product?.name || 'منتج محذوف'}
+                        </p>
+                        <div className="flex justify-between text-xs mt-1">
+                          <span className="text-gray-500 font-bold">الكمية: {item.quantity} {item.selectedSize ? `| مقاس: ${item.selectedSize}` : ''}</span>
+                          <span className="text-brand font-bold bg-brand/10 px-2 rounded">
+                            {item.purchaseTaskItem?.purchaseTask?.supplier?.name || 'متجرنا'}
+                          </span>
+                        </div>
+                        {/* Status Badges */}
+                        {status === 'UNAVAILABLE' && (
+                          <span className="text-red-600 text-[10px] font-bold mt-1 block">❌ المورد أفاد بعدم توفر القطعة (تجاهل التغليف)</span>
+                        )}
+                        {status === 'PENDING' && (
+                          <span className="text-orange-600 text-[10px] font-bold mt-1 block">⏳ لم يتم شراؤها من المورد بعد</span>
+                        )}
+                        {status === 'PURCHASED' && (
+                          <span className="text-emerald-600 text-[10px] font-bold mt-1 block">✅ تم توفيرها وجاهزة للتغليف</span>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 

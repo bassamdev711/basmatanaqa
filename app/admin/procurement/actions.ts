@@ -116,3 +116,69 @@ export async function updatePurchaseTaskStatus(taskId: string, status: string) {
     return { success: false, error: 'حدث خطأ أثناء تحديث المهمة' }
   }
 }
+
+export async function updatePurchaseTaskItemStatus(
+  itemId: string, 
+  status: string, 
+  actualCost?: number
+) {
+  try {
+    await verifyAdmin()
+    
+    await prisma.$transaction(async (tx) => {
+      // 1. Update the item
+      const updatedItem = await tx.purchaseTaskItem.update({
+        where: { id: itemId },
+        data: { 
+          status,
+          actualCost: actualCost !== undefined ? actualCost : undefined
+        },
+        include: {
+          purchaseTask: {
+            include: {
+              items: true
+            }
+          }
+        }
+      })
+
+      // 2. Auto-update the parent task status based on all its items
+      const task = updatedItem.purchaseTask
+      const allItems = task.items
+      const allProcessed = allItems.every(i => i.status === 'PURCHASED' || i.status === 'UNAVAILABLE')
+      
+      if (allProcessed) {
+        const hasUnavailable = allItems.some(i => i.status === 'UNAVAILABLE')
+        const allUnavailable = allItems.every(i => i.status === 'UNAVAILABLE')
+        
+        let newTaskStatus = 'PURCHASED'
+        if (allUnavailable) newTaskStatus = 'FAILED'
+        else if (hasUnavailable) newTaskStatus = 'PARTIAL'
+
+        if (task.status !== newTaskStatus) {
+          await tx.purchaseTask.update({
+            where: { id: task.id },
+            data: { 
+              status: newTaskStatus,
+              purchasedAt: new Date()
+            }
+          })
+        }
+      } else {
+        // If some are pending, ensure task is not marked as fully purchased
+        if (task.status === 'PURCHASED' || task.status === 'PARTIAL' || task.status === 'FAILED') {
+          await tx.purchaseTask.update({
+            where: { id: task.id },
+            data: { status: 'PENDING', purchasedAt: null }
+          })
+        }
+      }
+    })
+
+    revalidatePath('/admin/procurement')
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating task item:', error)
+    return { success: false, error: 'حدث خطأ أثناء تحديث القطعة' }
+  }
+}
