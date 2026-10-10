@@ -286,8 +286,6 @@ export default function CheckoutClient() {
       idempotencyKeyRef.current = requestKey
       window.sessionStorage.setItem('tif_checkout_request', requestKey)
 
-      let uploadFailed = false
-
       const result = await createOrder(
         { ...formData, phone: `+967${formData.phone}`, shippingFee },
         cartItems,
@@ -329,7 +327,12 @@ export default function CheckoutClient() {
           body: uploadFormData,
         })
         if (!uploadRes.ok) {
-          uploadFailed = true
+          let errorMsg = 'تعذر رفع صورة الإيصال. الرجاء المحاولة مرة أخرى.'
+          try {
+            const errorData = await uploadRes.json()
+            if (errorData.error) errorMsg = errorData.error
+          } catch (e) {}
+          throw new Error(errorMsg)
         }
       }
 
@@ -338,7 +341,7 @@ export default function CheckoutClient() {
       if (!result.trackingToken) {
         throw new Error('تعذر تجهيز رابط التتبع الآمن للطلب')
       }
-      router.push(`/checkout/success/${result.orderId}?token=${encodeURIComponent(result.trackingToken)}${uploadFailed ? '&uploadError=1' : ''}`)
+      router.push(`/checkout/success/${result.orderId}?token=${encodeURIComponent(result.trackingToken)}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
       setIsSubmitting(false)
