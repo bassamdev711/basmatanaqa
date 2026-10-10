@@ -89,8 +89,10 @@ export async function POST(request: NextRequest) {
   const uploadToken = typeof formData.get('uploadToken') === 'string' ? String(formData.get('uploadToken')).trim() : ''
   const transactionId = typeof formData.get('transactionId') === 'string' ? String(formData.get('transactionId')).trim().slice(0, 100) : ''
 
-  if (!isAdmin) {
-    if (!orderId || !uploadToken || !(await verifyOrderUploadToken(uploadToken, orderId))) {
+  const isReceiptUpload = Boolean(orderId && uploadToken)
+
+  if (isReceiptUpload) {
+    if (!(await verifyOrderUploadToken(uploadToken, orderId))) {
       return NextResponse.json({ error: 'غير مصرح برفع هذا الملف' }, { status: 403 })
     }
 
@@ -101,10 +103,12 @@ export async function POST(request: NextRequest) {
     if (!order || !['bank_transfer', 'wallets'].includes(order.paymentMethod) || !['PENDING', 'FAILED', 'AWAITING_CONFIRMATION'].includes(order.paymentStatus)) {
       return NextResponse.json({ error: 'غير مصرح برفع الإيصال لهذا الطلب' }, { status: 403 })
     }
+  } else if (!isAdmin) {
+    return NextResponse.json({ error: 'غير مصرح برفع هذا الملف' }, { status: 403 })
   }
 
-  const limitKey = isAdmin ? `upload_admin_${ip}` : `upload_receipt_${orderId}_${ip}`
-  const uploadLimit = isAdmin ? 30 : 5
+  const limitKey = isReceiptUpload ? `upload_receipt_${orderId}_${ip}` : `upload_admin_${ip}`
+  const uploadLimit = isReceiptUpload ? 5 : 30
   if (!checkRateLimit(limitKey, uploadLimit, 60 * 60 * 1000)) {
     return NextResponse.json({ error: 'تم تجاوز حد رفع الملفات. يرجى المحاولة لاحقاً.' }, { status: 429 })
   }
@@ -135,7 +139,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'خدمة التخزين غير مهيأة' }, { status: 503 })
   }
 
-  const folder = isAdmin ? 'products' : 'receipts'
+  const folder = isReceiptUpload ? 'receipts' : 'products'
   const filename = `${folder}/${Date.now()}-${crypto.randomBytes(16).toString('hex')}.${detectedType.ext}`
   let uploadedUrl: string | undefined
 
@@ -144,11 +148,11 @@ export async function POST(request: NextRequest) {
       access: 'public',
       token: blobToken,
       contentType: detectedType.mime,
-      cacheControlMaxAge: isAdmin ? 31536000 : 0,
-    }, isAdmin ? 'product' : 'receipt', buffer.length)
+      cacheControlMaxAge: !isReceiptUpload ? 31536000 : 0,
+    }, !isReceiptUpload ? 'product' : 'receipt', buffer.length)
     uploadedUrl = blob.url
 
-    if (!isAdmin) {
+    if (isReceiptUpload) {
       const updated = await prisma.order.updateMany({
         where: {
           id: orderId,
@@ -174,7 +178,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: uploadedUrl, warning })
   } catch (error) {
-    if (uploadedUrl && !isAdmin) {
+    if (uploadedUrl && isReceiptUpload) {
       try {
         await del(uploadedUrl, { token: blobToken })
         await markBlobDeleted(uploadedUrl)
