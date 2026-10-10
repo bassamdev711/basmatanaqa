@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client'
 import { awardOrderPoints, reverseOrderPoints } from '@/lib/loyalty/service'
 import { createUserNotification } from '@/lib/notifications/service'
 
-const ORDER_STATUSES = new Set(['NEW', 'PROCESSING', 'SHIPPED', 'COMPLETED', 'CANCELLED', 'REFUNDED'])
+const ORDER_STATUSES = new Set(['NEW', 'PROCESSING', 'READY_FOR_SHIPPING', 'SHIPPED', 'COMPLETED', 'CANCELLED', 'REFUNDED'])
 const PAYMENT_STATUSES = new Set(['PENDING', 'AWAITING_CONFIRMATION', 'PAID', 'FAILED', 'AWAITING_CUSTOMER_SERVICE', 'REJECTED'])
 
 export async function getOrders(statusFilter?: string, timeFilter?: string, search?: string, page = 1, limit = 50) {
@@ -19,6 +19,7 @@ export async function getOrders(statusFilter?: string, timeFilter?: string, sear
   if (statusFilter && statusFilter !== 'الكل') {
     if (statusFilter === 'جديد') whereClause.status = 'NEW'
     if (statusFilter === 'قيد التجهيز') whereClause.status = 'PROCESSING'
+    if (statusFilter === 'جاهز للشحن') whereClause.status = 'READY_FOR_SHIPPING'
     if (statusFilter === 'مشحون') whereClause.status = 'SHIPPED'
     if (statusFilter === 'مكتمل') whereClause.status = 'COMPLETED'
     if (statusFilter === 'ملغى') whereClause.status = 'CANCELLED'

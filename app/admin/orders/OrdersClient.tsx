@@ -33,6 +33,7 @@ type OrderStats = {
 const STATUS_LABEL: Record<string, string> = {
   NEW: 'جديد',
   PROCESSING: 'قيد التجهيز',
+  READY_FOR_SHIPPING: 'جاهز للشحن',
   SHIPPED: 'مشحون',
   COMPLETED: 'مكتمل',
   CANCELLED: 'ملغى',
@@ -64,6 +65,7 @@ function OrderBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     NEW: 'bg-blue-100 text-blue-700',
     PROCESSING: 'bg-indigo-100 text-indigo-700',
+    READY_FOR_SHIPPING: 'bg-emerald-100 text-emerald-700',
     SHIPPED: 'bg-teal-100 text-teal-700',
     COMPLETED: 'bg-brand/10 text-brand-700',
     CANCELLED: 'bg-red-100 text-red-700',
@@ -183,7 +185,7 @@ export default function OrdersClient({
             }} 
             className="bg-white border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-600 focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
-            {['الكل', 'جديد', 'قيد التجهيز', 'مشحون', 'مكتمل', 'ملغى'].map(s => <option key={s} value={s}>{s === 'الكل' ? 'حالة الطلب: الكل' : s}</option>)}
+            {['الكل', 'جديد', 'قيد التجهيز', 'جاهز للشحن', 'مشحون', 'مكتمل', 'ملغى'].map(s => <option key={s} value={s}>{s === 'الكل' ? 'حالة الطلب: الكل' : s}</option>)}
           </select>
         </div>
 

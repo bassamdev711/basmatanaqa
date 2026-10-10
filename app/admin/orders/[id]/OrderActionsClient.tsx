@@ -54,6 +54,7 @@ export default function OrderActionsClient({
           >
             <option value="NEW">جديد</option>
             <option value="PROCESSING">قيد التجهيز</option>
+            <option value="READY_FOR_SHIPPING">جاهز للشحن</option>
             <option value="SHIPPED">تم الشحن</option>
             <option value="COMPLETED">مكتمل</option>
             <option value="CANCELLED">ملغي</option>

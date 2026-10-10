@@ -36,6 +36,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       case 'PENDING': return 'قيد المراجعة'
       case 'AWAITING_PAYMENT': return 'بانتظار الدفع'
       case 'APPROVED': return 'معتمد'
+      case 'READY_FOR_SHIPPING': return 'جاهز للشحن'
       case 'SHIPPED': return 'تم الشحن'
       case 'COMPLETED': return 'مكتمل'
       case 'CANCELLED': return 'ملغي'
