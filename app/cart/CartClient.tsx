@@ -11,7 +11,7 @@ const emptySubscribe = () => () => {}
 const getClientHydrationSnapshot = () => true
 const getServerHydrationSnapshot = () => false
 
-export default function CartClient() {
+export default function CartClient({ couponsEnabled = true }: { couponsEnabled?: boolean }) {
   const currency = useCurrency()
 
   const { cartItems, removeFromCart, updateQuantity, cartTotal, finalTotal, appliedCoupon, couponLoading, couponError, applyCoupon, removeCoupon } = useCart()
@@ -112,47 +112,49 @@ export default function CartClient() {
                 <h2 className="text-base md:text-2xl font-black text-foreground mb-3 md:mb-6 border-b border-black/5 pb-3">ملخص الطلب</h2>
 
                 {/* Coupon Input */}
-                <div className="mb-6">
-                  <p className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
-                    <Tag className="w-4 h-4 text-accent" />
-                    كوبون خصم
-                  </p>
-                  {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-brand/5 border border-brand/20 rounded-sm px-3 py-2.5">
-                      <div>
-                        <span className="font-mono font-black text-brand text-sm">{appliedCoupon.code}</span>
-                        <p className="text-xs text-brand/70 mt-0.5">
-                          خصم {appliedCoupon.type === 'PERCENTAGE' ? `${appliedCoupon.value}%` : `${appliedCoupon.value.toLocaleString('ar-SA')} {currency}`}
-                        </p>
+                {couponsEnabled && (
+                  <div className="mb-6">
+                    <p className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
+                      <Tag className="w-4 h-4 text-accent" />
+                      كوبون خصم
+                    </p>
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between bg-brand/5 border border-brand/20 rounded-sm px-3 py-2.5">
+                        <div>
+                          <span className="font-mono font-black text-brand text-sm">{appliedCoupon.code}</span>
+                          <p className="text-xs text-brand/70 mt-0.5">
+                            خصم {appliedCoupon.type === 'PERCENTAGE' ? `${appliedCoupon.value}%` : `${appliedCoupon.value.toLocaleString('ar-SA')} ${currency}`}
+                          </p>
+                        </div>
+                        <button onClick={removeCoupon} className="text-red-400 hover:text-red-600 transition-colors">
+                          <X size={16} />
+                        </button>
                       </div>
-                      <button onClick={removeCoupon} className="text-red-400 hover:text-red-600 transition-colors">
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 overflow-hidden">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        placeholder="أدخل كود الخصم"
-                        dir="ltr"
-                        className="min-w-0 flex-1 h-[44px] border border-black/10 rounded-sm px-3 py-2 text-sm font-mono tracking-wider focus:outline-none focus:border-brand bg-surface"
-                        onKeyDown={(e) => e.key === 'Enter' && applyCoupon(couponCode)}
-                      />
-                      <button
-                        onClick={() => applyCoupon(couponCode)}
-                        disabled={couponLoading || !couponCode.trim()}
-                        className="btn btn-primary shrink-0 px-4 flex items-center gap-1.5 disabled:opacity-50"
-                      >
-                        {couponLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'تطبيق'}
-                      </button>
-                    </div>
-                  )}
-                  {couponError && (
-                    <p className="text-red-500 text-xs mt-1.5">{couponError}</p>
-                  )}
-                </div>
+                    ) : (
+                      <div className="flex gap-2 overflow-hidden">
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          placeholder="أدخل كود الخصم"
+                          dir="ltr"
+                          className="min-w-0 flex-1 h-[44px] border border-black/10 rounded-sm px-3 py-2 text-sm font-mono tracking-wider focus:outline-none focus:border-brand bg-surface"
+                          onKeyDown={(e) => e.key === 'Enter' && applyCoupon(couponCode)}
+                        />
+                        <button
+                          onClick={() => applyCoupon(couponCode)}
+                          disabled={couponLoading || !couponCode.trim()}
+                          className="btn btn-primary shrink-0 px-4 flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {couponLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'تطبيق'}
+                        </button>
+                      </div>
+                    )}
+                    {couponError && (
+                      <p className="text-red-500 text-xs mt-1.5">{couponError}</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-3 md:space-y-4 mb-6 md:mb-8 text-sm md:text-base">
                   <div className="flex justify-between text-foreground">

@@ -7,6 +7,20 @@ import { getCurrency } from '@/lib/currency'
 import { verifyAdmin } from '@/lib/auth'
 
 const COUPON_CODE_PATTERN = /^[A-Z0-9_-]{3,64}$/
+
+export async function toggleCouponSystem(enabled: boolean) {
+  const isAdmin = await verifyAdmin()
+  if (!isAdmin) throw new Error('Unauthorized')
+  
+  await prisma.storeSettings.update({
+    where: { id: 'singleton' },
+    data: { couponsEnabled: enabled },
+  })
+  revalidatePath('/admin/marketing/coupons')
+  revalidatePath('/cart')
+  revalidatePath('/checkout')
+  return { success: true }
+}
 const COUPON_TYPES = new Set(['PERCENTAGE', 'FIXED'])
 
 function parseCouponForm(formData: FormData) {

@@ -24,7 +24,7 @@ type PaymentSettingsResponse = {
     codFee: number
     customerServiceEnabled: boolean
   } | null
-  storeSettings: { shippingFee: number; freeShippingThreshold: number }
+  storeSettings: { shippingFee: number; freeShippingThreshold: number; couponsEnabled?: boolean }
   shippingCities: ShippingCity[]
   bankAccounts: BankAccount[]
   digitalWallets: DigitalWallet[]
@@ -153,7 +153,7 @@ export default function CheckoutClient() {
       // Provide fallback so it doesn't stay blank
       setPaymentSettings({
         settings: { codEnabled: false, bankTransferEnabled: false, walletsEnabled: false, codFee: 0, customerServiceEnabled: true },
-        storeSettings: { shippingFee: 0, freeShippingThreshold: 0 },
+        storeSettings: { shippingFee: 0, freeShippingThreshold: 0, couponsEnabled: true },
         shippingCities: [],
         bankAccounts: [],
         digitalWallets: [],

@@ -575,6 +575,7 @@ export async function getPaymentMethods() {
     storeSettings: {
       shippingFee: Number(storeSettings?.shippingFee || 0),
       freeShippingThreshold: Number(storeSettings?.freeShippingThreshold || 0),
+      couponsEnabled: storeSettings?.couponsEnabled ?? true,
     },
     shippingCities: shippingCities.map((city) => ({
       id: city.id,

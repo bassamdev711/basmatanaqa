@@ -350,6 +350,7 @@ model StoreSettings {
   ogImageUrl            String? // صورة المشاركة (Open Graph)
   faviconUrl            String? // أيقونة المتصفح (Favicon)
   storeUrl              String? // رابط المتجر لتوليد QR Code
+  couponsEnabled        Boolean  @default(true)
   updatedAt             DateTime @updatedAt
 }
 

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import prisma from '@/lib/prisma'
 import { Plus, Tag, Trash2, ToggleLeft, ToggleRight, Calendar, Users } from 'lucide-react'
-import { deleteCoupon, toggleCoupon } from './actions'
+import { deleteCoupon, toggleCoupon, toggleCouponSystem } from './actions'
 import { getCurrency } from '@/lib/currency'
 
 export const metadata = { title: 'كوبونات الخصم | لوحة التحكم' }
@@ -22,7 +22,11 @@ export default async function CouponsPage() {
   const currency = await getCurrency()
 
   let coupons: Coupon[] = []
+  let couponsEnabled = true
   try {
+    const settings = await prisma.storeSettings.findUnique({ where: { id: 'singleton' } })
+    if (settings) couponsEnabled = settings.couponsEnabled
+
     const dbCoupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' }, take: 200 })
     coupons = dbCoupons.map((coupon) => ({
       ...coupon,
@@ -40,13 +44,27 @@ export default async function CouponsPage() {
           <h2 className="text-2xl font-black text-gray-900">كوبونات الخصم</h2>
           <p className="text-gray-500 text-sm mt-1">{coupons.length} كوبون مسجَّل</p>
         </div>
-        <Link
-          href="/admin/marketing/coupons/new"
-          className="flex items-center gap-2 bg-emerald text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-deep-green transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          كوبون جديد
-        </Link>
+        <div className="flex items-center gap-4">
+          <form action={async () => {
+            'use server'
+            await toggleCouponSystem(!couponsEnabled)
+          }}>
+            <button
+              type="submit"
+              className={`flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-colors border ${couponsEnabled ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'}`}
+            >
+              {couponsEnabled ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+              {couponsEnabled ? 'تعطيل نظام الكوبونات بالكامل' : 'تفعيل نظام الكوبونات بالكامل'}
+            </button>
+          </form>
+          <Link
+            href="/admin/marketing/coupons/new"
+            className="flex items-center gap-2 bg-emerald text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-deep-green transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            كوبون جديد
+          </Link>
+        </div>
       </div>
 
       {/* Coupons Table */}
