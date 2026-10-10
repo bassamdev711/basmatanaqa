@@ -13,9 +13,12 @@ const MAX_FILE_SIZE = 4 * 1024 * 1024
 const WARN_FILE_SIZE = 2 * 1024 * 1024
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
+  'image/jpg',
   'image/png',
   'image/webp',
   'image/avif',
+  'image/heic',
+  'image/heif',
   'application/pdf',
 ])
 
