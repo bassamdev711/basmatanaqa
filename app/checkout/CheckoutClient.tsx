@@ -564,6 +564,34 @@ export default function CheckoutClient() {
                           <div className="mt-4 pt-4 border-t border-black/10 animate-in fade-in slide-in-from-top-2">
                             <h4 className="text-sm font-bold text-brand mb-3 uppercase">الحسابات البنكية المتاحة</h4>
                             <div className="space-y-4 mb-6">
+                              {LOCAL_PAYMENT_METHODS.filter(m => m.type === 'bank_transfer').map((method) => (
+                                <div key={method.id} className={`relative overflow-hidden p-4 rounded-xl border ${method.borderClass} ${method.bgClass} shadow-sm transition-all hover:shadow-md`}>
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-12 h-12 bg-white rounded-lg p-1.5 shadow-sm border border-black/5 flex items-center justify-center shrink-0">
+                                        <Image src={method.logo} alt={method.name} width={40} height={40} className="object-contain" />
+                                      </div>
+                                      <div>
+                                        <h5 className={`font-black text-lg ${method.textClass}`}>{method.name}</h5>
+                                        <span className="text-xs text-black/60 font-bold">باسم المتجر</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between bg-white/60 p-3 rounded-lg border border-black/5">
+                                    <div>
+                                      <span className="text-xs text-black/50 block mb-0.5 font-bold">رقم الحساب</span>
+                                      <span className="font-bold tracking-wider" dir="ltr">{TEST_ACCOUNT_NUMBER}</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.preventDefault(); handleCopy(TEST_ACCOUNT_NUMBER, method.id); }}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold transition-all ${copiedId === method.id ? 'bg-green-500 text-white' : 'bg-white border border-black/10 hover:bg-black/5 text-black/70'}`}
+                                    >
+                                      {copiedId === method.id ? <span>تم النسخ</span> : <><span>نسخ</span><Copy size={14} /></>}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                               {paymentSettings.bankAccounts.map((account) => (
                                 <div key={account.id} className="relative overflow-hidden p-4 rounded-xl border border-black/10 bg-white shadow-sm transition-all hover:shadow-md" style={{ borderColor: account.colorHex || undefined }}>
                                   <div className="flex justify-between items-start mb-4">
@@ -687,6 +715,33 @@ export default function CheckoutClient() {
                             <h4 className="text-sm font-bold text-brand mb-3 uppercase">المحافظ المتاحة</h4>
                             <div className="space-y-4 mb-6">
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {LOCAL_PAYMENT_METHODS.filter(m => m.type === 'wallets').map((method) => (
+                                <div key={method.id} className={`relative overflow-hidden p-4 rounded-xl border ${method.borderClass} ${method.bgClass} shadow-sm transition-all hover:shadow-md`}>
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-12 h-12 bg-white rounded-lg p-1.5 shadow-sm border border-black/5 flex items-center justify-center shrink-0">
+                                        <Image src={method.logo} alt={method.name} width={40} height={40} className="object-contain" />
+                                      </div>
+                                      <div>
+                                        <h5 className={`font-black text-base ${method.textClass}`}>{method.name}</h5>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between bg-white/60 p-2.5 rounded-lg border border-black/5">
+                                    <div>
+                                      <span className="text-[10px] text-black/50 block mb-0.5 font-bold">رقم الحساب</span>
+                                      <span className="font-bold tracking-wider text-sm" dir="ltr">{TEST_ACCOUNT_NUMBER}</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.preventDefault(); handleCopy(TEST_ACCOUNT_NUMBER, method.id); }}
+                                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-all ${copiedId === method.id ? 'bg-green-500 text-white' : 'bg-white border border-black/10 hover:bg-black/5 text-black/70'}`}
+                                    >
+                                      {copiedId === method.id ? <span>تم النسخ</span> : <><span>نسخ</span><Copy size={12} /></>}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                               {paymentSettings.digitalWallets.map((wallet) => (
                                 <div key={wallet.id} className="relative overflow-hidden p-4 rounded-xl border border-black/10 bg-white shadow-sm transition-all hover:shadow-md" style={{ borderColor: wallet.colorHex || undefined }}>
                                   <div className="flex justify-between items-start mb-4">
@@ -902,22 +957,30 @@ export default function CheckoutClient() {
                   <ArrowLeft size={20} className="group-hover:-translate-x-2 transition-transform" />
                 </button>
               ) : (
-                <div className="flex gap-4 mt-6">
-                  <button 
-                    type="button" 
-                    onClick={() => setStep(1)}
-                    className="btn bg-white text-foreground border border-black/10 hover:bg-black/5 md:h-16 h-14 px-6 font-bold"
-                  >
-                    رجوع
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting || !hasAvailablePaymentMethod || priceChanges !== null}
-                    className="btn btn-primary flex-1 btn-lg gap-3 group !bg-accent !text-foreground hover:!bg-accent/90 border border-black/10 disabled:opacity-50 disabled:cursor-not-allowed md:h-16 h-14 md:text-lg"
-                  >
-                    {isSubmitting ? (uploadStatus || 'جاري اعتماد الطلب...') : 'تأكيد الطلب الآن'}
-                    {!isSubmitting && <ArrowLeft size={20} className="group-hover:-translate-x-2 transition-transform" />}
-                  </button>
+                <div className="mt-6 flex flex-col gap-4">
+                  {isSubmitting && uploadStatus && (
+                    <div className="p-4 bg-brand/5 border border-brand/20 rounded-xl text-brand font-bold text-sm md:text-base flex items-center justify-center gap-3 shadow-sm animate-pulse">
+                      <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin shrink-0" />
+                      <span>{uploadStatus}</span>
+                    </div>
+                  )}
+                  <div className="flex gap-4">
+                    <button 
+                      type="button" 
+                      onClick={() => setStep(1)}
+                      className="btn bg-white text-foreground border border-black/10 hover:bg-black/5 md:h-16 h-14 px-6 font-bold"
+                    >
+                      رجوع
+                    </button>
+                    <button 
+                      type="submit" 
+                      disabled={isSubmitting || !hasAvailablePaymentMethod || priceChanges !== null}
+                      className="btn btn-primary flex-1 btn-lg gap-3 group !bg-accent !text-foreground hover:!bg-accent/90 border border-black/10 disabled:opacity-50 disabled:cursor-not-allowed md:h-16 h-14 md:text-lg shadow-sm"
+                    >
+                      {isSubmitting ? (uploadStatus || 'جاري اعتماد الطلب...') : 'تأكيد الطلب الآن'}
+                      {!isSubmitting && <ArrowLeft size={20} className="group-hover:-translate-x-2 transition-transform" />}
+                    </button>
+                  </div>
                 </div>
               )}
             </form>
