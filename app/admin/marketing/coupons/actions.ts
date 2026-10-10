@@ -12,9 +12,10 @@ export async function toggleCouponSystem(enabled: boolean) {
   const isAdmin = await verifyAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
   
-  await prisma.storeSettings.update({
+  await prisma.storeSettings.upsert({
     where: { id: 'singleton' },
-    data: { couponsEnabled: enabled },
+    update: { couponsEnabled: enabled },
+    create: { id: 'singleton', couponsEnabled: enabled },
   })
   revalidatePath('/admin/marketing/coupons')
   revalidatePath('/cart')
