@@ -629,7 +629,7 @@ export default function CheckoutClient() {
                                   </div>
                                 </div>
                               ))}
-                              {paymentSettings.bankAccounts.length === 0 && (
+                              {paymentSettings.bankAccounts.length === 0 && LOCAL_PAYMENT_METHODS.filter(m => m.type === 'bank_transfer').length === 0 && (
                                 <p className="text-xs text-red-500">لا توجد حسابات بنكية مضافة حالياً.</p>
                               )}
                             </div>
@@ -779,7 +779,7 @@ export default function CheckoutClient() {
                                 </div>
                               ))}
                               </div>
-                              {paymentSettings.digitalWallets.length === 0 && (
+                              {paymentSettings.digitalWallets.length === 0 && LOCAL_PAYMENT_METHODS.filter(m => m.type === 'wallets').length === 0 && (
                                 <p className="text-xs text-red-500">لا توجد محافظ إلكترونية مضافة حالياً.</p>
                               )}
                             </div>
