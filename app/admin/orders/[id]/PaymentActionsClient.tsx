@@ -47,36 +47,15 @@ export default function PaymentActionsClient({ orderId, currentPaymentStatus }: 
         </span>
       </div>
 
-      {currentPaymentStatus === 'AWAITING_CONFIRMATION' && (
+      {currentPaymentStatus !== 'PAID' && (
         <div className="flex gap-2">
           <button 
             onClick={() => handleUpdate('PAID')}
             disabled={isUpdating}
-            className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md font-bold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-green-600 text-white px-4 py-3 rounded-md font-bold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <CheckCircle2 size={16} />
-            تأكيد استلام المبلغ
-          </button>
-          <button 
-            onClick={() => handleUpdate('REJECTED')}
-            disabled={isUpdating}
-            className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md font-bold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <XCircle size={16} />
-            رفض السند
-          </button>
-        </div>
-      )}
-
-      {currentPaymentStatus === 'AWAITING_CUSTOMER_SERVICE' && (
-        <div className="flex gap-2">
-          <button 
-            onClick={() => handleUpdate('PAID')}
-            disabled={isUpdating}
-            className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md font-bold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <CheckCircle2 size={16} />
-            تأكيد الدفع يدوياً
+            <CheckCircle2 size={18} />
+            تأكيد الدفع (تحويل حالة الطلب إلى مدفوع)
           </button>
         </div>
       )}
