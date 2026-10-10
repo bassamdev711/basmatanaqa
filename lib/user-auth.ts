@@ -78,7 +78,7 @@ export async function getCurrentUser() {
     where: { tokenHash: hashToken(token) },
     include: { user: true },
   })
-  if (!session || session.revokedAt || session.expiresAt <= new Date() || !session.user.isActive) return null
+  if (!session || session.revokedAt || session.expiresAt <= new Date()) return null
 
   await prisma.userSession.update({
     where: { id: session.id },

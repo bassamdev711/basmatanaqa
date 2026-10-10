@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Phone, Mail, MapPin, Package, ChevronRight, X, Save, Loader2, AlertTriangle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Phone, Mail, MapPin, Package, ChevronRight, X, Save, Loader2, AlertTriangle, Search } from 'lucide-react'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from './actions'
 
 type Supplier = {
@@ -27,6 +27,13 @@ export default function SuppliersPage() {
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredSuppliers = suppliers.filter(s => 
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (s.phone && s.phone.includes(searchQuery)) ||
+    (s.whatsapp && s.whatsapp.includes(searchQuery))
+  )
 
   const load = async () => {
     setLoading(true)
@@ -65,15 +72,27 @@ export default function SuppliersPage() {
 
   return (
     <div className="p-6 md:p-8 space-y-6" dir="rtl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-foreground">الموردون</h1>
           <p className="text-sm text-foreground/50 mt-1">إدارة موردي البضاعة وربطهم بالمنتجات</p>
         </div>
-        <button onClick={openNew} className="btn btn-primary gap-2">
-          <Plus size={18} />
-          مورد جديد
-        </button>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-grow md:w-64">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
+            <input 
+              type="text" 
+              placeholder="بحث في الموردين..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white border border-foreground/10 rounded-xl pr-10 pl-4 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+            />
+          </div>
+          <button onClick={openNew} className="btn btn-primary gap-2 shrink-0">
+            <Plus size={18} />
+            <span className="hidden sm:inline">مورد جديد</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -87,9 +106,15 @@ export default function SuppliersPage() {
           <p className="text-foreground/50 mb-6">أضف مورديك الأول لربط المنتجات بهم وتفكيك الطلبات.</p>
           <button onClick={openNew} className="btn btn-primary gap-2"><Plus size={16} />إضافة مورد</button>
         </div>
+      ) : filteredSuppliers.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-foreground/5 p-16 text-center">
+          <Search className="w-16 h-16 text-foreground/20 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-foreground mb-2">لم يتم العثور على نتائج</h3>
+          <p className="text-foreground/50 mb-6">لا يوجد مورد يطابق بحثك "{searchQuery}"</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {suppliers.map(s => (
+          {filteredSuppliers.map(s => (
             <div key={s.id} className={`bg-white rounded-2xl border p-5 space-y-4 smooth-transition hover:border-brand/30 ${s.isActive ? 'border-foreground/5' : 'border-red-100 opacity-70'}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -108,10 +133,30 @@ export default function SuppliersPage() {
                   </button>
                 </div>
               </div>
-              <div className="space-y-1.5 text-sm text-foreground/70">
-                {s.phone && <div className="flex items-center gap-2"><Phone size={13} className="text-brand" /><span dir="ltr">{s.phone}</span></div>}
-                {s.whatsapp && <div className="flex items-center gap-2"><span className="text-green-600 font-bold text-xs">WA</span><span dir="ltr">{s.whatsapp}</span></div>}
-                {s.email && <div className="flex items-center gap-2"><Mail size={13} className="text-brand" />{s.email}</div>}
+              <div className="space-y-2 text-sm text-foreground/70">
+                {s.phone && (
+                  <div className="flex items-center justify-between bg-surface/50 p-2 rounded-lg border border-foreground/5">
+                    <div className="flex items-center gap-2">
+                      <Phone size={14} className="text-brand" />
+                      <span dir="ltr" className="font-semibold text-foreground">{s.phone}</span>
+                    </div>
+                    <a href={`tel:${s.phone}`} className="flex items-center gap-1 text-xs bg-brand/10 text-brand px-2.5 py-1.5 rounded hover:bg-brand/20 transition-colors font-bold">
+                      <Phone size={12} /> اتصال
+                    </a>
+                  </div>
+                )}
+                {s.whatsapp && (
+                  <div className="flex items-center justify-between bg-surface/50 p-2 rounded-lg border border-foreground/5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600 font-bold text-xs bg-green-100 px-1.5 py-0.5 rounded">WA</span>
+                      <span dir="ltr" className="font-semibold text-foreground">{s.whatsapp}</span>
+                    </div>
+                    <a href={`https://wa.me/${s.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2.5 py-1.5 rounded hover:bg-green-200 transition-colors font-bold">
+                      مراسلة
+                    </a>
+                  </div>
+                )}
+                {s.email && <div className="flex items-center gap-2 mt-3"><Mail size={13} className="text-brand" />{s.email}</div>}
                 {s.address && <div className="flex items-center gap-2"><MapPin size={13} className="text-brand" />{s.address}</div>}
               </div>
               {s.notes && (

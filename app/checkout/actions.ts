@@ -59,6 +59,9 @@ export async function createOrder(
   const requestKey = typeof idempotencyKey === 'string' ? idempotencyKey.trim().slice(0, 128) : ''
   try {
     const authenticatedUser = await getCurrentUser()
+    if (authenticatedUser && !authenticatedUser.isActive) {
+      return { success: false, error: `حسابك مقيد حالياً. السبب: ${authenticatedUser.restrictionReason || 'مخالفة سياسات المتجر'}. لا يمكنك إتمام الطلب.` }
+    }
     const headersList = await headers()
     const ip = getClientIp(headersList.get('x-forwarded-for'))
 

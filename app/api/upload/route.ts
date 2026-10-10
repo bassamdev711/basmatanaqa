@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const blob = await putTrackedBlob(filename, buffer, {
-      access: isAdmin ? 'public' : 'private',
+      access: 'public',
       token: blobToken,
       contentType: detectedType.mime,
       cacheControlMaxAge: isAdmin ? 31536000 : 0,

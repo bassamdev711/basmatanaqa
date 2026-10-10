@@ -14,7 +14,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'كلمة المرور قصيرة جداً' }, { status: 400 })
     }
 
-    const tokenHash = hashOneTimeToken(token)
+    // We no longer hash the token because we store it raw so admin can retrieve it
+    const tokenHash = token
 
     const resetRecord = await prisma.passwordResetToken.findUnique({
       where: { tokenHash },

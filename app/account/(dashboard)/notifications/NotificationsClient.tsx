@@ -11,11 +11,13 @@ export default function NotificationsClient({ initialNotifications }: { initialN
   const handleMarkAsRead = async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, readAt: new Date() } : n))
     await markNotificationAsRead(id)
+    window.dispatchEvent(new Event('notificationsRead'))
   }
 
   const handleMarkAllAsRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, readAt: new Date() })))
     await markAllNotificationsAsRead()
+    window.dispatchEvent(new Event('notificationsRead'))
   }
 
   const unreadCount = notifications.filter(n => !n.readAt).length

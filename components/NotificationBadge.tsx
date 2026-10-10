@@ -1,20 +1,29 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 export default function NotificationBadge() {
   const [unreadCount, setUnreadCount] = useState(0)
+  const pathname = usePathname()
 
   useEffect(() => {
-    fetch('/api/user/notifications/unread-count')
-      .then(res => res.json())
-      .then(data => {
-        if (data && typeof data.count === 'number') {
-          setUnreadCount(data.count)
-        }
-      })
-      .catch(() => {})
-  }, [])
+    const fetchCount = () => {
+      fetch('/api/user/notifications/unread-count')
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.count === 'number') {
+            setUnreadCount(data.count)
+          }
+        })
+        .catch(() => {})
+    }
+
+    fetchCount()
+
+    window.addEventListener('notificationsRead', fetchCount)
+    return () => window.removeEventListener('notificationsRead', fetchCount)
+  }, [pathname])
 
   if (unreadCount === 0) return null
 

@@ -220,7 +220,7 @@ export async function changeCustomerPassword(userId: string, newPassword: string
   }
 }
 
-export async function toggleCustomerStatus(userId: string) {
+export async function toggleCustomerStatus(userId: string, reason?: string) {
   await verifyAdmin()
 
   try {
@@ -237,7 +237,10 @@ export async function toggleCustomerStatus(userId: string) {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { isActive: newStatus }
+      data: { 
+        isActive: newStatus,
+        restrictionReason: newStatus ? null : (reason || 'مخالفة سياسات المتجر')
+      }
     })
 
     if (!newStatus) {
@@ -250,5 +253,46 @@ export async function toggleCustomerStatus(userId: string) {
   } catch (error) {
     console.error('Failed to toggle customer status:', error)
     return { success: false, error: 'حدث خطأ أثناء تغيير حالة الحساب' }
+  }
+}
+
+export async function hardDeleteCustomer(userId: string) {
+  await verifyAdmin()
+  
+  try {
+    const customer = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { loyaltyAccount: true }
+    })
+
+    if (!customer) {
+      return { success: false, error: 'العميل غير موجود' }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (customer.loyaltyAccount) {
+        await tx.loyaltyTransaction.deleteMany({
+          where: { accountId: customer.loyaltyAccount.id }
+        })
+      }
+      
+      await tx.loyaltyTransaction.deleteMany({
+        where: { userId }
+      })
+
+      await tx.loyaltyAccount.deleteMany({
+        where: { userId }
+      })
+      
+      await tx.user.delete({
+        where: { id: userId }
+      })
+    })
+
+    revalidatePath('/admin/customers')
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to hard delete customer:', error)
+    return { success: false, error: 'حدث خطأ أثناء حذف الحساب نهائياً' }
   }
 }

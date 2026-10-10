@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { KeyRound, MessageCircle, Copy, CheckCircle2 } from 'lucide-react'
 
 export default function CustomerActions({ customerId, customerPhone }: { customerId: string, customerPhone: string }) {
@@ -8,6 +8,22 @@ export default function CustomerActions({ customerId, customerPhone }: { custome
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [whatsappPhone, setWhatsappPhone] = useState(customerPhone.replace('+967', ''))
+
+  useEffect(() => {
+    // Fetch active reset link if any
+    const fetchActiveLink = async () => {
+      try {
+        const res = await fetch(`/api/admin/customers/${customerId}/reset-link`)
+        const data = await res.json()
+        if (res.ok && data.resetLink) {
+          setResetLink(data.resetLink)
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchActiveLink()
+  }, [customerId])
 
   const generateResetLink = async () => {
     setLoading(true)

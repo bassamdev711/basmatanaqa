@@ -178,13 +178,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                   <Receipt size={16} className="text-brand" />
                   إثبات الدفع
                 </h3>
-                <a href={`/api/admin/orders/${order.id}/payment-proof`} target="_blank" rel="noopener noreferrer" className="block relative h-40 w-full rounded-md overflow-hidden border border-gray-200 group">
+                <a href={order.paymentProofUrl} target="_blank" rel="noopener noreferrer" className="block relative h-40 w-full rounded-md overflow-hidden border border-gray-200 group bg-gray-50 flex items-center justify-center">
                   <Image 
-                    src={`/api/admin/orders/${order.id}/payment-proof`}
+                    src={order.paymentProofUrl}
                     alt="إيصال الدفع"
                     fill 
                     unoptimized
-                    className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                    className="object-contain group-hover:scale-105 transition-transform duration-300" 
                   />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="text-white font-bold text-sm bg-black/60 px-3 py-1 rounded-full">عرض الصورة بحجم كامل</span>
