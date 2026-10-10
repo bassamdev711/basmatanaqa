@@ -83,29 +83,34 @@ export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'c
                 {variant === 'circles' ? (
                   <>
                     <div
-                      className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center overflow-hidden border-[2px] transition-all duration-300 pointer-events-none ${
+                      className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center border-[2px] transition-all duration-300 pointer-events-none ${
                         isActive
-                          ? 'border-brand shadow-sm scale-105'
-                          : 'border-transparent bg-black/5 group-hover:border-brand/30 group-hover:scale-105'
+                          ? 'border-brand shadow-lg shadow-brand/40 scale-110 ring-4 ring-brand/20 z-10'
+                          : 'border-transparent bg-black/5 group-hover:border-brand/30 group-hover:scale-105 overflow-hidden'
                       }`}
                     >
-                      {f.imageUrl ? (
-                        <Image
-                          src={f.imageUrl}
-                          alt={f.label}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 56px, 64px"
-                          draggable={false}
-                        />
-                      ) : (
-                        <LayoutGrid className={`w-5 h-5 md:w-6 md:h-6 transition-all ${
-                          isActive ? 'text-brand' : 'text-foreground/40 group-hover:text-brand'
-                        }`} />
-                      )}
+                      {/* Inner wrapper for image to ensure rounded overflow doesn't clip the outer ring */}
+                      <div className="absolute inset-0 rounded-full overflow-hidden">
+                        {f.imageUrl ? (
+                          <Image
+                            src={f.imageUrl}
+                            alt={f.label}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 56px, 64px"
+                            draggable={false}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <LayoutGrid className={`w-5 h-5 md:w-6 md:h-6 transition-all ${
+                              isActive ? 'text-brand scale-110' : 'text-foreground/40 group-hover:text-brand'
+                            }`} />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className={`text-[10px] md:text-xs font-bold transition-colors pointer-events-none text-center w-14 md:w-16 whitespace-normal ${
-                      isActive ? 'text-brand' : 'text-foreground/70 group-hover:text-brand'
+                    <span className={`text-[10px] md:text-xs font-bold transition-all duration-300 pointer-events-none text-center whitespace-nowrap px-1 ${
+                      isActive ? 'text-brand scale-105' : 'text-foreground/70 group-hover:text-brand'
                     }`}>
                       {f.label}
                     </span>
