@@ -7,7 +7,7 @@ import { loginSchema } from '@/lib/validation/user'
 
 export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  if (!checkRateLimit(`login:${ip}`, 10, 15 * 60 * 1000)) return NextResponse.json({ error: 'بيانات الدخول غير صحيحة.' }, { status: 401 })
+  if (!checkRateLimit(`login:${ip}`, 10, 15 * 60 * 1000)) return NextResponse.json({ error: 'محاولات دخول كثيرة، تم قفل الجهاز مؤقتاً لمدة 15 دقيقة.' }, { status: 429 })
   try {
     const parsed = loginSchema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ error: 'بيانات الدخول غير صحيحة.' }, { status: 401 })

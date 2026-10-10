@@ -162,7 +162,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <div className="space-y-3 text-sm text-gray-600">
               <p>
                 <span className="font-bold text-gray-900">طريقة الدفع:</span> 
-                {order.paymentMethod === 'bank_transfer' ? ' إيداع بنكي' : ' الدفع عند الاستلام'}
+                {order.paymentMethod === 'bank_transfer' ? ' إيداع بنكي' 
+                 : order.paymentMethod === 'wallets' ? ' محفظة إلكترونية'
+                 : order.paymentMethod === 'customer_service' ? ' خدمة العملاء'
+                 : ' الدفع عند الاستلام'}
               </p>
               {order.transactionId && (
                 <p><span className="font-bold text-gray-900">رقم العملية:</span> {order.transactionId}</p>
@@ -180,6 +183,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                     src={`/api/admin/orders/${order.id}/payment-proof`}
                     alt="إيصال الدفع"
                     fill 
+                    unoptimized
                     className="object-cover group-hover:scale-105 transition-transform duration-300" 
                   />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

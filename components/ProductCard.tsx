@@ -139,7 +139,7 @@ export default function ProductCard({ product, currency, priority = false }: Pro
         <div className="mt-auto">
           <button 
             onClick={handleAddToCart}
-            className="w-full py-2 border border-black/10 text-black md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 hover:bg-black hover:text-white transition-all duration-300 rounded-md flex items-center justify-center gap-2 font-medium text-xs md:text-sm"
+            className="w-full py-2 bg-brand text-white md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 hover:bg-brand-hover transition-all duration-300 rounded-md flex items-center justify-center gap-2 font-medium text-xs md:text-sm shadow-sm"
           >
             <ShoppingBag size={14} className="opacity-70" />
             أضف للسلة
