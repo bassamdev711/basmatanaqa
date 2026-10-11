@@ -45,6 +45,7 @@ const LOCAL_PAYMENT_METHODS = [
     description: 'التحويل البنكي',
     accountNumber: '3052834812',
     accountLabel: 'رقم الحساب',
+    holderName: 'رقم حساب مؤقت',
     logo: '/krimi.webp',
     type: 'bank_transfer',
     bgClass: 'bg-[#fdf4ff]',
@@ -682,7 +683,7 @@ export default function CheckoutClient() {
                                       </div>
                                       <div>
                                         <h5 className={`font-black text-lg ${method.textClass}`}>{method.name}</h5>
-                                        <span className="text-xs text-black/60 font-bold">باسم المتجر</span>
+                                        <span className="text-xs text-black/60 font-bold">{method.holderName || 'رقم حساب مؤقت'}</span>
                                       </div>
                                     </div>
                                   </div>
