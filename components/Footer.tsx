@@ -64,7 +64,7 @@ export default async function Footer({
     // Render the configured fallbacks when the database is unavailable during build or runtime.
   }
 
-  const phone = contactSettings?.phoneNumber || null;
+  const phone = contactSettings?.phoneNumber || '+967 716 761 754';
   const showPhone = Boolean(phone && contactSettings?.showPhoneNumber !== false);
   const email = contactSettings?.emailAddress || 'shahrazadstore.online@gmail.com';
   const showEmail = Boolean(email && contactSettings?.showEmailAddress !== false);

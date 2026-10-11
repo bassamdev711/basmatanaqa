@@ -16,7 +16,7 @@ type ContactData = {
 }
 
 export default function ContactClient({ contactData }: { contactData?: ContactData | null }) {
-  const phone = contactData?.phoneNumber || '+967 777 777 777'
+  const phone = contactData?.phoneNumber || '+967 716 761 754'
   const showPhone = contactData?.showPhoneNumber !== false
   const email = contactData?.emailAddress || 'shahrazadstore.online@gmail.com'
   const showEmail = contactData?.showEmailAddress !== false
