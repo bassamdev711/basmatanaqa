@@ -191,7 +191,9 @@ export default function CheckoutClient() {
   }
 
   const storeSettings = paymentSettings.storeSettings;
-  const shippingCities = paymentSettings.shippingCities || [];
+  const shippingCities = (paymentSettings.shippingCities || []).filter(
+    (city: ShippingCity) => city.name !== 'أخرى' && city.name !== 'اخري'
+  );
   const hasAvailablePaymentMethod = Boolean(
     paymentSettings.settings?.bankTransferEnabled ||
     paymentSettings.settings?.walletsEnabled ||
@@ -267,12 +269,8 @@ export default function CheckoutClient() {
       setError('لا توجد منطقة توصيل متاحة حالياً.')
       return
     }
-    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.address || !formData.city) {
-      setError('يرجى تعبئة جميع الحقول المطلوبة (الاسم الكامل يجب أن يكون حرفين على الأقل)')
-      return
-    }
-    if (formData.address.trim().length < 5) {
-      setError('تفاصيل العنوان يجب أن تكون 5 أحرف على الأقل')
+    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.city) {
+      setError('يرجى كتابة الاسم بالكامل واختيار منطقة التوصيل')
       return
     }
     setError('')
@@ -292,14 +290,8 @@ export default function CheckoutClient() {
       setPhoneError('')
     }
 
-    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.address || !formData.city) {
-      setError('يرجى تعبئة جميع الحقول المطلوبة (الاسم الكامل يجب أن يكون حرفين على الأقل)')
-      setStep(1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
-    }
-    if (formData.address.trim().length < 5) {
-      setError('تفاصيل العنوان يجب أن تكون 5 أحرف على الأقل')
+    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.city) {
+      setError('يرجى كتابة الاسم بالكامل واختيار منطقة التوصيل')
       setStep(1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
@@ -336,7 +328,7 @@ export default function CheckoutClient() {
       window.sessionStorage.setItem('tif_checkout_request', requestKey)
 
       const result = await createOrder(
-        { ...formData, phone: `+967${formData.phone}`, shippingFee },
+        { ...formData, address: formData.address || formData.city || 'المنطقة المحددة', phone: `+967${formData.phone}`, shippingFee },
         cartItems,
         cartTotal,
         appliedCoupon?.code,
@@ -435,14 +427,8 @@ export default function CheckoutClient() {
       setPhoneError('')
     }
 
-    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.address || !formData.city) {
-      setError('يرجى تعبئة جميع الحقول المطلوبة (الاسم الكامل، المحافظة/المدينة، وتفاصيل العنوان)')
-      setStep(1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
-    }
-    if (formData.address.trim().length < 5) {
-      setError('تفاصيل العنوان يجب أن تكون 5 أحرف على الأقل')
+    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.city) {
+      setError('يرجى كتابة الاسم بالكامل واختيار منطقة التوصيل')
       setStep(1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
@@ -460,7 +446,7 @@ export default function CheckoutClient() {
       window.sessionStorage.setItem('tif_checkout_request', requestKey)
 
       const result = await createOrder(
-        { ...formData, paymentMethod: 'customer_service', phone: `+967${formData.phone}`, shippingFee },
+        { ...formData, address: formData.address || formData.city || 'المنطقة المحددة', paymentMethod: 'customer_service', phone: `+967${formData.phone}`, shippingFee },
         cartItems,
         cartTotal,
         appliedCoupon?.code,
@@ -641,7 +627,7 @@ export default function CheckoutClient() {
                     )}
                   </div>
 
-                  <div className="flex flex-col">
+                  <div className="flex flex-col md:col-span-2">
                     <label htmlFor="city" className="text-sm font-bold text-foreground/70 mb-2">منطقة التوصيل</label>
                     <select
                       id="city"
@@ -659,19 +645,6 @@ export default function CheckoutClient() {
                         </option>
                       ))}
                     </select>
-                  </div>
-
-                  <div className="flex flex-col md:col-span-2">
-                    <label className="text-sm font-bold text-foreground/70 mb-2">تفاصيل العنوان</label>
-                    <input 
-                      type="text" 
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      required
-                      placeholder={formData.city === 'أخرى' ? "أدخل عنوانك بالتفصيل هنا..." : "اسم الشارع، رقم المبنى، الحي"}
-                      className="bg-transparent border-b border-black/20 pb-3 outline-none focus:border-brand transition-colors"
-                    />
                   </div>
                 </div>
               </section>
@@ -1096,7 +1069,7 @@ export default function CheckoutClient() {
                 <button 
                   type="button" 
                   onClick={handleNextStep}
-                  disabled={!hasAvailableCity || priceChanges !== null || !formData.fullName || !formData.phone || !formData.city || !formData.address}
+                  disabled={!hasAvailableCity || priceChanges !== null || !formData.fullName || !formData.phone || !formData.city}
                   className="btn btn-primary w-full btn-lg gap-3 group !bg-accent !text-foreground hover:!bg-accent/90 border border-black/10 disabled:opacity-50 disabled:cursor-not-allowed md:h-16 h-14 md:text-lg mt-6"
                 >
                   المتابعة للدفع

@@ -72,7 +72,7 @@ export function getCheckoutWhatsAppLink({
   customerName: string
   customerPhone: string
   city: string
-  address: string
+  address?: string | null
   notes?: string | null
   items: Array<{
     name: string
@@ -95,7 +95,7 @@ export function getCheckoutWhatsAppLink({
   }
   message += `• اسم العميل: ${customerName}\n`
   message += `• الهاتف: ${customerPhone}\n`
-  message += `• العنوان: ${city} - ${address}\n`
+  message += `• منطقة التوصيل: ${city}${address && address.trim() && address.trim() !== city.trim() ? ` - ${address.trim()}` : ''}\n`
   if (notes && notes.trim()) {
     message += `• ملاحظات: ${notes.trim()}\n`
   }

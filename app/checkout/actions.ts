@@ -34,14 +34,12 @@ function isValidCheckoutData(data: CheckoutData): boolean {
   const fullName = normalizeText(data.fullName, 120)
   const phone = normalizeText(data.phone, 32)
   const area = normalizeText(data.city, 120)
-  const address = normalizeText(data.address, 500)
 
   return (
     fullName.length >= 2 &&
     phone.length >= 7 &&
     /^[+\d\s().-]+$/.test(phone) &&
     area.length >= 2 &&
-    address.length >= 5 &&
     PAYMENT_METHODS.has(data.paymentMethod)
   )
 }
@@ -320,7 +318,7 @@ export async function createOrder(
           customerPhone: normalizeText(checkoutData.phone, 32),
           governorate: selectedArea.name,
           city: selectedArea.name,
-          address: normalizeText(checkoutData.address, 500),
+          address: normalizeText(checkoutData.address, 500) || selectedArea.name,
           paymentMethod: checkoutData.paymentMethod,
           shippingFee,
           totalAmount: finalTotal,
