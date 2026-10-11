@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation'
 import { useCartAnimation } from '@/components/CartAnimationProvider'
 import { useToast } from '@/components/ToastProvider'
 import { useCurrency } from '@/components/CurrencyProvider'
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon'
+import { getProductWhatsAppLink } from '@/lib/whatsapp-order'
 
 interface ProductVariant {
   id: string
@@ -169,6 +171,33 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     handleAddToCart(e)
+  }
+
+  const handleWhatsAppOrder = () => {
+    if (product.hasSizes && !selectedDynamicSize) {
+      showToast('error', 'الرجاء اختيار المقاس أولاً لتأكيد طلبك')
+      return
+    }
+    if (hasVariants && !selectedVariant) {
+      showToast('error', 'الرجاء اختيار المقاس أولاً لتأكيد طلبك')
+      return
+    }
+    if (currentStock <= 0) {
+      showToast('error', 'نعتذر، هذا المنتج نفد من المخزون.')
+      return
+    }
+
+    const chosenSize = selectedVariant?.size || selectedDynamicSize || product.size || null
+
+    const url = getProductWhatsAppLink({
+      name: product.name,
+      size: chosenSize,
+      price: currentPrice,
+      currency,
+      quantity,
+      slug: product.slug,
+    })
+    window.open(url, '_blank')
   }
 
   return (
@@ -397,6 +426,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   <CreditCard size={20} />
                   اشترِ الآن
                 </button>
+
+                <button 
+                  onClick={handleWhatsAppOrder}
+                  disabled={currentStock <= 0}
+                  className="w-full h-14 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-base md:text-lg gap-2.5 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <WhatsAppIcon size={22} />
+                  <span>اطلب عبر واتساب مباشرة</span>
+                </button>
               </div>
 
             </motion.div>
@@ -404,25 +442,35 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         </div>
 
         {/* Fixed Bottom Bar for Mobile */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] flex items-center justify-between gap-3 z-40 shadow-[0_-10px_30px_rgba(0,0,0,0.1)]" dir="rtl">
-          <div className="flex flex-col">
-             <span className="text-xs text-foreground/60 font-bold">الإجمالي</span>
-             <span className="text-base font-black text-brand leading-none">{Number(currentPrice * quantity).toLocaleString('ar-SA')} {currency}</span>
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 p-2.5 pb-[calc(env(safe-area-inset-bottom)+10px)] flex items-center justify-between gap-2 z-40 shadow-[0_-10px_30px_rgba(0,0,0,0.1)]" dir="rtl">
+          <div className="flex flex-col shrink-0">
+             <span className="text-[10px] text-foreground/60 font-bold">الإجمالي</span>
+             <span className="text-sm font-black text-brand leading-none">{Number(currentPrice * quantity).toLocaleString('ar-SA')} {currency}</span>
           </div>
-          <div className="flex items-center gap-2 flex-1 justify-end">
+          <div className="flex items-center gap-1.5 flex-1 justify-end">
             <button 
               onClick={handleAddToCartClick}
               disabled={currentStock <= 0}
-              className="btn btn-outline btn-icon shrink-0 rounded-lg disabled:opacity-50"
+              className="btn btn-outline btn-icon shrink-0 rounded-lg disabled:opacity-50 h-11 w-11"
+              title="أضف للسلة"
             >
-              <ShoppingBag size={20} />
+              <ShoppingBag size={18} />
             </button>
             <button 
               onClick={handleBuyNow}
               disabled={currentStock <= 0}
-              className="btn btn-primary flex-1 max-w-[140px] rounded-lg disabled:opacity-50"
+              className="btn btn-primary rounded-lg disabled:opacity-50 text-xs px-3 h-11"
             >
               اشترِ الآن
+            </button>
+            <button 
+              onClick={handleWhatsAppOrder}
+              disabled={currentStock <= 0}
+              className="bg-[#25D366] hover:bg-[#1EBE5D] text-white rounded-lg flex items-center gap-1.5 px-3 h-11 font-bold text-xs disabled:opacity-50 shrink-0 shadow-sm"
+              title="اطلب عبر واتساب"
+            >
+              <WhatsAppIcon size={16} />
+              <span>واتساب</span>
             </button>
           </div>
         </div>

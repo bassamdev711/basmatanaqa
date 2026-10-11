@@ -12,6 +12,8 @@ import { createOrder } from './actions'
 import { useCurrency } from '@/components/CurrencyProvider'
 import { compressImageClientSide } from '@/lib/compress'
 import { PhoneInput } from '@/components/PhoneInput'
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon'
+import { getCheckoutWhatsAppLink } from '@/lib/whatsapp-order'
 
 type ShippingCity = { id: string; name: string; shippingFee: number }
 type BankAccount = { id: string; bankName: string; accountName: string; accountNumber: string; logoUrl?: string | null; colorHex?: string | null }
@@ -194,7 +196,8 @@ export default function CheckoutClient() {
     paymentSettings.settings?.bankTransferEnabled ||
     paymentSettings.settings?.walletsEnabled ||
     paymentSettings.settings?.codEnabled ||
-    paymentSettings.settings?.customerServiceEnabled
+    paymentSettings.settings?.customerServiceEnabled ||
+    true // WhatsApp direct order is always available
   )
   const hasAvailableCity = shippingCities.length > 0
   
@@ -385,6 +388,28 @@ export default function CheckoutClient() {
         setUploadStatus('اكتمل الرفع بنجاح!')
       }
 
+      if (formData.paymentMethod === 'customer_service') {
+        const orderNumber = (result as any)?.orderNumber || result.orderId
+        const waUrl = getCheckoutWhatsAppLink({
+          customerName: formData.fullName,
+          customerPhone: formData.phone,
+          city: formData.city,
+          address: formData.address,
+          notes: formData.notes,
+          items: cartItems.map(item => ({
+            name: item.name,
+            size: item.selectedSize,
+            quantity: item.quantity,
+            price: item.price,
+            slug: item.slug
+          })),
+          total: finalTotal,
+          currency,
+          orderNumber,
+        })
+        window.open(waUrl, '_blank')
+      }
+
       window.sessionStorage.removeItem('tif_checkout_request')
       clearCart()
       if (!result.trackingToken) {
@@ -396,6 +421,107 @@ export default function CheckoutClient() {
       setIsSubmitting(false)
       setUploadStatus('')
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleWhatsAppCheckout = async () => {
+    if (isSubmitting) return
+
+    if (formData.phone.length !== 9 || !formData.phone.startsWith('7')) {
+      setPhoneError('رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 7')
+      phoneContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    } else {
+      setPhoneError('')
+    }
+
+    if (!formData.fullName || formData.fullName.trim().length < 2 || !formData.address || !formData.city) {
+      setError('يرجى تعبئة جميع الحقول المطلوبة (الاسم الكامل، المحافظة/المدينة، وتفاصيل العنوان)')
+      setStep(1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+    if (formData.address.trim().length < 5) {
+      setError('تفاصيل العنوان يجب أن تكون 5 أحرف على الأقل')
+      setStep(1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    setIsSubmitting(true)
+    setUploadStatus('جاري تسجيل الطلب وتجهيز الواتساب...')
+    setError('')
+
+    try {
+      const requestKey = idempotencyKeyRef.current
+        || window.sessionStorage.getItem('tif_checkout_request')
+        || window.crypto.randomUUID()
+      idempotencyKeyRef.current = requestKey
+      window.sessionStorage.setItem('tif_checkout_request', requestKey)
+
+      const result = await createOrder(
+        { ...formData, paymentMethod: 'customer_service', phone: `+967${formData.phone}`, shippingFee },
+        cartItems,
+        cartTotal,
+        appliedCoupon?.code,
+        undefined,
+        undefined,
+        requestKey,
+        pointsUsed
+      )
+
+      const orderNumber = (result as any)?.orderNumber || (result?.success ? result.orderId : null)
+
+      const waUrl = getCheckoutWhatsAppLink({
+        customerName: formData.fullName,
+        customerPhone: formData.phone,
+        city: formData.city,
+        address: formData.address,
+        notes: formData.notes,
+        items: cartItems.map(item => ({
+          name: item.name,
+          size: item.selectedSize,
+          quantity: item.quantity,
+          price: item.price,
+          slug: item.slug
+        })),
+        total: finalTotal,
+        currency,
+        orderNumber,
+      })
+
+      window.open(waUrl, '_blank')
+      window.sessionStorage.removeItem('tif_checkout_request')
+      clearCart()
+
+      if (result.success && result.orderId && result.trackingToken) {
+        router.push(`/checkout/success/${result.orderId}?token=${encodeURIComponent(result.trackingToken)}`)
+      } else {
+        router.push('/')
+      }
+    } catch {
+      const waUrl = getCheckoutWhatsAppLink({
+        customerName: formData.fullName,
+        customerPhone: formData.phone,
+        city: formData.city,
+        address: formData.address,
+        notes: formData.notes,
+        items: cartItems.map(item => ({
+          name: item.name,
+          size: item.selectedSize,
+          quantity: item.quantity,
+          price: item.price,
+          slug: item.slug
+        })),
+        total: finalTotal,
+        currency,
+      })
+      window.open(waUrl, '_blank')
+      clearCart()
+      router.push('/')
+    } finally {
+      setIsSubmitting(false)
+      setUploadStatus('')
     }
   }
 
@@ -933,32 +1059,35 @@ export default function CheckoutClient() {
                     </label>
                   )}
 
-                  {paymentSettings.settings?.customerServiceEnabled && (
-                    <label className={`flex items-start p-3 md:p-6 border ${formData.paymentMethod === 'customer_service' ? 'border-brand bg-white shadow-sm' : 'border-black/10'} cursor-pointer transition-all hover:bg-black/5`}>
-                      <input 
-                        type="radio" 
-                        name="paymentMethod" 
-                        value="customer_service"
-                        checked={formData.paymentMethod === 'customer_service'}
-                        onChange={handleChange}
-                        className="mt-0.5 accent-brand w-4 h-4 md:w-5 md:h-5"
-                      />
-                      <div className="mr-3 md:mr-4 w-full">
-                        <div className="text-sm md:text-lg font-bold text-foreground">حجز الطلب (والدفع لاحقاً عبر خدمة العملاء)</div>
-                        <div className="text-xs md:text-sm text-foreground/70 mt-0.5">
-                          سيتم حفظ طلبك وسنتواصل معك لاختيار طريقة الدفع الأنسب لك.
-                        </div>
-                        {formData.paymentMethod === 'customer_service' && (
-                          <div className="mt-4 pt-4 border-t border-black/10 animate-in fade-in slide-in-from-top-2">
-                            <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-sm border border-blue-100 flex items-start gap-2">
-                              <AlertCircle className="w-5 h-5 shrink-0 text-blue-600" />
-                              <p>اكتمل حجز طلبك. بانتظار تواصل خدمة العملاء لاعتماده.</p>
-                            </div>
-                          </div>
-                        )}
+                  {/* WhatsApp Order Option */}
+                  <label className={`flex items-start p-3 md:p-6 border rounded-xl ${formData.paymentMethod === 'customer_service' ? 'border-[#25D366] bg-green-50/40 shadow-sm' : 'border-black/10'} cursor-pointer transition-all hover:bg-black/5`}>
+                    <input 
+                      type="radio" 
+                      name="paymentMethod" 
+                      value="customer_service"
+                      checked={formData.paymentMethod === 'customer_service'}
+                      onChange={handleChange}
+                      className="mt-0.5 accent-[#25D366] w-4 h-4 md:w-5 md:h-5"
+                    />
+                    <div className="mr-3 md:mr-4 w-full">
+                      <div className="text-sm md:text-lg font-bold text-foreground flex items-center gap-2">
+                        <WhatsAppIcon size={20} className="text-[#25D366]" />
+                        <span>تأكيد الطلب المباشر عبر واتساب</span>
+                        <span className="text-[10px] md:text-xs bg-[#25D366] text-white px-2 py-0.5 rounded-full font-bold">سريع ومباشر</span>
                       </div>
-                    </label>
-                  )}
+                      <div className="text-xs md:text-sm text-foreground/70 mt-1">
+                        سيتم تجهيز رسالة بكامل تفاصيل الفاتورة والمقاسات وروابط المنتجات لإرسالها وتأكيدها فوراً عبر واتساب.
+                      </div>
+                      {formData.paymentMethod === 'customer_service' && (
+                        <div className="mt-4 pt-4 border-t border-black/10 animate-in fade-in slide-in-from-top-2">
+                          <div className="bg-green-50 text-green-800 p-3 rounded-md text-sm border border-green-200 flex items-start gap-2 font-medium">
+                            <WhatsAppIcon size={18} className="text-[#25D366] shrink-0 mt-0.5" />
+                            <p>عند تأكيد الطلب، سيتم تسجيل طلبك تلقائياً وفتح محادثة واتساب جاهزة بكافة التفاصيل والروابط لاعتماده فوراً.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </label>
                 </div>
               </section>
               )}
@@ -981,6 +1110,18 @@ export default function CheckoutClient() {
                       <span>{uploadStatus}</span>
                     </div>
                   )}
+
+                  {/* Parallel Direct WhatsApp Confirmation Button */}
+                  <button 
+                    type="button" 
+                    onClick={handleWhatsAppCheckout}
+                    disabled={isSubmitting || priceChanges !== null}
+                    className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white md:h-16 h-14 px-6 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-3 shadow-md hover:shadow-lg transition-all active:scale-[0.99] disabled:opacity-50 border-2 border-[#1EBE5D]"
+                  >
+                    <WhatsAppIcon size={24} />
+                    <span>تأكيد وإرسال الطلب بالكامل عبر واتساب</span>
+                  </button>
+
                   <div className="flex gap-4">
                     <button 
                       type="button" 

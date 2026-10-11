@@ -59,6 +59,7 @@ export default async function ProductsPage({
     compareAtPrice: unknown
     imageUrl: string | null
     featured: boolean
+    hasSizes?: boolean
   }> = []
   
   let dbCollections: Array<{ name: string; slug: string; imageUrl: string | null }> = []
@@ -108,6 +109,7 @@ export default async function ProductsPage({
               compareAtPrice: true,
               imageUrl: true,
               featured: true,
+              hasSizes: true,
             },
           }),
           prisma.product.count({ where })
@@ -225,6 +227,7 @@ export default async function ProductsPage({
                       compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
                       imageUrl: product.imageUrl || '',
                       brand: product.brand || undefined,
+                      hasSizes: product.hasSizes,
                     }}
                     currency={currency}
                     priority={index < 4}

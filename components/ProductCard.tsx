@@ -3,11 +3,14 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag, Share2 } from 'lucide-react';
 import FavoriteButton from './FavoriteButton';
 import { useCart } from './CartProvider';
 import { useToast } from './ToastProvider';
 import { getImageSizes } from '@/lib/image-utils';
+import WhatsAppIcon from './icons/WhatsAppIcon';
+import { getProductWhatsAppLink } from '@/lib/whatsapp-order';
 
 interface ProductCardProps {
   product: {
@@ -19,12 +22,15 @@ interface ProductCardProps {
     imageUrl: string;
     engName?: string;
     brand?: string;
+    hasSizes?: boolean;
+    availableSizes?: string[];
   };
   currency: string;
   priority?: boolean;
 }
 
 export default function ProductCard({ product, currency, priority = false }: ProductCardProps) {
+  const router = useRouter();
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
@@ -61,6 +67,24 @@ export default function ProductCard({ product, currency, priority = false }: Pro
       maxStock: 99, // default max stock if not provided
     });
     showToast('success', 'تمت الإضافة إلى السلة بنجاح');
+  };
+
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (product.hasSizes) {
+      showToast('info', 'يرجى اختيار المقاس أولاً من صفحة المنتج');
+      router.push(`/products/${product.slug}`);
+      return;
+    }
+    const url = getProductWhatsAppLink({
+      name: product.name,
+      price: product.price,
+      currency,
+      quantity: 1,
+      slug: product.slug,
+    });
+    window.open(url, '_blank');
   };
 
   return (
@@ -135,14 +159,22 @@ export default function ProductCard({ product, currency, priority = false }: Pro
           )}
         </div>
         
-        {/* Add to Cart - Visible on mobile, hover on desktop */}
-        <div className="mt-auto">
+        {/* Action Buttons - Visible on mobile, hover on desktop */}
+        <div className="mt-auto flex gap-2">
           <button 
             onClick={handleAddToCart}
-            className="w-full py-2 bg-brand text-white md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 hover:bg-brand-hover transition-all duration-300 rounded-md flex items-center justify-center gap-2 font-medium text-xs md:text-sm shadow-sm"
+            className="flex-1 py-2 bg-brand text-white md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 hover:bg-brand-hover transition-all duration-300 rounded-md flex items-center justify-center gap-1.5 font-medium text-xs md:text-sm shadow-sm"
           >
-            <ShoppingBag size={14} className="opacity-70" />
-            أضف للسلة
+            <ShoppingBag size={14} className="opacity-80" />
+            <span>السلة</span>
+          </button>
+          <button 
+            onClick={handleWhatsAppClick}
+            className="flex-1 py-2 bg-[#25D366] text-white md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 hover:bg-[#1EBE5D] transition-all duration-300 rounded-md flex items-center justify-center gap-1.5 font-bold text-xs md:text-sm shadow-sm"
+            title="اطلب عبر واتساب"
+          >
+            <WhatsAppIcon size={15} />
+            <span>واتساب</span>
           </button>
         </div>
       </div>

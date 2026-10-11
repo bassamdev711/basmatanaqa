@@ -151,6 +151,7 @@ export default async function SearchPage({
                       compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
                       imageUrl: product.imageUrl || '',
                       brand: product.brand || undefined,
+                      hasSizes: product.hasSizes,
                     }}
                     currency={currency}
                     priority={index < 4}

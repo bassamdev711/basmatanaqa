@@ -443,7 +443,7 @@ export async function createOrder(
       : undefined
     const trackingToken = await createOrderTrackingToken(order.id)
 
-    return { success: true, orderId: order.id, paymentUploadToken, trackingToken }
+    return { success: true, orderId: order.id, orderNumber: order.orderNumber, paymentUploadToken, trackingToken }
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === 'UNAUTHORIZED') return { success: false, error: 'يجب تسجيل الدخول لإتمام الطلب.' }
