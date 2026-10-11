@@ -38,13 +38,13 @@ const emptySubscribe = () => () => {}
 const getClientHydrationSnapshot = () => true
 const getServerHydrationSnapshot = () => false
 
-const TEST_ACCOUNT_NUMBER = '87669876576';
-
 const LOCAL_PAYMENT_METHODS = [
   {
     id: 'krimi',
     name: 'بنك الكريمي',
     description: 'التحويل البنكي',
+    accountNumber: '3052834812',
+    accountLabel: 'رقم الحساب',
     logo: '/krimi.webp',
     type: 'bank_transfer',
     bgClass: 'bg-[#fdf4ff]',
@@ -53,9 +53,24 @@ const LOCAL_PAYMENT_METHODS = [
     btnClass: 'bg-[#9333ea] text-white hover:bg-[#7e22ce]',
   },
   {
+    id: 'onecash',
+    name: 'ون كاش ONE Cash',
+    description: 'التحويل إلى المحفظة',
+    accountNumber: '153424202',
+    accountLabel: 'رقم النقطة',
+    logo: '/oncach.webp',
+    type: 'wallets',
+    bgClass: 'bg-[#fffbeb]',
+    borderClass: 'border-[#d97706]',
+    textClass: 'text-[#b45309]',
+    btnClass: 'bg-[#d97706] text-white hover:bg-[#b45309]',
+  },
+  {
     id: 'jaib',
     name: 'جيب Jaib',
     description: 'التحويل إلى المحفظة',
+    accountNumber: '7888875',
+    accountLabel: 'رقم النقطة',
     logo: '/jip.webp',
     type: 'wallets',
     bgClass: 'bg-[#fef2f2]',
@@ -63,28 +78,6 @@ const LOCAL_PAYMENT_METHODS = [
     textClass: 'text-[#b91c1c]',
     btnClass: 'bg-[#dc2626] text-white hover:bg-[#b91c1c]',
   },
-  {
-    id: 'jawali',
-    name: 'جوالي JAWALI',
-    description: 'التحويل إلى المحفظة',
-    logo: '/jwali.webp',
-    type: 'wallets',
-    bgClass: 'bg-[#eff6ff]',
-    borderClass: 'border-[#1e3a8a]',
-    textClass: 'text-[#1e3a8a]',
-    btnClass: 'bg-[#1e3a8a] text-white hover:bg-[#1e40af]',
-  },
-  {
-    id: 'onecash',
-    name: 'ون كاش ONE Cash',
-    description: 'التحويل إلى المحفظة',
-    logo: '/oncach.webp',
-    type: 'wallets',
-    bgClass: 'bg-[#fffbeb]',
-    borderClass: 'border-[#d97706]',
-    textClass: 'text-[#b45309]',
-    btnClass: 'bg-[#d97706] text-white hover:bg-[#b45309]',
-  }
 ];
 
 export default function CheckoutClient() {
@@ -695,12 +688,12 @@ export default function CheckoutClient() {
                                   </div>
                                   <div className="flex items-center justify-between bg-white/60 p-3 rounded-lg border border-black/5">
                                     <div>
-                                      <span className="text-xs text-black/50 block mb-0.5 font-bold">رقم الحساب</span>
-                                      <span className="font-bold tracking-wider" dir="ltr">{TEST_ACCOUNT_NUMBER}</span>
+                                      <span className="text-xs text-black/50 block mb-0.5 font-bold">{method.accountLabel || 'رقم الحساب'}</span>
+                                      <span className="font-bold tracking-wider" dir="ltr">{method.accountNumber}</span>
                                     </div>
                                     <button
                                       type="button"
-                                      onClick={(e) => { e.preventDefault(); handleCopy(TEST_ACCOUNT_NUMBER, method.id); }}
+                                      onClick={(e) => { e.preventDefault(); handleCopy(method.accountNumber, method.id); }}
                                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold transition-all ${copiedId === method.id ? 'bg-green-500 text-white' : 'bg-white border border-black/10 hover:bg-black/5 text-black/70'}`}
                                     >
                                       {copiedId === method.id ? <span>تم النسخ</span> : <><span>نسخ</span><Copy size={14} /></>}
@@ -845,12 +838,12 @@ export default function CheckoutClient() {
                                   </div>
                                   <div className="flex items-center justify-between bg-white/60 p-2.5 rounded-lg border border-black/5">
                                     <div>
-                                      <span className="text-[10px] text-black/50 block mb-0.5 font-bold">رقم الحساب</span>
-                                      <span className="font-bold tracking-wider text-sm" dir="ltr">{TEST_ACCOUNT_NUMBER}</span>
+                                      <span className="text-[10px] text-black/50 block mb-0.5 font-bold">{method.accountLabel || 'رقم النقطة'}</span>
+                                      <span className="font-bold tracking-wider text-sm" dir="ltr">{method.accountNumber}</span>
                                     </div>
                                     <button
                                       type="button"
-                                      onClick={(e) => { e.preventDefault(); handleCopy(TEST_ACCOUNT_NUMBER, method.id); }}
+                                      onClick={(e) => { e.preventDefault(); handleCopy(method.accountNumber, method.id); }}
                                       className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-all ${copiedId === method.id ? 'bg-green-500 text-white' : 'bg-white border border-black/10 hover:bg-black/5 text-black/70'}`}
                                     >
                                       {copiedId === method.id ? <span>تم النسخ</span> : <><span>نسخ</span><Copy size={12} /></>}
