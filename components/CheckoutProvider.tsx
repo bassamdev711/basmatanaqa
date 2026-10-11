@@ -10,6 +10,7 @@ export interface CheckoutData {
   address: string
   paymentMethod: string
   shippingFee: number
+  notes?: string
 }
 
 interface CheckoutContextType {
