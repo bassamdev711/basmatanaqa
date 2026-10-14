@@ -12,6 +12,7 @@ import { useToast } from '@/components/ToastProvider'
 import { useCurrency } from '@/components/CurrencyProvider'
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon'
 import { getProductWhatsAppLink } from '@/lib/whatsapp-order'
+import ScrollableSizesRow from '@/components/ScrollableSizesRow'
 
 interface ProductVariant {
   id: string
@@ -313,52 +314,34 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
               {/* Variants Selector */}
               {hasVariants && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold text-foreground mb-3">اختر الحجم (Variant):</h3>
-                  <div className="flex flex-wrap gap-3">
-                    {product.variants!.map((variant) => (
-                      <button
-                        key={variant.id}
-                        onClick={() => {
-                          setSelectedVariant(variant)
-                          setQuantity(1)
-                        }}
-                        className={`px-6 py-2 border rounded-full text-sm font-bold transition-all ${
-                          selectedVariant?.id === variant.id
-                            ? 'bg-brand text-surface border-brand shadow-md'
-                            : 'bg-white text-foreground border-black/10 hover:border-brand/50'
-                        }`}
-                      >
-                        {variant.size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <ScrollableSizesRow
+                  title="اختر المقاس / الحجم:"
+                  options={product.variants!.map((variant) => ({
+                    id: variant.id,
+                    label: variant.size,
+                    isSelected: selectedVariant?.id === variant.id,
+                    onClick: () => {
+                      setSelectedVariant(variant)
+                      setQuantity(1)
+                    },
+                  }))}
+                />
               )}
 
               {/* Dynamic Sizes Selector */}
               {product.hasSizes && product.availableSizes && product.availableSizes.length > 0 && !hasVariants && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-bold text-foreground mb-3">اختر المقاس:</h3>
-                  <div className="flex flex-wrap gap-3">
-                    {product.availableSizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => {
-                          setSelectedDynamicSize(size)
-                          setQuantity(1)
-                        }}
-                        className={`px-6 py-2 border rounded-full text-sm font-bold transition-all ${
-                          selectedDynamicSize === size
-                            ? 'bg-brand text-surface border-brand shadow-md'
-                            : 'bg-white text-foreground border-black/10 hover:border-brand/50'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <ScrollableSizesRow
+                  title="اختر المقاس:"
+                  options={product.availableSizes.map((size) => ({
+                    id: size,
+                    label: size,
+                    isSelected: selectedDynamicSize === size,
+                    onClick: () => {
+                      setSelectedDynamicSize(size)
+                      setQuantity(1)
+                    },
+                  }))}
+                />
               )}
 
               {/* Specs Grid (Compact) */}
