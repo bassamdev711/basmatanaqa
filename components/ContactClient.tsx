@@ -98,9 +98,9 @@ export default function ContactClient({ contactData }: { contactData?: ContactDa
                   <Clock className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="text-foreground font-bold mb-2">أوقات العمل</h4>
-                  <p className="text-foreground/60 font-light leading-relaxed">
-                    فريق خدمة العملاء متاح للرد على استفساراتكم على مدار الساعة. نضمن لكم الرد في مدة أقصاها 12 ساعة.
+                  <h4 className="text-foreground font-bold mb-2">أوقات العمل وخدمة العملاء</h4>
+                  <p className="text-foreground/70 font-medium leading-relaxed">
+                    فريق خدمة العملاء والتواصل المباشر متاح يومياً من الساعة <span className="font-bold text-foreground">2:00 ظهراً</span> إلى الساعة <span className="font-bold text-foreground">8:00 مساءً</span>.
                   </p>
                 </div>
               </div>

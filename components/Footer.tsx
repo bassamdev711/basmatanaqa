@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Send, AtSign, MapPin, Phone, Mail } from "lucide-react";
+import { Send, AtSign, MapPin, Phone, Mail, Clock } from "lucide-react";
 import prisma from "@/lib/prisma";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement> & { size?: number }) => (
@@ -236,6 +236,10 @@ export default async function Footer({
                   <a href={`mailto:${email}`} className="hover:text-accent transition-colors">{email}</a>
                 </li>
               )}
+              <li className="flex items-center gap-3">
+                <span className="text-accent"><Clock size={16} /></span>
+                <span>ساعات العمل: 2:00 ظهراً - 8:00 مساءً</span>
+              </li>
             </ul>
           </div>
         </div>

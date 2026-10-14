@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Clock } from "lucide-react";
 
 type AboutData = {
   aboutTopTitle?: string | null
@@ -50,6 +51,11 @@ export default function About({
               <p className="text-surface/70 font-light text-base md:text-xl max-w-2xl mx-auto leading-relaxed md:leading-loose">
                 {data.aboutDescription || 'نختار منتجاتنا بعناية ونبني كل تفصيل حول احتياجات العملاء، من اكتشاف المنتج إلى استلامه بثقة وسهولة.'}
               </p>
+
+              <div className="mt-8 inline-flex items-center gap-2.5 bg-surface/10 backdrop-blur-sm border border-accent/25 px-5 py-2.5 rounded-full text-surface/90 text-sm md:text-base font-medium">
+                <Clock className="w-4 h-4 text-accent shrink-0" />
+                <span>أوقات التواصل وخدمة العملاء: يومياً من 2:00 ظهراً إلى 8:00 مساءً</span>
+              </div>
             </motion.div>
           </div>
 
