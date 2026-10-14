@@ -107,10 +107,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح برفع هذا الملف' }, { status: 403 })
   }
 
-  const limitKey = isReceiptUpload ? `upload_receipt_${orderId}_${ip}` : `upload_admin_${ip}`
-  const uploadLimit = isReceiptUpload ? 5 : 30
-  if (!checkRateLimit(limitKey, uploadLimit, 60 * 60 * 1000)) {
-    return NextResponse.json({ error: 'تم تجاوز حد رفع الملفات. يرجى المحاولة لاحقاً.' }, { status: 429 })
+  // تطبيق حد التكرار فقط على رفع إيصالات التحويل من العملاء لمنع الإغراق
+  // بينما يُستثنى لوحة الإدارة (الأدمن) من هذا الحد ليتمكن من رفع المنتجات بحرية
+  if (isReceiptUpload) {
+    const limitKey = `upload_receipt_${orderId}_${ip}`
+    if (!checkRateLimit(limitKey, 5, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'تم تجاوز حد رفع الملفات. يرجى المحاولة لاحقاً.' }, { status: 429 })
+    }
   }
 
   if (!ALLOWED_MIME_TYPES.has(file.type) || file.size <= 0 || file.size > MAX_FILE_SIZE) {
