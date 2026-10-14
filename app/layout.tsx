@@ -75,10 +75,18 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     icons: {
-      icon: '/logo.webp',
-      shortcut: '/logo.webp',
-      apple: '/logo.webp',
+      icon: [
+        { url: '/favicon.ico', sizes: 'any' },
+        { url: '/favicon-48x48.png', sizes: '48x48', type: 'image/png' },
+        { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+        { url: '/favicon-192x192.png', sizes: '192x192', type: 'image/png' },
+      ],
+      shortcut: '/favicon.ico',
+      apple: [
+        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      ],
     },
+    manifest: '/site.webmanifest',
   }
 }
 
@@ -107,7 +115,7 @@ export default async function RootLayout({
     name: 'شهرزاد',
     alternateName: 'Shahrazad',
     url: 'https://shahrazadstore.com',
-    logo: 'https://shahrazadstore.com/logo.webp',
+    logo: 'https://shahrazadstore.com/logo.png',
   }
   const websiteSchema = {
     '@context': 'https://schema.org',
