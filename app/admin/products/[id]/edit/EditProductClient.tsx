@@ -6,6 +6,7 @@ import { Info, ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-react'
 import { updateProduct } from '../../actions'
 import { getSubCategories } from '../../../collections/actions'
 import ImageUpload from '../../ImageUpload'
+import SizeSelector from '../../SizeSelector'
 import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
 import { toast } from 'react-hot-toast'
@@ -71,22 +72,9 @@ export default function EditProductClient({
   // Sizes State
   const [hasSizes, setHasSizes] = useState(product.hasSizes || false)
   const [availableSizes, setAvailableSizes] = useState<string[]>(product.availableSizes || [])
-  const [currentSizeInput, setCurrentSizeInput] = useState('')
-
   const [seoPhrases, setSeoPhrases] = useState<string[]>(product.seoSearchPhrases || [])
   const [seoScore, setSeoScore] = useState<number>(product.seoScore || 0)
   const [showAdvanced, setShowAdvanced] = useState(false)
-
-  const handleAddSize = () => {
-    if (currentSizeInput.trim() && !availableSizes.includes(currentSizeInput.trim())) {
-      setAvailableSizes([...availableSizes, currentSizeInput.trim()])
-      setCurrentSizeInput('')
-    }
-  }
-
-  const handleRemoveSize = (sizeToRemove: string) => {
-    setAvailableSizes(availableSizes.filter(s => s !== sizeToRemove))
-  }
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -204,59 +192,12 @@ export default function EditProductClient({
             </div>
           </div>
 
-          <div className="border-t border-gray-200 pt-6">
-            <label className="flex items-center gap-2 cursor-pointer mb-4">
-              <input 
-                type="checkbox" 
-                checked={hasSizes}
-                onChange={(e) => setHasSizes(e.target.checked)}
-                className="h-5 w-5 rounded text-black focus:ring-black" 
-              />
-              <span className="text-base font-bold text-gray-900">المنتج يحتوي على مقاسات</span>
-            </label>
-
-            {hasSizes && (
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">إضافة مقاس (اضغط إنتر أو انقر إضافة)</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={currentSizeInput}
-                      onChange={(e) => setCurrentSizeInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          handleAddSize()
-                        }
-                      }}
-                      placeholder="مثال: XL، 42، كبير..."
-                      className="flex-1 rounded-md border-gray-300 border p-2 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" 
-                    />
-                    <button type="button" onClick={handleAddSize} className="btn btn-secondary px-4">
-                      إضافة
-                    </button>
-                  </div>
-                </div>
-                
-                {availableSizes.length > 0 && (
-                  <div>
-                    <span className="block text-sm font-medium text-gray-700 mb-2">المقاسات المعتمدة:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {availableSizes.map(size => (
-                        <span key={size} className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white text-sm rounded-full">
-                          {size}
-                          <button type="button" onClick={() => handleRemoveSize(size)} className="hover:text-red-300 focus:outline-none ml-1 font-bold">
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <SizeSelector
+            hasSizes={hasSizes}
+            onHasSizesChange={setHasSizes}
+            availableSizes={availableSizes}
+            onChangeSizes={setAvailableSizes}
+          />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">الوصف التسويقي</label>
             <textarea name="description" rows={4} value={description} onChange={e => setDescription(e.target.value)}
