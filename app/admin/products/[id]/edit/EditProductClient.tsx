@@ -113,12 +113,18 @@ export default function EditProductClient({
   }, [selectedCollection])
 
   const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[\u0600-\u06FF]/g, '') // remove arabic chars
-      .replace(/[^a-z0-9\s-]/g, '')
+    let generated = name
       .trim()
       .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9\u0600-\u06FF-]/g, '')
+      .toLowerCase()
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+
+    if (!generated) {
+      generated = `product-${Math.random().toString(36).substring(2, 8)}`
+    }
+    return generated
   }
 
   const generateSKU = () => {
@@ -319,6 +325,9 @@ export default function EditProductClient({
                   <button type="button" onClick={() => setSlug(generateSlug(name))} className="text-xs text-blue-600 mt-1 hover:underline">
                     توليد الرابط من الاسم الحالي
                   </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    إذا تكرر الرابط مع منتج آخر، سيتم توليد رقم تسلسلي (-2، -3...) أو رمز فريد تلقائياً لضمان عدم التعارض.
+                  </p>
                 </div>
                 
                 <div>

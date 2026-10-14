@@ -153,16 +153,6 @@ export default function NewProductPage() {
               }}
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">رابط المشاركة للمنتج (يعبأ تلقائياً) *</label>
-              <div className="flex rounded-md shadow-sm" dir="ltr">
-                <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm bg-gray-50">
-                  /products/
-                </span>
-                <input type="text" name="slug" required value={slug} onChange={(e) => setSlug(e.target.value)}
-                  className="w-full min-w-0 flex-1 rounded-none rounded-r-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
-              </div>
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
               <input type="number" name="price" step="0.01" min="0" required dir="ltr"
@@ -319,6 +309,21 @@ export default function NewProductPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">رابط المشاركة للمنتج (Slug) - اختياري</label>
+                  <div className="flex rounded-md shadow-sm" dir="ltr">
+                    <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm bg-gray-50">
+                      /products/
+                    </span>
+                    <input type="text" name="slug" value={slug} onChange={(e) => setSlug(e.target.value)}
+                      placeholder="يُنشأ تلقائياً برقم تسلسلي أو رمز فريد"
+                      className="w-full min-w-0 flex-1 rounded-none rounded-r-md border-gray-300 border p-2 text-sm text-gray-900 bg-white focus:border-black focus:outline-none" />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    يُترك فارغاً للتوليد التلقائي برقم تسلسلي (-2، -3...) أو رمز مميز عند تكرار الأسماء.
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">رمز التخزين (SKU)</label>
                   <div className="flex gap-2" dir="ltr">

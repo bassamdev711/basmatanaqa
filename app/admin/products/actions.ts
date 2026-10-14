@@ -7,6 +7,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { verifyAdmin } from '@/lib/auth';
+import { getUniqueProductSlug, slugify, generateRandomSuffix } from '@/lib/slug';
 
 const isNextRedirectError = (err: any) => err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_REDIRECT');
 
@@ -21,9 +22,12 @@ export async function createProduct(formData: FormData) {
 
   try {
     // Extract fields
-    const name = formData.get('name') as string;
-    let slug = (formData.get('slug') as string)?.trim();
-    if (!slug) slug = `product-${Date.now()}`;
+    const name = (formData.get('name') as string)?.trim();
+    let rawSlug = (formData.get('slug') as string)?.trim();
+    if (!rawSlug && name) {
+      rawSlug = name;
+    }
+    const slug = await getUniqueProductSlug(rawSlug || name);
     const brand = formData.get('brand') as string | null;
     const collectionId = formData.get('collectionId') as string | null;
     const supplierId = formData.get('supplierId') as string | null;
@@ -81,33 +85,69 @@ export async function createProduct(formData: FormData) {
       }
     }
 
-    const product = await prisma.product.create({
-      data: {
-        name,
-        slug,
-        brand: brand ?? undefined,
-        collectionId: collectionId || undefined,
-        supplierId: supplierId || undefined,
-        costPrice: costPrice ?? undefined,
-        gender: gender || undefined,
-        size: size || undefined,
-        description: description ?? undefined,
-        price,
-        compareAtPrice: compareAtPrice ?? undefined,
-        sku: sku ?? undefined,
-        stock,
-        isActive,
-        featured,
-        bestseller,
-        imageUrl: storedImageUrl ?? undefined,
-        images: storedExtraImages,
-        seoSearchPhrases,
-        seoScore,
-        subCategoryId: subCategoryId || undefined,
-        hasSizes,
-        availableSizes,
-      },
-    });
+    let product;
+    try {
+      product = await prisma.product.create({
+        data: {
+          name,
+          slug,
+          brand: brand ?? undefined,
+          collectionId: collectionId || undefined,
+          supplierId: supplierId || undefined,
+          costPrice: costPrice ?? undefined,
+          gender: gender || undefined,
+          size: size || undefined,
+          description: description ?? undefined,
+          price,
+          compareAtPrice: compareAtPrice ?? undefined,
+          sku: sku ?? undefined,
+          stock,
+          isActive,
+          featured,
+          bestseller,
+          imageUrl: storedImageUrl ?? undefined,
+          images: storedExtraImages,
+          seoSearchPhrases,
+          seoScore,
+          subCategoryId: subCategoryId || undefined,
+          hasSizes,
+          availableSizes,
+        },
+      });
+    } catch (createErr: any) {
+      if (createErr.code === 'P2002') {
+        const fallbackSlug = `${(slugify(rawSlug || name) || 'product').slice(0, 40)}-${Date.now().toString(36)}-${generateRandomSuffix(4)}`;
+        product = await prisma.product.create({
+          data: {
+            name,
+            slug: fallbackSlug,
+            brand: brand ?? undefined,
+            collectionId: collectionId || undefined,
+            supplierId: supplierId || undefined,
+            costPrice: costPrice ?? undefined,
+            gender: gender || undefined,
+            size: size || undefined,
+            description: description ?? undefined,
+            price,
+            compareAtPrice: compareAtPrice ?? undefined,
+            sku: sku ?? undefined,
+            stock,
+            isActive,
+            featured,
+            bestseller,
+            imageUrl: storedImageUrl ?? undefined,
+            images: storedExtraImages,
+            seoSearchPhrases,
+            seoScore,
+            subCategoryId: subCategoryId || undefined,
+            hasSizes,
+            availableSizes,
+          },
+        });
+      } else {
+        throw createErr;
+      }
+    }
     
     revalidatePath('/admin/products');
     revalidatePath(`/products/${product.slug}`);
@@ -156,9 +196,12 @@ export async function updateProduct(formData: FormData) {
 
   try {
     const id = formData.get('id') as string;
-    const name = formData.get('name') as string;
-    let slug = (formData.get('slug') as string)?.trim();
-    if (!slug) slug = `product-${Date.now()}`;
+    const name = (formData.get('name') as string)?.trim();
+    let rawSlug = (formData.get('slug') as string)?.trim();
+    if (!rawSlug && name) {
+      rawSlug = name;
+    }
+    const slug = await getUniqueProductSlug(rawSlug || name, id);
     const brand = formData.get('brand') as string | null;
     const collectionId = formData.get('collectionId') as string | null;
     const supplierId = formData.get('supplierId') as string | null;
@@ -213,34 +256,71 @@ export async function updateProduct(formData: FormData) {
       }
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name,
-        slug,
-        brand: brand ?? undefined,
-        collectionId: collectionId || undefined,
-        supplierId: supplierId || null,
-        costPrice: costPrice != null && Number.isFinite(costPrice) && costPrice >= 0 ? costPrice : null,
-        gender: gender || undefined,
-        size: size || undefined,
-        description: description ?? undefined,
-        price,
-        compareAtPrice: compareAtPrice ?? undefined,
-        sku: sku ?? undefined,
-        stock,
-        isActive,
-        featured,
-        bestseller,
-        imageUrl: storedImageUrl ?? undefined,
-        images: storedExtraImages,
-        seoSearchPhrases,
-        seoScore,
-        subCategoryId: subCategoryId || null,
-        hasSizes,
-        availableSizes,
-      },
-    });
+    let product;
+    try {
+      product = await prisma.product.update({
+        where: { id },
+        data: {
+          name,
+          slug,
+          brand: brand ?? undefined,
+          collectionId: collectionId || undefined,
+          supplierId: supplierId || null,
+          costPrice: costPrice != null && Number.isFinite(costPrice) && costPrice >= 0 ? costPrice : null,
+          gender: gender || undefined,
+          size: size || undefined,
+          description: description ?? undefined,
+          price,
+          compareAtPrice: compareAtPrice ?? undefined,
+          sku: sku ?? undefined,
+          stock,
+          isActive,
+          featured,
+          bestseller,
+          imageUrl: storedImageUrl ?? undefined,
+          images: storedExtraImages,
+          seoSearchPhrases,
+          seoScore,
+          subCategoryId: subCategoryId || null,
+          hasSizes,
+          availableSizes,
+        },
+      });
+    } catch (updateErr: any) {
+      if (updateErr.code === 'P2002') {
+        const fallbackSlug = `${(slugify(rawSlug || name) || 'product').slice(0, 40)}-${Date.now().toString(36)}-${generateRandomSuffix(4)}`;
+        product = await prisma.product.update({
+          where: { id },
+          data: {
+            name,
+            slug: fallbackSlug,
+            brand: brand ?? undefined,
+            collectionId: collectionId || undefined,
+            supplierId: supplierId || null,
+            costPrice: costPrice != null && Number.isFinite(costPrice) && costPrice >= 0 ? costPrice : null,
+            gender: gender || undefined,
+            size: size || undefined,
+            description: description ?? undefined,
+            price,
+            compareAtPrice: compareAtPrice ?? undefined,
+            sku: sku ?? undefined,
+            stock,
+            isActive,
+            featured,
+            bestseller,
+            imageUrl: storedImageUrl ?? undefined,
+            images: storedExtraImages,
+            seoSearchPhrases,
+            seoScore,
+            subCategoryId: subCategoryId || null,
+            hasSizes,
+            availableSizes,
+          },
+        });
+      } else {
+        throw updateErr;
+      }
+    }
 
     const addAnother = formData.get('addAnother') === 'true';
 
