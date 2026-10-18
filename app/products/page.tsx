@@ -8,7 +8,7 @@ import CategoryFilterChips from '@/components/CategoryFilterChips'
 import CategoryScrollWrapper from '@/components/CategoryScrollWrapper'
 import { getSiteUrl, getStoreConfig } from '@/lib/store-config'
 import ProductDiscoveryFilters from '@/components/ProductDiscoveryFilters'
-import PaginationControls from '@/components/PaginationControls'
+import ProductsListWithLoadMore from '@/components/ProductsListWithLoadMore'
 import { Prisma } from '@prisma/client'
 import { unstable_cache } from 'next/cache'
 
@@ -214,28 +214,21 @@ export default async function ProductsPage({
               لا توجد منتجات مطابقة للبحث أو الفلاتر الحالية
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-8">
-                {products.map((product, index) => (
-                  <ProductCard 
-                    key={product.id}
-                    product={{
-                      id: product.id,
-                      name: product.name,
-                      slug: product.slug,
-                      price: Number(product.price),
-                      compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
-                      imageUrl: product.imageUrl || '',
-                      brand: product.brand || undefined,
-                      hasSizes: product.hasSizes,
-                    }}
-                    currency={currency}
-                    priority={index < 4}
-                  />
-                ))}
-              </div>
-              <PaginationControls currentPage={page} totalPages={Math.ceil(totalCount / pageSize)} />
-            </>
+            <ProductsListWithLoadMore
+              initialProducts={products.map((p) => ({
+                id: p.id,
+                slug: p.slug,
+                name: p.name,
+                brand: p.brand,
+                price: Number(p.price),
+                compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null,
+                imageUrl: p.imageUrl || '',
+                hasSizes: p.hasSizes,
+              }))}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              currency={currency}
+            />
           )}
         </section>
       </div>
