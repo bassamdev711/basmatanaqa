@@ -1,8 +1,8 @@
 'use client'
 
-import { startTransition, useState, useEffect } from 'react'
+import { startTransition, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Info, ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-react'
+import { Info, ImageIcon, Settings, ChevronDown, ChevronUp, Zap, Check } from 'lucide-react'
 import { createProduct } from '../actions'
 import { getCollections, getSubCategories } from '../../collections/actions'
 import { getSuppliers } from '../../suppliers/actions'
@@ -12,6 +12,7 @@ import SeoOptimization from '@/components/admin/seo/SeoOptimization'
 import { useFormStatus } from 'react-dom'
 import { calculateSeoScore, SeoEvaluationData } from '@/lib/seo/score'
 import { toast } from 'react-hot-toast'
+import { useProductQueue } from '../ProductQueueContext'
 
 type CollectionOption = { id: string; name: string }
 type CategoryOption = { id: string; name: string }
@@ -31,6 +32,9 @@ function SubmitButtons() {
 }
 
 export default function NewProductPage() {
+  const { addToQueue } = useProductQueue()
+  const formRef = useRef<HTMLFormElement>(null)
+
   const [mainImage, setMainImage] = useState('')
   const [extraImages, setExtraImages] = useState<string[]>([])
   const [slug, setSlug] = useState('')
@@ -46,10 +50,74 @@ export default function NewProductPage() {
   const [hasSizes, setHasSizes] = useState(false)
   const [availableSizes, setAvailableSizes] = useState<string[]>([])
   const [name, setName] = useState('')
+  const [price, setPrice] = useState('')
+  const [stock, setStock] = useState('10')
+  const [costPrice, setCostPrice] = useState('')
+  const [compareAtPrice, setCompareAtPrice] = useState('')
+  const [selectedSubCategory, setSelectedSubCategory] = useState('')
+  const [selectedSupplier, setSelectedSupplier] = useState('')
   const [description, setDescription] = useState('')
   const [seoPhrases, setSeoPhrases] = useState<string[]>([])
   const [seoScore, setSeoScore] = useState<number>(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const handleInstantBackgroundAdd = (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    if (!name.trim()) {
+      toast.error('يرجى كتابة اسم المنتج أولاً')
+      return
+    }
+    const numPrice = Number(price)
+    if (!price || isNaN(numPrice) || numPrice < 0) {
+      toast.error('يرجى إدخال سعر صحيح للمنتج')
+      return
+    }
+
+    // Add directly to persistent queue
+    addToQueue({
+      name: name.trim(),
+      slug: slug || generateSlug(name),
+      price: numPrice,
+      stock: stock ? Number(stock) : 10,
+      costPrice: costPrice ? Number(costPrice) : null,
+      compareAtPrice: compareAtPrice ? Number(compareAtPrice) : null,
+      collectionId: selectedCollection || null,
+      subCategoryId: selectedSubCategory || null,
+      supplierId: selectedSupplier || null,
+      description: description || null,
+      mainImageFileUrl: mainImage || undefined,
+      extraImageFileUrls: extraImages.length > 0 ? extraImages : undefined,
+      sku: sku || undefined,
+      hasSizes,
+      availableSizes,
+      seoSearchPhrases: seoPhrases,
+      seoScore,
+      isActive: true,
+    })
+
+    // Instant reset form without waiting
+    setName('')
+    setPrice('')
+    setCostPrice('')
+    setCompareAtPrice('')
+    setDescription('')
+    setMainImage('')
+    setExtraImages([])
+    setHasSizes(false)
+    setAvailableSizes([])
+    setSeoPhrases([])
+    setSeoScore(0)
+    generateSKU()
+
+    // Scroll smoothly to top
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    toast.success('⚡ تم إرسال المنتج للطابور وبدء المعالجة في الخلفية!', {
+      duration: 3500,
+      icon: '🚀',
+    })
+  }
 
   const generateSlug = (name: string) => {
     let generated = name
@@ -135,7 +203,7 @@ export default function NewProductPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">اسم المنتج *</label>
-              <input type="text" name="name" required onChange={(e) => {
+              <input type="text" name="name" value={name} required onChange={(e) => {
                 setName(e.target.value)
                 setSlug(generateSlug(e.target.value))
               }}
@@ -143,12 +211,12 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
-              <input type="number" name="price" step="0.01" min="0" required dir="ltr"
+              <input type="number" name="price" value={price} onChange={e => setPrice(e.target.value)} step="0.01" min="0" required dir="ltr"
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">الكمية المتوفرة</label>
-              <input type="number" name="stock" min="0" defaultValue={10} dir="ltr"
+              <input type="number" name="stock" value={stock} onChange={e => setStock(e.target.value)} min="0" dir="ltr"
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
               <p className="text-xs text-gray-500 mt-1">القيمة الافتراضية 10 لتسريع الإضافة</p>
             </div>
@@ -163,7 +231,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الفرعية</label>
-              <select name="subCategoryId" disabled={!selectedCollection} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
+              <select name="subCategoryId" value={selectedSubCategory} onChange={e => setSelectedSubCategory(e.target.value)} disabled={!selectedCollection} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
                 <option value="">بدون مجموعة فرعية</option>
                 {subCategories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -172,7 +240,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">المورد</label>
-              <select name="supplierId" className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
+              <select name="supplierId" value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
                 <option value="">بدون مورد</option>
                 {suppliers.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -181,7 +249,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">سعر التكلفة (من المورد)</label>
-              <input type="number" name="costPrice" step="0.01" min="0" dir="ltr"
+              <input type="number" name="costPrice" value={costPrice} onChange={e => setCostPrice(e.target.value)} step="0.01" min="0" dir="ltr"
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
               <p className="text-xs text-gray-500 mt-1">لا يظهر للعميل — لحساب الربح فقط</p>
             </div>
@@ -334,11 +402,23 @@ export default function NewProductPage() {
             </div>
           </div>
 
-        <div className="flex justify-end gap-3 pb-6">
-          <Link href="/admin/products" className="btn btn-outline text-sm font-bold">
-            إلغاء
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-6 pt-2 border-t border-gray-200">
+          <Link href="/admin/products" className="btn btn-outline text-sm font-bold text-gray-600">
+            العودة للمنتجات
           </Link>
-          <SubmitButtons />
+          <div className="flex flex-wrap items-center gap-3">
+            {/* The Instant 0-delay Background Add Button */}
+            <button
+              type="button"
+              onClick={handleInstantBackgroundAdd}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
+              title="إضافة فورية وإخلاء النموذج للبدء في المنتج التالي فوراً"
+            >
+              <Zap className="w-4 h-4 fill-current text-amber-300" />
+              <span>إضافة فورية ومتابعة الإدخال ⚡</span>
+            </button>
+            <SubmitButtons />
+          </div>
         </div>
       </form>
     </div>

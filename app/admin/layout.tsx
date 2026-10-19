@@ -28,6 +28,8 @@ async function requireAdmin() {
   }
 }
 
+import AdminQueueWrapper from './products/AdminQueueWrapper'
+
 export default async function AdminLayout({
   children,
 }: {
@@ -51,11 +53,13 @@ export default async function AdminLayout({
     <AdminSidebar profile={profile} store={store}>
       <Toaster position="bottom-left" />
       <SetupRedirect isSetupComplete={profile.isSetupComplete} />
-      <div className="max-w-6xl mx-auto md:px-10 mt-8">
-        <div className="px-4 md:px-0">
-          {children}
+      <AdminQueueWrapper>
+        <div className="max-w-6xl mx-auto md:px-10 mt-8">
+          <div className="px-4 md:px-0">
+            {children}
+          </div>
         </div>
-      </div>
+      </AdminQueueWrapper>
     </AdminSidebar>
   )
 }

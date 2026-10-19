@@ -173,6 +173,114 @@ export async function createProduct(formData: FormData) {
   }
 }
 
+/**
+ * Async creation for background queue without redirects
+ */
+export async function createProductAsync(payload: {
+  name: string;
+  slug?: string;
+  price: number;
+  stock?: number;
+  compareAtPrice?: number | null;
+  costPrice?: number | null;
+  collectionId?: string | null;
+  subCategoryId?: string | null;
+  supplierId?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  images?: string[];
+  sku?: string | null;
+  hasSizes?: boolean;
+  availableSizes?: string[];
+  seoSearchPhrases?: string[];
+  seoScore?: number | null;
+  isActive?: boolean;
+}) {
+  await verifyAdmin();
+
+  try {
+    const name = payload.name.trim();
+    if (!name) {
+      return { success: false, error: 'اسم المنتج مطلوب' };
+    }
+
+    const rawSlug = payload.slug?.trim() || name;
+    const slug = await getUniqueProductSlug(rawSlug);
+
+    if (payload.collectionId && payload.subCategoryId) {
+      const subCat = await prisma.subCategory.findUnique({ where: { id: payload.subCategoryId } });
+      if (subCat && subCat.collectionId !== payload.collectionId) {
+        return { success: false, error: 'المجموعة الفرعية لا تنتمي للمجموعة الرئيسية' };
+      }
+    }
+
+    let product;
+    try {
+      product = await prisma.product.create({
+        data: {
+          name,
+          slug,
+          collectionId: payload.collectionId || undefined,
+          subCategoryId: payload.subCategoryId || undefined,
+          supplierId: payload.supplierId || undefined,
+          costPrice: payload.costPrice ?? undefined,
+          description: payload.description ?? undefined,
+          price: payload.price,
+          compareAtPrice: payload.compareAtPrice ?? undefined,
+          sku: payload.sku ?? undefined,
+          stock: payload.stock ?? 10,
+          isActive: payload.isActive ?? true,
+          imageUrl: payload.imageUrl ?? undefined,
+          images: payload.images || [],
+          seoSearchPhrases: payload.seoSearchPhrases || [],
+          seoScore: payload.seoScore ?? undefined,
+          hasSizes: payload.hasSizes ?? false,
+          availableSizes: payload.availableSizes || [],
+        },
+      });
+    } catch (createErr: any) {
+      if (createErr.code === 'P2002') {
+        const fallbackSlug = `${(slugify(rawSlug) || 'product').slice(0, 40)}-${Date.now().toString(36)}-${generateRandomSuffix(4)}`;
+        product = await prisma.product.create({
+          data: {
+            name,
+            slug: fallbackSlug,
+            collectionId: payload.collectionId || undefined,
+            subCategoryId: payload.subCategoryId || undefined,
+            supplierId: payload.supplierId || undefined,
+            costPrice: payload.costPrice ?? undefined,
+            description: payload.description ?? undefined,
+            price: payload.price,
+            compareAtPrice: payload.compareAtPrice ?? undefined,
+            sku: payload.sku ?? undefined,
+            stock: payload.stock ?? 10,
+            isActive: payload.isActive ?? true,
+            imageUrl: payload.imageUrl ?? undefined,
+            images: payload.images || [],
+            seoSearchPhrases: payload.seoSearchPhrases || [],
+            seoScore: payload.seoScore ?? undefined,
+            hasSizes: payload.hasSizes ?? false,
+            availableSizes: payload.availableSizes || [],
+          },
+        });
+      } else {
+        throw createErr;
+      }
+    }
+
+    revalidatePath('/admin/products');
+    revalidatePath(`/products/${product.slug}`);
+    revalidatePath('/');
+    revalidatePath('/products');
+    revalidateTag('products', 'max');
+
+    return { success: true, product: { id: product.id, name: product.name, slug: product.slug } };
+  } catch (err: any) {
+    console.error('Error in createProductAsync:', err);
+    return { success: false, error: err.message || 'فشل حفظ المنتج' };
+  }
+}
+
 export async function deleteProduct(productId: string) {
   await verifyAdmin();
   try {
