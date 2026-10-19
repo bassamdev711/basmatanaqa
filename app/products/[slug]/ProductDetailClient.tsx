@@ -203,6 +203,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         await navigator.share({
           title: `${product.name} | متجر شهرزاد`,
           text: shareText,
+          url: shortUrl,
         })
       } catch (err) {
         if ((err as any)?.name !== 'AbortError') {
