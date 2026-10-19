@@ -175,25 +175,25 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
     const shortUrl = `${window.location.origin}/p/${code}${queryString}`
 
-    // Compose formal multi-line message
+    // Compose elegant and attractive multi-line message with courteous emojis
     const lines = [
-      'متجر شهرزاد',
-      `المنتج: ${product.name}`,
-      `السعر: ${currentPrice} ${currency}`,
+      '✨ متجر شهرزاد ✨',
+      `🛍️ المنتج: ${product.name}`,
+      `💰 السعر: ${currentPrice} ${currency}`,
     ]
 
     if (product.collection?.name) {
-      lines.push(`القسم: ${product.collection.name}`)
+      lines.push(`🏷️ القسم: ${product.collection.name}`)
     }
     if (product.subCategory?.name) {
-      lines.push(`التصنيف: ${product.subCategory.name}`)
+      lines.push(`📂 التصنيف: ${product.subCategory.name}`)
     }
     if (chosenSize) {
-      lines.push(`المقاس المختار: ${chosenSize}`)
+      lines.push(`📏 المقاس المختار: ${chosenSize}`)
     }
 
     lines.push('')
-    lines.push('رابط المنتج:')
+    lines.push('🔗 رابط وتفاصيل المنتج:')
     lines.push(shortUrl)
 
     const shareText = lines.join('\n')
