@@ -488,7 +488,7 @@ export default function BulkUploadClient() {
                 <label className="block text-xs font-black text-gray-800 mb-1">السعر (ر.ي) *</label>
                 <input 
                   type="number"
-                  placeholder="مثال: 5500"
+                  placeholder="مثال: 2500"
                   value={currentCard.price}
                   onChange={(e) => updateCard(currentIndex, { price: e.target.value })}
                   step="0.01"
@@ -496,6 +496,23 @@ export default function BulkUploadClient() {
                   dir="ltr"
                   className="w-full rounded-xl border-gray-300 border p-3 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
                 />
+                {/* أزرار مساعدة سريعة للأسعار الشائعة */}
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {['1000', '2000', '2200', '2500', '3000', '4000'].map((presetPrice) => (
+                    <button
+                      key={presetPrice}
+                      type="button"
+                      onClick={() => updateCard(currentIndex, { price: presetPrice })}
+                      className={`px-2 py-1 rounded-lg text-xs font-black transition-all border ${
+                        currentCard.price === presetPrice
+                          ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {presetPrice}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

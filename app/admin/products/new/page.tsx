@@ -227,9 +227,26 @@ export default function NewProductPage() {
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">السعر (ر.ي) *</label>
               <input type="number" name="price" value={price} onChange={e => setPrice(e.target.value)} step="0.01" min="0" required dir="ltr"
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+              {/* أزرار مساعدة سريعة للأسعار الشائعة */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {['1000', '2000', '2200', '2500', '3000', '4000'].map((presetPrice) => (
+                  <button
+                    key={presetPrice}
+                    type="button"
+                    onClick={() => setPrice(presetPrice)}
+                    className={`px-2 py-1 rounded-lg text-xs font-black transition-all border ${
+                      price === presetPrice
+                        ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {presetPrice}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">الكمية المتوفرة</label>
