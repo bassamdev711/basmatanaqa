@@ -3,10 +3,11 @@
 import { useToast } from '@/components/ToastProvider'
 import { useConfirm } from '@/components/ConfirmProvider'
 import React, { useState } from 'react'
-import { Plus, Edit2, X, Trash2, ArrowRight, ImageIcon } from 'lucide-react'
+import { Plus, Edit2, X, Trash2, ArrowRight, ImageIcon, Link2 } from 'lucide-react'
 import Link from 'next/link'
 import { createSubCategory, updateSubCategory, deleteSubCategory } from '../actions'
 import ImageUpload from '../../products/ImageUpload'
+import BulkAssignModal from './BulkAssignModal'
 
 type SubCategory = {
   id: string
@@ -29,6 +30,7 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [bulkModalSub, setBulkModalSub] = useState<SubCategory | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -167,11 +169,19 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <button onClick={() => handleEdit(sub)} className="text-blue-600 hover:text-blue-800" title="تعديل">
-                        <Edit2 size={18} />
+                      <button
+                        onClick={() => setBulkModalSub(sub)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
+                        title="ربط منتجات بهذه المجموعة الفرعية"
+                      >
+                        <Link2 size={14} className="text-emerald-700" />
+                        <span>ربط منتجات</span>
                       </button>
-                      <button onClick={() => handleDelete(sub.id, sub.name)} className="text-red-600 hover:text-red-800" title="حذف">
-                        <Trash2 size={18} />
+                      <button onClick={() => handleEdit(sub)} className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="تعديل">
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => handleDelete(sub.id, sub.name)} className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="حذف">
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -185,6 +195,21 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
           </div>
         )}
       </div>
+
+      {/* Bulk Assign Modal */}
+      {bulkModalSub && (
+        <BulkAssignModal
+          collectionId={collection.id}
+          collectionName={collection.name}
+          subCategory={bulkModalSub}
+          isOpen={!!bulkModalSub}
+          onClose={() => setBulkModalSub(null)}
+          onSuccess={() => {
+            setBulkModalSub(null);
+            window.location.reload();
+          }}
+        />
+      )}
 
       {/* Create/Edit Modal */}
       {isModalOpen && (

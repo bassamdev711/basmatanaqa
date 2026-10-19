@@ -129,3 +129,118 @@ export async function deleteSubCategory(id: string, collectionId: string) {
     return { success: false, error: 'حدث خطأ. ربما يكون هناك منتجات مرتبطة بهذا التصنيف.' };
   }
 }
+
+/**
+ * Fetch unassigned products for a given collection with pagination and optional search
+ */
+export async function getUnassignedProducts({
+  collectionId,
+  page = 1,
+  limit = 20,
+  search = '',
+}: {
+  collectionId: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+}) {
+  await verifyAdmin();
+
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    collectionId: collectionId,
+    subCategoryId: null,
+  };
+
+  if (search && search.trim()) {
+    where.name = {
+      contains: search.trim(),
+      mode: 'insensitive',
+    };
+  }
+
+  const [products, totalCount] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        imageUrl: true,
+        stock: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  const serializedProducts = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    imageUrl: p.imageUrl,
+    stock: p.stock,
+  }));
+
+  const hasMore = skip + products.length < totalCount;
+
+  return {
+    products: serializedProducts,
+    totalCount,
+    hasMore,
+  };
+}
+
+/**
+ * Bulk assign an array of product IDs to a given subCategory
+ */
+export async function bulkAssignProductsToSubCategory({
+  productIds,
+  subCategoryId,
+  collectionId,
+}: {
+  productIds: string[];
+  subCategoryId: string;
+  collectionId: string;
+}) {
+  await verifyAdmin();
+
+  if (!productIds || productIds.length === 0) {
+    return { success: false, error: 'لم يتم تحديد أي منتجات.' };
+  }
+
+  try {
+    const subCategory = await prisma.subCategory.findUnique({
+      where: { id: subCategoryId },
+      select: { id: true, collectionId: true },
+    });
+
+    if (!subCategory || subCategory.collectionId !== collectionId) {
+      return { success: false, error: 'المجموعة الفرعية المحددة غير صالحة.' };
+    }
+
+    const updated = await prisma.product.updateMany({
+      where: {
+        id: { in: productIds },
+        collectionId: collectionId,
+      },
+      data: {
+        subCategoryId: subCategoryId,
+      },
+    });
+
+    revalidatePath(`/admin/collections/${collectionId}`);
+    revalidatePath('/admin/products');
+
+    return {
+      success: true,
+      count: updated.count,
+    };
+  } catch (error: any) {
+    console.error('Error in bulkAssignProductsToSubCategory:', error);
+    return { success: false, error: 'حدث خطأ أثناء ربط المنتجات.' };
+  }
+}
