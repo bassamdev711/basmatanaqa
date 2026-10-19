@@ -244,3 +244,114 @@ export async function bulkAssignProductsToSubCategory({
     return { success: false, error: 'حدث خطأ أثناء ربط المنتجات.' };
   }
 }
+
+/**
+ * Fetch products that have NO main collection assigned at all (collectionId: null)
+ */
+export async function getCompletelyUnassignedProducts({
+  page = 1,
+  limit = 20,
+  search = '',
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) {
+  await verifyAdmin();
+
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    collectionId: null,
+  };
+
+  if (search && search.trim()) {
+    where.name = {
+      contains: search.trim(),
+      mode: 'insensitive',
+    };
+  }
+
+  const [products, totalCount] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        imageUrl: true,
+        stock: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  const serializedProducts = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    imageUrl: p.imageUrl,
+    stock: p.stock,
+  }));
+
+  const hasMore = skip + products.length < totalCount;
+
+  return {
+    products: serializedProducts,
+    totalCount,
+    hasMore,
+  };
+}
+
+/**
+ * Bulk assign products to a main Collection (and optionally clear/set subCategory)
+ */
+export async function bulkAssignProductsToCollection({
+  productIds,
+  collectionId,
+}: {
+  productIds: string[];
+  collectionId: string;
+}) {
+  await verifyAdmin();
+
+  if (!productIds || productIds.length === 0) {
+    return { success: false, error: 'لم يتم تحديد أي منتجات.' };
+  }
+
+  try {
+    const collection = await prisma.collection.findUnique({
+      where: { id: collectionId },
+      select: { id: true },
+    });
+
+    if (!collection) {
+      return { success: false, error: 'المجموعة الرئيسية غير موجودة.' };
+    }
+
+    const updated = await prisma.product.updateMany({
+      where: {
+        id: { in: productIds },
+      },
+      data: {
+        collectionId: collectionId,
+        subCategoryId: null, // Reset subCategory since it's a new main collection
+      },
+    });
+
+    revalidatePath('/admin/collections');
+    revalidatePath('/admin/products');
+    revalidatePath('/');
+
+    return {
+      success: true,
+      count: updated.count,
+    };
+  } catch (error: any) {
+    console.error('Error in bulkAssignProductsToCollection:', error);
+    return { success: false, error: 'حدث خطأ أثناء ربط المنتجات بالمجموعة الرئيسية.' };
+  }
+}

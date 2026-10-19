@@ -3,10 +3,11 @@
 import { useToast } from '@/components/ToastProvider'
 import { useConfirm } from '@/components/ConfirmProvider'
 import React, { useState } from 'react'
-import { Plus, Package, Edit2, X, Trash2 } from 'lucide-react'
+import { Plus, Package, Edit2, X, Trash2, Link2 } from 'lucide-react'
 import Link from 'next/link'
 import { createCollection, deleteCollection, updateCollection } from './actions'
 import ImageUpload from '../products/ImageUpload'
+import CollectionBulkAssignModal from './CollectionBulkAssignModal'
 
 type Collection = {
   id: string
@@ -34,6 +35,7 @@ export default function CollectionsClient({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [assignModalCollection, setAssignModalCollection] = useState<Collection | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -145,19 +147,27 @@ export default function CollectionsClient({
                 {col.description || 'لا يوجد وصف.'}
               </p>
 
-              <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-100">
-                <span className="text-gray-500 text-sm font-bold flex items-center gap-2">
+              <div className="mt-auto pt-4 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100">
+                <span className="text-gray-500 text-sm font-bold flex items-center gap-1.5">
                   <Package size={16} /> {col._count?.products ?? 0} منتج
                 </span>
-                <div className="flex items-center gap-3">
-                  <Link href={`/admin/collections/${col.id}`} className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-bold bg-blue-50 px-2 py-1 rounded" title="إدارة الفروع">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setAssignModalCollection(col)}
+                    className="inline-flex items-center gap-1 text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg border border-blue-200 transition-colors"
+                    title="ضم منتجات غير مرتبطة لهذه المجموعة"
+                  >
+                    <Link2 size={13} />
+                    <span>ضم منتجات</span>
+                  </button>
+                  <Link href={`/admin/collections/${col.id}`} className="text-emerald-700 hover:text-emerald-900 transition-colors text-xs font-bold bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg border border-emerald-200" title="إدارة الفروع">
                     الفروع
                   </Link>
-                  <button onClick={() => handleEdit(col)} className="text-brand hover:text-brand-800 transition-colors" title="تعديل">
-                    <Edit2 size={18} />
+                  <button onClick={() => handleEdit(col)} className="text-brand hover:text-brand-800 p-1.5 rounded-lg hover:bg-gray-100 transition-colors" title="تعديل">
+                    <Edit2 size={16} />
                   </button>
-                  <button onClick={() => handleDelete(col.id, col.name)} className="text-red-500 hover:text-red-700 transition-colors" title="حذف">
-                    <Trash2 size={18} />
+                  <button onClick={() => handleDelete(col.id, col.name)} className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="حذف">
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -171,6 +181,19 @@ export default function CollectionsClient({
           </div>
         )}
       </div>
+
+      {/* Bulk Assign Modal for Main Collection */}
+      {assignModalCollection && (
+        <CollectionBulkAssignModal
+          collection={assignModalCollection}
+          isOpen={!!assignModalCollection}
+          onClose={() => setAssignModalCollection(null)}
+          onSuccess={() => {
+            setAssignModalCollection(null);
+            window.location.reload();
+          }}
+        />
+      )}
 
       {/* Create Modal */}
       {isModalOpen && (
