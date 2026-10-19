@@ -68,8 +68,8 @@ export default function ImageUpload({
   const handleExtraUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    if (additionalImages.length + files.length > 5) {
-      showToast('error', 'الحد الأقصى للصور الإضافية هو 5 صور')
+    if (additionalImages.length + files.length > 10) {
+      showToast('error', 'الحد الأقصى للصور الإضافية هو 10 صور')
       return
     }
     setUploadingExtra(true)
@@ -183,9 +183,9 @@ export default function ImageUpload({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700">
-              صور إضافية ({additionalImages.length}/5)
+              صور إضافية ({additionalImages.length}/10)
             </label>
-            {additionalImages.length < 5 && (
+            {additionalImages.length < 10 && (
               <button
                 type="button"
                 onClick={() => extraCameraRef.current?.click()}
@@ -199,7 +199,7 @@ export default function ImageUpload({
             )}
           </div>
 
-          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
             {additionalImages.map((url, i) => (
               <div key={i} className="relative aspect-square rounded-md overflow-hidden border border-gray-200">
                 <Image src={url} alt={`صورة ${i + 1}`} fill className="object-cover" />
@@ -212,7 +212,7 @@ export default function ImageUpload({
                 </button>
               </div>
             ))}
-            {additionalImages.length < 5 && (
+            {additionalImages.length < 10 && (
               <button
                 type="button"
                 onClick={() => extraInputRef.current?.click()}

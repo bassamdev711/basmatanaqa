@@ -49,14 +49,26 @@ export async function createProduct(formData: FormData) {
     const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
     const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
     
-    const subCategoryId = formData.get('subCategoryId') as string | null;
+    const rawSubCategoryIds = formData.getAll('subCategoryIds') as string[];
+    let subCategoryId = formData.get('subCategoryId') as string | null;
+    let subCategoryIds = rawSubCategoryIds.filter(Boolean);
+    if (subCategoryId && !subCategoryIds.includes(subCategoryId)) {
+      subCategoryIds.unshift(subCategoryId);
+    }
+    if (!subCategoryId && subCategoryIds.length > 0) {
+      subCategoryId = subCategoryIds[0];
+    }
+
     const hasSizes = formData.get('hasSizes') === 'true';
     const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
     const addAnother = formData.get('addAnother') === 'true';
 
-    if (collectionId && subCategoryId) {
-      const subCat = await prisma.subCategory.findUnique({ where: { id: subCategoryId } });
-      if (subCat && subCat.collectionId !== collectionId) {
+    if (collectionId && subCategoryIds.length > 0) {
+      const validSubCats = await prisma.subCategory.findMany({
+        where: { id: { in: subCategoryIds }, collectionId },
+        select: { id: true },
+      });
+      if (validSubCats.length !== subCategoryIds.length) {
         throw new Error('INVALID_SUBCATEGORY');
       }
     }
@@ -110,6 +122,7 @@ export async function createProduct(formData: FormData) {
           seoSearchPhrases,
           seoScore,
           subCategoryId: subCategoryId || undefined,
+          subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
           hasSizes,
           availableSizes,
         },
@@ -140,6 +153,7 @@ export async function createProduct(formData: FormData) {
             seoSearchPhrases,
             seoScore,
             subCategoryId: subCategoryId || undefined,
+            subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
             hasSizes,
             availableSizes,
           },
@@ -185,6 +199,7 @@ export async function createProductAsync(payload: {
   costPrice?: number | null;
   collectionId?: string | null;
   subCategoryId?: string | null;
+  subCategoryIds?: string[];
   supplierId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
@@ -207,10 +222,19 @@ export async function createProductAsync(payload: {
     const rawSlug = payload.slug?.trim() || name;
     const slug = await getUniqueProductSlug(rawSlug);
 
-    if (payload.collectionId && payload.subCategoryId) {
-      const subCat = await prisma.subCategory.findUnique({ where: { id: payload.subCategoryId } });
-      if (subCat && subCat.collectionId !== payload.collectionId) {
-        return { success: false, error: 'المجموعة الفرعية لا تنتمي للمجموعة الرئيسية' };
+    const subCategoryIds = (payload.subCategoryIds || []).filter(Boolean);
+    let subCategoryId = payload.subCategoryId || (subCategoryIds.length > 0 ? subCategoryIds[0] : null);
+    if (subCategoryId && !subCategoryIds.includes(subCategoryId)) {
+      subCategoryIds.unshift(subCategoryId);
+    }
+
+    if (payload.collectionId && subCategoryIds.length > 0) {
+      const validSubCats = await prisma.subCategory.findMany({
+        where: { id: { in: subCategoryIds }, collectionId: payload.collectionId },
+        select: { id: true },
+      });
+      if (validSubCats.length !== subCategoryIds.length) {
+        return { success: false, error: 'بعض المجموعات الفرعية لا تنتمي للمجموعة الرئيسية' };
       }
     }
 
@@ -221,7 +245,8 @@ export async function createProductAsync(payload: {
           name,
           slug,
           collectionId: payload.collectionId || undefined,
-          subCategoryId: payload.subCategoryId || undefined,
+          subCategoryId: subCategoryId || undefined,
+          subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
           supplierId: payload.supplierId || undefined,
           costPrice: payload.costPrice ?? undefined,
           description: payload.description ?? undefined,
@@ -246,7 +271,8 @@ export async function createProductAsync(payload: {
             name,
             slug: fallbackSlug,
             collectionId: payload.collectionId || undefined,
-            subCategoryId: payload.subCategoryId || undefined,
+            subCategoryId: subCategoryId || undefined,
+            subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
             supplierId: payload.supplierId || undefined,
             costPrice: payload.costPrice ?? undefined,
             description: payload.description ?? undefined,

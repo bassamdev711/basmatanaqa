@@ -54,12 +54,18 @@ export default function NewProductPage() {
   const [stock, setStock] = useState('10')
   const [costPrice, setCostPrice] = useState('')
   const [compareAtPrice, setCompareAtPrice] = useState('')
-  const [selectedSubCategory, setSelectedSubCategory] = useState('')
+  const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>([])
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [description, setDescription] = useState('')
   const [seoPhrases, setSeoPhrases] = useState<string[]>([])
   const [seoScore, setSeoScore] = useState<number>(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const toggleSubCategory = (id: string) => {
+    setSelectedSubCategories(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    )
+  }
 
   const handleInstantBackgroundAdd = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -83,7 +89,8 @@ export default function NewProductPage() {
       costPrice: costPrice ? Number(costPrice) : null,
       compareAtPrice: compareAtPrice ? Number(compareAtPrice) : null,
       collectionId: selectedCollection || null,
-      subCategoryId: selectedSubCategory || null,
+      subCategoryId: selectedSubCategories[0] || null,
+      subCategoryIds: selectedSubCategories,
       supplierId: selectedSupplier || null,
       description: description || null,
       mainImageFileUrl: mainImage || undefined,
@@ -104,6 +111,7 @@ export default function NewProductPage() {
     setDescription('')
     setMainImage('')
     setExtraImages([])
+    setSelectedSubCategories([])
     setHasSizes(false)
     setAvailableSizes([])
     setSeoPhrases([])
@@ -229,14 +237,47 @@ export default function NewProductPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة الفرعية</label>
-              <select name="subCategoryId" value={selectedSubCategory} onChange={e => setSelectedSubCategory(e.target.value)} disabled={!selectedCollection} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-100 disabled:text-gray-500">
-                <option value="">بدون مجموعة فرعية</option>
-                {subCategories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                المجموعات الفرعية (يمكن اختيار أكثر من مجموعة)
+              </label>
+              {!selectedCollection ? (
+                <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200">
+                  يرجى اختيار المجموعة الرئيسية أولاً لعرض الفروع المتاحة
+                </p>
+              ) : subCategories.length === 0 ? (
+                <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  لا توجد فروع مضافة لهذه المجموعة حتى الآن
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  {subCategories.map((c) => {
+                    const isSelected = selectedSubCategories.includes(c.id)
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleSubCategory(c.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                          isSelected
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-100'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5" />}
+                        <span>{c.name}</span>
+                      </button>
+                    )
+                  })}
+                  {/* Hidden inputs so standard form submit also sends all selected */}
+                  {selectedSubCategories.map((id) => (
+                    <input key={id} type="hidden" name="subCategoryIds" value={id} />
+                  ))}
+                  {selectedSubCategories.length > 0 && (
+                    <input type="hidden" name="subCategoryId" value={selectedSubCategories[0]} />
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">المورد</label>

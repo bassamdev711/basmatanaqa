@@ -69,11 +69,29 @@ export default async function ProductsPage({
   let availableBrands: string[] = [];
 
   try {
+    let subCategoryFilterObj: any = {};
+    if (subcategory) {
+      const targetSub = await prisma.subCategory.findUnique({
+        where: { slug: subcategory },
+        select: { id: true },
+      });
+      if (targetSub) {
+        subCategoryFilterObj = {
+          OR: [
+            { subCategoryId: targetSub.id },
+            { subCategoryIds: { has: targetSub.id } },
+          ],
+        };
+      } else {
+        subCategoryFilterObj = { subCategory: { slug: subcategory } };
+      }
+    }
+
     const whereClause: Prisma.ProductWhereInput = {
       isActive: true,
       stock: { gt: 0 },
       ...(collection ? { collection: { slug: collection } } : {}),
-      ...(subcategory ? { subCategory: { slug: subcategory } } : {}),
+      ...subCategoryFilterObj,
       ...(minPrice !== undefined || maxPrice !== undefined ? {
          price: {
            ...(minPrice !== undefined ? { gte: minPrice } : {}),

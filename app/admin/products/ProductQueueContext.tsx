@@ -15,6 +15,7 @@ export type QueueProductItem = {
   costPrice?: number | null;
   collectionId?: string | null;
   subCategoryId?: string | null;
+  subCategoryIds?: string[];
   supplierId?: string | null;
   description?: string | null;
   // Raw images to upload or already uploaded URLs
@@ -170,6 +171,7 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
           costPrice: nextItem.costPrice,
           collectionId: nextItem.collectionId,
           subCategoryId: nextItem.subCategoryId,
+          subCategoryIds: nextItem.subCategoryIds,
           supplierId: nextItem.supplierId,
           description: nextItem.description,
           imageUrl: uploadedMainUrl,

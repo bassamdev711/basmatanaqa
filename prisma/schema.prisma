@@ -21,6 +21,7 @@ model Product {
   category         String?
   subCategoryId    String?
   subCategory      SubCategory?     @relation(fields: [subCategoryId], references: [id])
+  subCategoryIds   String[]         @default([])
   hasSizes         Boolean          @default(false)
   availableSizes   String[]
   collectionId     String?
