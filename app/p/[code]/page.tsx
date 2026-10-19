@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { Metadata } from 'next';
-import { getStoreConfig } from '@/lib/store-config';
+import { getSiteUrl, getStoreConfig } from '@/lib/store-config';
 import ShortRedirectClient from './ShortRedirectClient';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +36,7 @@ export async function generateMetadata({
   if (!product) return { robots: { index: false, follow: false } };
 
   const store = await getStoreConfig();
+  const siteUrl = getSiteUrl(process.env.NEXT_PUBLIC_SITE_URL || store.storeUrl);
   
   // Pick active image based on ?img= query parameter
   let targetImageUrl = product.imageUrl;
@@ -47,19 +48,26 @@ export async function generateMetadata({
     }
   }
 
+  const absoluteImageUrl = targetImageUrl ? new URL(targetImageUrl, siteUrl).toString() : undefined;
+  const absoluteShortUrl = new URL(`/p/${encodeURIComponent(code)}`, siteUrl).toString();
   const description = product.description || `تسوق ${product.name} الآن من ${store.name}`;
 
   return {
+    metadataBase: siteUrl,
     title: `${product.name} | ${store.name}`,
     description,
+    alternates: {
+      canonical: absoluteShortUrl,
+    },
     openGraph: {
       title: `${product.name} | ${store.name}`,
       description,
+      url: absoluteShortUrl,
       siteName: store.name,
       type: 'website',
-      ...(targetImageUrl ? { 
+      ...(absoluteImageUrl ? { 
         images: [{ 
-          url: targetImageUrl, 
+          url: absoluteImageUrl, 
           width: 800, 
           height: 800, 
           alt: product.name 
@@ -70,7 +78,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `${product.name} | ${store.name}`,
       description,
-      ...(targetImageUrl ? { images: [targetImageUrl] } : {}),
+      ...(absoluteImageUrl ? { images: [absoluteImageUrl] } : {}),
     },
   };
 }

@@ -232,7 +232,7 @@ export default function NewProductPage() {
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
               {/* أزرار مساعدة سريعة للأسعار الشائعة */}
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {['1000', '2000', '2200', '2500', '3000', '4000'].map((presetPrice) => (
+                {['1000', '2000', '2200', '2500', '2700', '3000', '3200', '4000'].map((presetPrice) => (
                   <button
                     key={presetPrice}
                     type="button"

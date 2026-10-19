@@ -229,7 +229,8 @@ export async function createProductAsync(payload: {
     const rawSlug = payload.slug?.trim() || name;
     const slug = await getUniqueProductSlug(rawSlug);
 
-    const subCategoryIds = (payload.subCategoryIds || []).filter(Boolean);
+    const rawSubCategoryIds = (payload.subCategoryIds || []).filter(Boolean);
+    let subCategoryIds = [...rawSubCategoryIds];
     let subCategoryId = payload.subCategoryId || (subCategoryIds.length > 0 ? subCategoryIds[0] : null);
     if (subCategoryId && !subCategoryIds.includes(subCategoryId)) {
       subCategoryIds.unshift(subCategoryId);
@@ -240,8 +241,11 @@ export async function createProductAsync(payload: {
         where: { id: { in: subCategoryIds }, collectionId: payload.collectionId },
         select: { id: true },
       });
-      if (validSubCats.length !== subCategoryIds.length) {
-        return { success: false, error: 'بعض المجموعات الفرعية لا تنتمي للمجموعة الرئيسية' };
+      const validIds = validSubCats.map((sc) => sc.id);
+      // Filter down to only valid subcategories belonging to this collection
+      subCategoryIds = subCategoryIds.filter((id) => validIds.includes(id));
+      if (subCategoryId && !validIds.includes(subCategoryId)) {
+        subCategoryId = subCategoryIds[0] || null;
       }
     }
 

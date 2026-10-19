@@ -37,7 +37,9 @@ type SubCategoryItem = {
 type BulkProductCard = {
   id: string
   mainImageBlobUrl: string
+  mainImageFile?: File
   extraImagesBlobUrls: string[]
+  extraImageFiles?: File[]
   name: string
   price: string
   stock: string
@@ -123,7 +125,9 @@ export default function BulkUploadClient() {
         newCards.push({
           id: `bulk-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
           mainImageBlobUrl: blobUrl,
+          mainImageFile: compressed,
           extraImagesBlobUrls: [],
+          extraImageFiles: [],
           name: '',
           price: '',
           stock: '10',
@@ -149,7 +153,7 @@ export default function BulkUploadClient() {
         if (prev.length === 0) setCurrentIndex(0)
         return updated
       })
-      toast.success(`تم فتح ${newCards.length} نموذج بنجاح! يمكنك الآن إدخال البيانات والتمرير.`)
+      toast.success(`تم فتح ${newCards.length} نموذج بنجاح. يمكنك الآن إدخال البيانات والتمرير.`)
     }
   }
 
@@ -181,11 +185,15 @@ export default function BulkUploadClient() {
       const compressed = await compressImageClientSide(file)
       const blobUrl = URL.createObjectURL(compressed)
       const currentExtras = products[currentIndex].extraImagesBlobUrls || []
+      const currentExtraFiles = products[currentIndex].extraImageFiles || []
       if (currentExtras.length >= 10) {
         toast.error('الحد الأقصى هو 10 صور إضافية')
         return
       }
-      updateCard(currentIndex, { extraImagesBlobUrls: [...currentExtras, blobUrl] })
+      updateCard(currentIndex, { 
+        extraImagesBlobUrls: [...currentExtras, blobUrl],
+        extraImageFiles: [...currentExtraFiles, compressed],
+      })
       toast.success('تمت إضافة صورة إضافية')
     } catch {
       toast.error('فشل معالجة الصورة')
@@ -196,7 +204,8 @@ export default function BulkUploadClient() {
     const card = products[cardIndex]
     if (!card) return
     const updated = card.extraImagesBlobUrls.filter((_, i) => i !== imgIndex)
-    updateCard(cardIndex, { extraImagesBlobUrls: updated })
+    const updatedFiles = (card.extraImageFiles || []).filter((_, i) => i !== imgIndex)
+    updateCard(cardIndex, { extraImagesBlobUrls: updated, extraImageFiles: updatedFiles })
   }
 
   const removeCard = (index: number) => {
@@ -231,7 +240,9 @@ export default function BulkUploadClient() {
       subCategoryId: card.subCategoryIds[0] || null,
       subCategoryIds: card.subCategoryIds,
       description: card.description || null,
+      mainImageFile: card.mainImageFile,
       mainImageFileUrl: card.mainImageBlobUrl,
+      extraImageFiles: card.extraImageFiles && card.extraImageFiles.length > 0 ? card.extraImageFiles : undefined,
       extraImageFileUrls: card.extraImagesBlobUrls.length > 0 ? card.extraImagesBlobUrls : undefined,
       hasSizes: card.hasSizes,
       availableSizes: card.availableSizes,
@@ -498,7 +509,7 @@ export default function BulkUploadClient() {
                 />
                 {/* أزرار مساعدة سريعة للأسعار الشائعة */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  {['1000', '2000', '2200', '2500', '3000', '4000'].map((presetPrice) => (
+                  {['1000', '2000', '2200', '2500', '2700', '3000', '3200', '4000'].map((presetPrice) => (
                     <button
                       key={presetPrice}
                       type="button"

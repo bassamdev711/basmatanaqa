@@ -19,7 +19,9 @@ export type QueueProductItem = {
   supplierId?: string | null;
   description?: string | null;
   // Raw images to upload or already uploaded URLs
+  mainImageFile?: File | null;
   mainImageFileUrl?: string; // either blob: URL or uploaded https:// URL
+  extraImageFiles?: File[];
   extraImageFileUrls?: string[];
   sku?: string | null;
   hasSizes?: boolean;
@@ -46,22 +48,28 @@ interface ProductQueueContextType {
 
 const ProductQueueContext = createContext<ProductQueueContextType | null>(null);
 
-// Upload helper with retries and detailed logging
-async function uploadWithRetry(fileUrl: string, maxRetries = 3): Promise<string> {
+// Upload helper with retries and direct File support
+async function uploadWithRetry(fileOrUrl: File | string, maxRetries = 3): Promise<string> {
   // If already uploaded (https://), return as is
-  if (fileUrl.startsWith('https://')) return fileUrl;
+  if (typeof fileOrUrl === 'string' && fileOrUrl.startsWith('https://')) return fileOrUrl;
 
   let lastError: any = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Fetch blob from local object URL
-      const response = await fetch(fileUrl);
-      if (!response.ok) {
-        throw new Error('تعذر قراءة ملف الصورة من الذاكرة المحلية (قد تكون الجلسة انتهت)');
+      let file: File;
+
+      if (fileOrUrl instanceof File) {
+        file = fileOrUrl;
+      } else {
+        // Fetch blob from local object URL
+        const response = await fetch(fileOrUrl);
+        if (!response.ok) {
+          throw new Error('تعذر قراءة ملف الصورة من الذاكرة المحلية (قد تكون الجلسة انتهت)');
+        }
+        const blob = await response.blob();
+        file = new File([blob], `product-photo-${Date.now()}.webp`, { type: blob.type || 'image/webp' });
       }
-      const blob = await response.blob();
-      const file = new File([blob], `product-photo-${Date.now()}.webp`, { type: blob.type || 'image/webp' });
 
       // Compress client side
       let compressedFile = file;
@@ -131,13 +139,20 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
       try {
         // 1. Upload Main Image
         let uploadedMainUrl: string | null = null;
-        if (nextItem.mainImageFileUrl) {
+        if (nextItem.mainImageFile) {
+          uploadedMainUrl = await uploadWithRetry(nextItem.mainImageFile, 3);
+        } else if (nextItem.mainImageFileUrl) {
           uploadedMainUrl = await uploadWithRetry(nextItem.mainImageFileUrl, 3);
         }
 
         // 2. Upload Extra Images
         let uploadedExtraUrls: string[] = [];
-        if (nextItem.extraImageFileUrls && nextItem.extraImageFileUrls.length > 0) {
+        if (nextItem.extraImageFiles && nextItem.extraImageFiles.length > 0) {
+          for (const extraFile of nextItem.extraImageFiles) {
+            const url = await uploadWithRetry(extraFile, 3);
+            uploadedExtraUrls.push(url);
+          }
+        } else if (nextItem.extraImageFileUrls && nextItem.extraImageFileUrls.length > 0) {
           for (const extraUrl of nextItem.extraImageFileUrls) {
             const url = await uploadWithRetry(extraUrl, 3);
             uploadedExtraUrls.push(url);
@@ -180,7 +195,7 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
                 : item
             )
           );
-          toast.success(`✅ تم حفظ "${nextItem.name}" بنجاح!`, { duration: 4000 });
+          toast.success(`تم حفظ "${nextItem.name}" بنجاح`, { duration: 4000 });
         } else {
           throw new Error(res.error || 'فشل حفظ المنتج في قاعدة البيانات');
         }
