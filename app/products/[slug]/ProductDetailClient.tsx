@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Minus, Plus, X, ShoppingBag, CreditCard, Share2 } from 'lucide-react'
 import { useCart } from '@/components/CartProvider'
 import { getImageSizes } from '@/lib/image-utils'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCartAnimation } from '@/components/CartAnimationProvider'
 import { useToast } from '@/components/ToastProvider'
 import { useCurrency } from '@/components/CurrencyProvider'
@@ -26,6 +26,8 @@ interface Product {
   id: string
   name: string
   slug: string
+  shortCode?: string | null
+  itemNumber?: number | null
   brand: string | null
   description: string | null
   price: number
@@ -48,10 +50,17 @@ interface Product {
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const currency = useCurrency()
-
   const router = useRouter()
+  const searchParams = useSearchParams()
+
   const allImages = [product.imageUrl, ...product.images].filter(Boolean) as string[]
-  const [activeImage, setActiveImage] = useState(allImages[0] || '')
+
+  // Initial image from search query (?img=1 or ?img=0)
+  const initialImgParam = searchParams.get('img')
+  const initialImgIndex = initialImgParam !== null ? parseInt(initialImgParam, 10) : 0
+  const defaultInitialImage = (!isNaN(initialImgIndex) && allImages[initialImgIndex]) ? allImages[initialImgIndex] : (allImages[0] || '')
+
+  const [activeImage, setActiveImage] = useState(defaultInitialImage)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
   
@@ -76,14 +85,18 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   // Variants state
   const hasVariants = product.variants && product.variants.length > 0
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(hasVariants ? product.variants![0] : null)
+  const sizeParam = searchParams.get('size')
+  
+  const initialVariant = hasVariants 
+    ? (sizeParam ? product.variants!.find(v => v.size === sizeParam) || product.variants![0] : product.variants![0])
+    : null
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(initialVariant)
 
   // Dynamic Sizes State
-  const [selectedDynamicSize, setSelectedDynamicSize] = useState<string | null>(
-    product.hasSizes && product.availableSizes && product.availableSizes.length > 0 
-      ? product.availableSizes[0] 
-      : null
-  )
+  const initialDynamicSize = product.hasSizes && product.availableSizes && product.availableSizes.length > 0 
+    ? (sizeParam && product.availableSizes.includes(sizeParam) ? sizeParam : product.availableSizes[0]) 
+    : null
+  const [selectedDynamicSize, setSelectedDynamicSize] = useState<string | null>(initialDynamicSize)
 
   // Current Displayed Data
   const currentPrice = selectedVariant ? selectedVariant.price : product.price
@@ -146,20 +159,59 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   }
 
   const handleShare = async () => {
-    const url = window.location.href
+    // Find active image index in allImages
+    const activeImageIdx = allImages.findIndex(img => img === activeImage)
+    const code = product.shortCode || product.slug
+
+    // Build query params for state preservation
+    const queryParts: string[] = []
+    if (activeImageIdx > 0) {
+      queryParts.push(`img=${activeImageIdx}`)
+    }
+    const chosenSize = selectedDynamicSize || selectedVariant?.size
+    if (chosenSize) {
+      queryParts.push(`size=${encodeURIComponent(chosenSize)}`)
+    }
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
+    const shortUrl = `${window.location.origin}/p/${code}${queryString}`
+
+    // Compose elegant multi-line message
+    const lines = [
+      '✨ متجر شهرزاد',
+      `🛍️ ${product.name}`,
+      `💰 السعر: ${currentPrice} ${currency}`,
+    ]
+
+    if (product.collection?.name) {
+      lines.push(`📂 القسم: ${product.collection.name}`)
+    }
+    if (product.subCategory?.name) {
+      lines.push(`🏷️ التصنيف: ${product.subCategory.name}`)
+    }
+    if (chosenSize) {
+      lines.push(`📏 المقاس المختار: ${chosenSize}`)
+    }
+
+    lines.push('')
+    lines.push('🔗 رابط المنتج:')
+    lines.push(shortUrl)
+
+    const shareText = lines.join('\n')
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: product.name,
-          text: `شاهد ${product.name} على متجرنا!`,
-          url: url,
+          title: `${product.name} | متجر شهرزاد`,
+          text: shareText,
         })
       } catch (err) {
-        console.log('Error sharing', err)
+        if ((err as any)?.name !== 'AbortError') {
+          console.log('Error sharing', err)
+        }
       }
     } else {
-      navigator.clipboard.writeText(url)
-      showToast('success', 'تم نسخ الرابط بنجاح!')
+      navigator.clipboard.writeText(shareText)
+      showToast('success', 'تم نسخ تفاصيل ورابط المنتج بنجاح!')
     }
   }
 

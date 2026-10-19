@@ -108,6 +108,7 @@ export default async function ProductDetailPage({
     select: {
       id: true,
       slug: true,
+      shortCode: true,
       name: true,
       price: true,
       imageUrl: true,
@@ -167,6 +168,7 @@ export default async function ProductDetailPage({
                     id: p.id,
                     name: p.name,
                     slug: p.slug,
+                    shortCode: p.shortCode,
                     price: Number(p.price),
                     compareAtPrice: null,
                     imageUrl: p.imageUrl || '',

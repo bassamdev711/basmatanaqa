@@ -17,6 +17,7 @@ interface ProductCardProps {
     id: string;
     name: string;
     slug: string;
+    shortCode?: string | null;
     price: number;
     compareAtPrice: number | null;
     imageUrl: string;
@@ -37,20 +38,34 @@ export default function ProductCard({ product, currency, priority = false }: Pro
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/products/${product.slug}`;
+
+    const code = product.shortCode || product.slug;
+    const shortUrl = `${window.location.origin}/p/${code}`;
+
+    const lines = [
+      '✨ متجر شهرزاد',
+      `🛍️ ${product.name}`,
+      `💰 السعر: ${product.price} ${currency}`,
+      '',
+      '🔗 رابط المنتج:',
+      shortUrl,
+    ];
+    const shareText = lines.join('\n');
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: product.name,
-          text: `شاهد ${product.name} على متجرنا!`,
-          url: url,
+          title: `${product.name} | متجر شهرزاد`,
+          text: shareText,
         });
       } catch (err) {
-        console.log('Error sharing', err);
+        if ((err as any)?.name !== 'AbortError') {
+          console.log('Error sharing', err);
+        }
       }
     } else {
-      navigator.clipboard.writeText(url);
-      showToast('success', 'تم نسخ الرابط بنجاح!');
+      navigator.clipboard.writeText(shareText);
+      showToast('success', 'تم نسخ تفاصيل ورابط المنتج بنجاح!');
     }
   };
 

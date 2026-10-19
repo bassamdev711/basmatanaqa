@@ -11,6 +11,8 @@ model Product {
   id               String           @id @default(cuid())
   name             String
   slug             String           @unique
+  itemNumber       Int?             @unique
+  shortCode        String?          @unique
   brand            String?
   description      String?
   price            Decimal          @db.Decimal(10, 2)

@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 
 import { verifyAdmin } from '@/lib/auth';
 import { getUniqueProductSlug, slugify, generateRandomSuffix } from '@/lib/slug';
+import { getNextProductNumberAndCode } from '@/lib/product-shortcode';
 
 const isNextRedirectError = (err: any) => err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_REDIRECT');
 
@@ -97,12 +98,16 @@ export async function createProduct(formData: FormData) {
       }
     }
 
+    const { itemNumber, shortCode } = await getNextProductNumberAndCode();
+
     let product;
     try {
       product = await prisma.product.create({
         data: {
           name,
           slug,
+          itemNumber,
+          shortCode,
           brand: brand ?? undefined,
           collectionId: collectionId || undefined,
           supplierId: supplierId || undefined,
@@ -134,6 +139,8 @@ export async function createProduct(formData: FormData) {
           data: {
             name,
             slug: fallbackSlug,
+            itemNumber,
+            shortCode,
             brand: brand ?? undefined,
             collectionId: collectionId || undefined,
             supplierId: supplierId || undefined,
@@ -238,12 +245,16 @@ export async function createProductAsync(payload: {
       }
     }
 
+    const { itemNumber, shortCode } = await getNextProductNumberAndCode();
+
     let product;
     try {
       product = await prisma.product.create({
         data: {
           name,
           slug,
+          itemNumber,
+          shortCode,
           collectionId: payload.collectionId || undefined,
           subCategoryId: subCategoryId || undefined,
           subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
@@ -270,6 +281,8 @@ export async function createProductAsync(payload: {
           data: {
             name,
             slug: fallbackSlug,
+            itemNumber,
+            shortCode,
             collectionId: payload.collectionId || undefined,
             subCategoryId: subCategoryId || undefined,
             subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
