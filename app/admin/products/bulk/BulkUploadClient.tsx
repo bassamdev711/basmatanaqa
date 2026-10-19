@@ -57,12 +57,23 @@ export default function BulkUploadClient() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const extraImgInputRef = useRef<HTMLInputElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const [collections, setCollections] = useState<CollectionItem[]>([])
   const [subCategoriesMap, setSubCategoriesMap] = useState<Record<string, SubCategoryItem[]>>({})
   const [defaultCollectionId, setDefaultCollectionId] = useState('')
   const [products, setProducts] = useState<BulkProductCard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+
+  // Auto focus name input on current card change (both desktop and mobile)
+  useEffect(() => {
+    if (products.length > 0 && products[currentIndex]) {
+      const timer = setTimeout(() => {
+        nameInputRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [currentIndex, products.length])
 
   // Fetch collections and their subcategories on mount
   useEffect(() => {
@@ -220,8 +231,25 @@ export default function BulkUploadClient() {
     const card = products[cardIndex]
     if (!card) return
 
+    // Prevent duplicate submission if already queued
+    if (card.isSubmitted) {
+      toast('هذا المنتج تمت إضافته بالفعل إلى طابور الحفظ مسبقاً', { icon: 'ℹ️' })
+      // If there are other unsubmitted items, advance to them
+      const nextUnsubmittedIndex = products.findIndex((p, idx) => idx > cardIndex && !p.isSubmitted)
+      if (nextUnsubmittedIndex !== -1) {
+        setCurrentIndex(nextUnsubmittedIndex)
+      } else {
+        const anyUnsubmittedIndex = products.findIndex(p => !p.isSubmitted)
+        if (anyUnsubmittedIndex !== -1) {
+          setCurrentIndex(anyUnsubmittedIndex)
+        }
+      }
+      return
+    }
+
     if (!card.name.trim()) {
       toast.error('يرجى إدخال اسم المنتج')
+      nameInputRef.current?.focus()
       return
     }
     const numPrice = Number(card.price)
@@ -252,13 +280,20 @@ export default function BulkUploadClient() {
     updateCard(cardIndex, { isSubmitted: true })
     toast.success(`تمت إضافة "${card.name}" إلى طابور المعالجة بالخلفية`)
 
+    // Check if this was the last remaining unsubmitted card
+    const remainingUnsubmitted = products.filter((p, idx) => idx !== cardIndex && !p.isSubmitted).length
+    if (remainingUnsubmitted === 0) {
+      toast.success(`اكتملت إضافة جميع المنتجات (${products.length} من ${products.length}) بنجاح!`, { duration: 6000 })
+      return
+    }
+
     // Auto-advance to the next unsubmitted card if available
     const nextUnsubmittedIndex = products.findIndex((p, idx) => idx > cardIndex && !p.isSubmitted)
     if (nextUnsubmittedIndex !== -1) {
       setCurrentIndex(nextUnsubmittedIndex)
     } else {
       // Look from the start
-      const anyUnsubmittedIndex = products.findIndex(p => !p.isSubmitted)
+      const anyUnsubmittedIndex = products.findIndex((p, idx) => idx !== cardIndex && !p.isSubmitted)
       if (anyUnsubmittedIndex !== -1) {
         setCurrentIndex(anyUnsubmittedIndex)
       }
@@ -268,6 +303,13 @@ export default function BulkUploadClient() {
   const currentCard = products[currentIndex]
   const currentSubCats = currentCard ? (subCategoriesMap[currentCard.collectionId] || []) : []
   const completedCount = products.filter(p => p.isSubmitted).length
+  const allCompleted = products.length > 0 && completedCount === products.length
+
+  const handleStartNewBatch = () => {
+    setProducts([])
+    setCurrentIndex(0)
+    fileInputRef.current?.click()
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20" dir="rtl">
@@ -487,6 +529,7 @@ export default function BulkUploadClient() {
               <div className="md:col-span-2">
                 <label className="block text-xs font-black text-gray-800 mb-1">اسم المنتج *</label>
                 <input 
+                  ref={nameInputRef}
                   type="text"
                   placeholder="مثال: فستان بناتي أنيق مورد"
                   value={currentCard.name}
@@ -625,17 +668,63 @@ export default function BulkUploadClient() {
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => handleSubmitCard(currentIndex)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-black hover:bg-gray-800 text-white font-black text-sm rounded-xl shadow-md transition-all active:scale-95"
-                >
-                  <Zap className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span>{currentCard.isSubmitted ? 'تحديث الإضافة للطابور' : 'إضافة هذا المنتج والتمرير للتالي'}</span>
-                </button>
+                {currentCard.isSubmitted ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-600 text-white font-black text-sm rounded-xl shadow-sm cursor-default"
+                  >
+                    <Check className="w-4 h-4 stroke-[3]" />
+                    <span>تمت إضافة هذا المنتج للطابور</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSubmitCard(currentIndex)}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-black hover:bg-gray-800 text-white font-black text-sm rounded-xl shadow-md transition-all active:scale-95"
+                  >
+                    <Zap className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    <span>إضافة هذا المنتج والتمرير للتالي</span>
+                  </button>
+                )}
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Completion Banner when all products in current batch are submitted */}
+      {allCompleted && (
+        <div className="bg-gradient-to-r from-emerald-900 to-teal-950 text-white p-6 rounded-2xl shadow-xl border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-5 animate-in fade-in duration-300">
+          <div className="flex items-center gap-4 text-center sm:text-right">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center shrink-0">
+              <Check className="w-6 h-6 text-emerald-300 stroke-[3]" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-white">
+                اكتملت إضافة جميع المنتجات ({completedCount} من {products.length})
+              </h3>
+              <p className="text-xs text-emerald-200 mt-1">
+                جميع المنتجات موجودة الآن في طابور الحفظ بالخلفية وتُحفظ تباعاً في قاعدة البيانات.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleStartNewBatch}
+              className="flex-1 sm:flex-none px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs rounded-xl shadow transition-all active:scale-95"
+            >
+              إضافة دفعة صور جديدة
+            </button>
+            <Link
+              href="/admin/products"
+              className="flex-1 sm:flex-none px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all text-center"
+            >
+              عرض المنتجات
+            </Link>
           </div>
         </div>
       )}

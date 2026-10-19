@@ -49,7 +49,14 @@ export async function generateMetadata({
   }
 
   const absoluteImageUrl = targetImageUrl ? new URL(targetImageUrl, siteUrl).toString() : undefined;
-  const absoluteShortUrl = new URL(`/p/${encodeURIComponent(code)}`, siteUrl).toString();
+  
+  // Build query string to preserve active image/size in canonical and og:url
+  const queryParams = new URLSearchParams();
+  if (sParams.img && typeof sParams.img === 'string') queryParams.set('img', sParams.img);
+  if (sParams.size && typeof sParams.size === 'string') queryParams.set('size', sParams.size);
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  
+  const absoluteShortUrl = new URL(`/p/${encodeURIComponent(code)}${queryString}`, siteUrl).toString();
   const description = product.description || `تسوق ${product.name} الآن من ${store.name}`;
 
   return {
