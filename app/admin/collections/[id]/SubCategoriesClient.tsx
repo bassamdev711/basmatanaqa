@@ -130,65 +130,126 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {collection.subCategories.length > 0 ? (
-          <table className="w-full text-right">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-sm font-bold text-gray-900">الصورة</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-900">الاسم</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-900">الرابط</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-900">الحالة</th>
-                <th className="px-6 py-4 text-sm font-bold text-gray-900">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {collection.subCategories.map(sub => (
-                <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    {sub.imageUrl ? (
-                      <img src={sub.imageUrl} alt={sub.name} className="w-12 h-12 rounded object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400">
-                        <ImageIcon size={20} />
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-gray-900">{sub.name}</span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500 font-mono text-sm">{sub.slug}</td>
-                  <td className="px-6 py-4">
-                    {sub.isActive ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                        نشط
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-800">
-                        مسودة
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-right min-w-[650px]">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-sm font-bold text-gray-900">الصورة</th>
+                    <th className="px-6 py-4 text-sm font-bold text-gray-900">الاسم</th>
+                    <th className="px-6 py-4 text-sm font-bold text-gray-900">الرابط</th>
+                    <th className="px-6 py-4 text-sm font-bold text-gray-900">الحالة</th>
+                    <th className="px-6 py-4 text-sm font-bold text-gray-900">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {collection.subCategories.map(sub => (
+                    <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        {sub.imageUrl ? (
+                          <img src={sub.imageUrl} alt={sub.name} className="w-12 h-12 rounded object-cover" />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                            <ImageIcon size={20} />
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-gray-900">{sub.name}</span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 font-mono text-sm">{sub.slug}</td>
+                      <td className="px-6 py-4">
+                        {sub.isActive ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                            نشط
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-800">
+                            مسودة
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setBulkModalSub(sub)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
+                            title="ربط منتجات بهذه المجموعة الفرعية"
+                          >
+                            <Link2 size={14} className="text-emerald-700" />
+                            <span>ربط منتجات</span>
+                          </button>
+                          <button onClick={() => handleEdit(sub)} className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="تعديل">
+                            <Edit2 size={16} />
+                          </button>
+                          <button onClick={() => handleDelete(sub.id, sub.name)} className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="حذف">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View (Optimized for Phones) */}
+            <div className="block md:hidden divide-y divide-gray-100">
+              {collection.subCategories.map((sub) => (
+                <div key={sub.id} className="p-4 space-y-3 bg-white">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
+                      {sub.imageUrl ? (
+                        <img src={sub.imageUrl} alt={sub.name} className="w-12 h-12 rounded-lg object-cover border border-gray-100 shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
+                          <ImageIcon size={20} />
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-sm">{sub.name}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-gray-400 font-mono" dir="ltr">/{sub.slug}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sub.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                            {sub.isActive ? 'نشط' : 'مسودة'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile Actions Bar */}
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-50">
+                    <button
+                      onClick={() => setBulkModalSub(sub)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-emerald-700 text-white hover:bg-emerald-800 transition-colors shadow-sm"
+                    >
+                      <Link2 size={14} />
+                      <span>ربط منتجات</span>
+                    </button>
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setBulkModalSub(sub)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
-                        title="ربط منتجات بهذه المجموعة الفرعية"
+                        onClick={() => handleEdit(sub)}
+                        className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                        title="تعديل"
                       >
-                        <Link2 size={14} className="text-emerald-700" />
-                        <span>ربط منتجات</span>
+                        <Edit2 size={14} />
+                        <span>تعديل</span>
                       </button>
-                      <button onClick={() => handleEdit(sub)} className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="تعديل">
-                        <Edit2 size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(sub.id, sub.name)} className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="حذف">
-                        <Trash2 size={16} />
+                      <button
+                        onClick={() => handleDelete(sub.id, sub.name)}
+                        className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                        title="حذف"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         ) : (
           <div className="p-12 text-center text-gray-500">
             لا توجد مجموعات فرعية مضافة في هذه المجموعة.
