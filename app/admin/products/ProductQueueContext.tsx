@@ -46,9 +46,7 @@ interface ProductQueueContextType {
 
 const ProductQueueContext = createContext<ProductQueueContextType | null>(null);
 
-const STORAGE_KEY = 'basmatanaqa_product_upload_queue';
-
-// Helper to upload with retry and network tolerance
+// Upload helper with retries and detailed logging
 async function uploadWithRetry(fileUrl: string, maxRetries = 3): Promise<string> {
   // If already uploaded (https://), return as is
   if (fileUrl.startsWith('https://')) return fileUrl;
@@ -59,14 +57,22 @@ async function uploadWithRetry(fileUrl: string, maxRetries = 3): Promise<string>
     try {
       // Fetch blob from local object URL
       const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error('تعذر قراءة ملف الصورة من الذاكرة المحلية (قد تكون الجلسة انتهت)');
+      }
       const blob = await response.blob();
       const file = new File([blob], `product-photo-${Date.now()}.webp`, { type: blob.type || 'image/webp' });
 
       // Compress client side
-      const compressed = await compressImageClientSide(file);
+      let compressedFile = file;
+      try {
+        compressedFile = await compressImageClientSide(file);
+      } catch (cErr) {
+        console.warn('Client compression fallback to original file:', cErr);
+      }
 
       const formData = new FormData();
-      formData.append('file', compressed);
+      formData.append('file', compressedFile);
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -76,17 +82,16 @@ async function uploadWithRetry(fileUrl: string, maxRetries = 3): Promise<string>
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || `Upload failed with status ${res.status}`);
+        throw new Error(errJson.error || `خطأ في خادم الرفع (${res.status})`);
       }
 
       const data = await res.json();
-      if (!data.url) throw new Error('No URL returned from upload API');
+      if (!data.url) throw new Error('لم يرجع خادم التخزين رابط الصورة');
 
       return data.url;
-    } catch (err) {
+    } catch (err: any) {
       lastError = err;
       console.warn(`[Queue Upload] Attempt ${attempt} failed:`, err);
-      // Wait before retry (1s, 2s, 3s)
       if (attempt < maxRetries) {
         await new Promise((r) => setTimeout(r, attempt * 1000));
       }
@@ -98,61 +103,39 @@ async function uploadWithRetry(fileUrl: string, maxRetries = 3): Promise<string>
 
 export function ProductQueueProvider({ children }: { children: React.ReactNode }) {
   const [queue, setQueue] = useState<QueueProductItem[]>([]);
+  const queueRef = useRef<QueueProductItem[]>([]);
   const isProcessingRef = useRef(false);
 
-  // Load from localStorage on mount
+  // Keep queueRef always in sync with state
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Reset any 'processing' items back to 'pending'
-          const normalized = parsed.map((item) => ({
-            ...item,
-            status: item.status === 'processing' ? 'pending' : item.status,
-          }));
-          setQueue(normalized);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to parse product queue from storage:', err);
-    }
-  }, []);
-
-  // Save to localStorage whenever queue changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
-    } catch (err) {
-      console.error('Failed to save product queue to storage:', err);
-    }
+    queueRef.current = queue;
   }, [queue]);
 
-  // Main Queue Processor Loop
+  // Main Queue Processor Loop - runs independently via interval
   useEffect(() => {
     const processNext = async () => {
       if (isProcessingRef.current) return;
 
-      // Find first pending item
-      const nextItem = queue.find((q) => q.status === 'pending');
+      // Find first pending item from the ref
+      const currentList = queueRef.current;
+      const nextItem = currentList.find((q) => q.status === 'pending');
       if (!nextItem) return;
 
       isProcessingRef.current = true;
 
-      // Mark as processing
+      // Mark item as processing
       setQueue((prev) =>
-        prev.map((item) => (item.id === nextItem.id ? { ...item, status: 'processing' } : item))
+        prev.map((item) => (item.id === nextItem.id ? { ...item, status: 'processing', errorMessage: undefined } : item))
       );
 
       try {
-        // 1. Upload Main Image if needed
+        // 1. Upload Main Image
         let uploadedMainUrl: string | null = null;
         if (nextItem.mainImageFileUrl) {
           uploadedMainUrl = await uploadWithRetry(nextItem.mainImageFileUrl, 3);
         }
 
-        // 2. Upload Extra Images if needed
+        // 2. Upload Extra Images
         let uploadedExtraUrls: string[] = [];
         if (nextItem.extraImageFileUrls && nextItem.extraImageFileUrls.length > 0) {
           for (const extraUrl of nextItem.extraImageFileUrls) {
@@ -181,7 +164,7 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
           availableSizes: nextItem.availableSizes,
           seoSearchPhrases: nextItem.seoSearchPhrases,
           seoScore: nextItem.seoScore,
-          isActive: nextItem.isActive,
+          isActive: nextItem.isActive ?? true,
         });
 
         if (res.success) {
@@ -192,37 +175,39 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
                     ...item,
                     status: 'success',
                     mainImageFileUrl: uploadedMainUrl || item.mainImageFileUrl,
+                    extraImageFileUrls: uploadedExtraUrls,
                   }
                 : item
             )
           );
-          toast.success(`تم حفظ "${nextItem.name}" بنجاح في الخلفية!`, { duration: 4000 });
+          toast.success(`✅ تم حفظ "${nextItem.name}" بنجاح!`, { duration: 4000 });
         } else {
           throw new Error(res.error || 'فشل حفظ المنتج في قاعدة البيانات');
         }
       } catch (err: any) {
         console.error('Queue processing error:', err);
+        const errMsg = err.message || 'حدث خطأ غير متوقع أثناء المعالجة';
         setQueue((prev) =>
           prev.map((item) =>
             item.id === nextItem.id
               ? {
                   ...item,
                   status: 'error',
-                  errorMessage: err.message || 'حدث خطأ غير متوقع أثناء المعالجة',
+                  errorMessage: errMsg,
                   retryCount: item.retryCount + 1,
                 }
               : item
           )
         );
-        toast.error(`تعذر حفظ "${nextItem.name}": ${err.message || 'خطأ في الاتصال'}`, { duration: 5000 });
+        toast.error(`تعذر حفظ "${nextItem.name}": ${errMsg}`, { duration: 5000 });
       } finally {
         isProcessingRef.current = false;
       }
     };
 
-    const interval = setInterval(processNext, 1000);
+    const interval = setInterval(processNext, 800);
     return () => clearInterval(interval);
-  }, [queue]);
+  }, []);
 
   const addToQueue = (
     product: Omit<QueueProductItem, 'id' | 'status' | 'retryCount' | 'createdAt'>
