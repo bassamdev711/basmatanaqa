@@ -349,3 +349,50 @@ export async function updateProduct(formData: FormData) {
     redirect(`/admin/products/${id}/edit?error=unknown`);
   }
 }
+
+/**
+ * Quick action to update product's subCategory from the products list modal.
+ */
+export async function quickUpdateProductSubCategory(productId: string, subCategoryId: string | null) {
+  await verifyAdmin();
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true, slug: true, collectionId: true },
+  });
+
+  if (!product) {
+    return { success: false, error: 'المنتج غير موجود' };
+  }
+
+  if (subCategoryId) {
+    const subCat = await prisma.subCategory.findUnique({
+      where: { id: subCategoryId },
+      select: { id: true, collectionId: true },
+    });
+
+    if (!subCat) {
+      return { success: false, error: 'المجموعة الفرعية غير موجودة' };
+    }
+
+    if (product.collectionId && subCat.collectionId !== product.collectionId) {
+      return { success: false, error: 'هذه المجموعة الفرعية لا تنتمي للمجموعة الرئيسية الخاصة بالمنتج' };
+    }
+  }
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      subCategoryId: subCategoryId || null,
+    },
+  });
+
+  revalidatePath('/admin/products');
+  if (product.slug) {
+    revalidatePath(`/products/${product.slug}`);
+  }
+  revalidatePath('/products');
+  revalidateTag('products', 'max');
+
+  return { success: true };
+}

@@ -4,6 +4,7 @@ import { Plus, Edit, ExternalLink } from 'lucide-react'
 import prisma from '@/lib/prisma'
 import DeleteButton from './DeleteButton'
 import CollectionFilter from './CollectionFilter'
+import SubCategoryAssignButton from './SubCategoryAssignButton'
 import { Prisma } from '@prisma/client'
 
 type ProductRow = {
@@ -16,6 +17,7 @@ type ProductRow = {
   isActive: boolean
   imageUrl: string | null
   collection?: { id: string; name: string } | null
+  subCategory?: { id: string; name: string } | null
 }
 
 export const dynamic = 'force-dynamic'
@@ -39,9 +41,10 @@ export default async function ProductsPage({
   let products: ProductRow[] = []
   let totalCount = 0;
   let collections: { id: string; name: string }[] = []
+  let subCategories: { id: string; name: string; collectionId: string }[] = []
   
   try {
-    const [fetchedProducts, count, fetchedCollections] = await Promise.all([
+    const [fetchedProducts, count, fetchedCollections, fetchedSubCategories] = await Promise.all([
       prisma.product.findMany({
         where: whereClause,
         orderBy: { createdAt: 'desc' },
@@ -49,6 +52,7 @@ export default async function ProductsPage({
         take: limit,
         include: {
           collection: { select: { id: true, name: true } },
+          subCategory: { select: { id: true, name: true } },
         },
       }),
       prisma.product.count({ where: whereClause }),
@@ -56,10 +60,16 @@ export default async function ProductsPage({
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       }),
+      prisma.subCategory.findMany({
+        select: { id: true, name: true, collectionId: true },
+        where: { isActive: true },
+        orderBy: { name: 'asc' },
+      }),
     ]);
     products = fetchedProducts;
     totalCount = count;
     collections = fetchedCollections;
+    subCategories = fetchedSubCategories;
   } catch (error) {
     console.error("Database connection error:", error)
   }
@@ -103,7 +113,10 @@ export default async function ProductsPage({
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   اسم المنتج
                 </th>
-                {/* Actions placed directly after Product Name */}
+                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  المجموعة الفرعية
+                </th>
+                {/* Actions placed directly after SubCategory */}
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   الإجراءات
                 </th>
@@ -128,7 +141,7 @@ export default async function ProductsPage({
             <tbody className="bg-white divide-y divide-gray-200">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={9} className="px-6 py-8 text-center text-sm text-gray-500">
                     لا توجد منتجات مطابقة لهذا الفلتر أو لم يتم إضافة منتجات بعد.
                   </td>
                 </tr>
@@ -146,7 +159,17 @@ export default async function ProductsPage({
                       <div className="text-sm font-bold text-gray-900 line-clamp-1">{product.name}</div>
                       <div className="text-xs text-gray-400 font-mono mt-0.5 line-clamp-1" dir="ltr">/{product.slug}</div>
                     </td>
-                    {/* Actions cell directly after Name */}
+                    {/* 3rd Column: SubCategory Modal Button */}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <SubCategoryAssignButton
+                        productId={product.id}
+                        productName={product.name}
+                        collection={product.collection}
+                        currentSubCategory={product.subCategory}
+                        availableSubCategories={subCategories}
+                      />
+                    </td>
+                    {/* Actions cell */}
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-1.5">
                         <Link 
