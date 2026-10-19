@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext } from 'react'
 
-const CurrencyContext = createContext<string>('ر.س')
+const CurrencyContext = createContext<string>('ر.ي')
 
 export function CurrencyProvider({ children, currency }: { children: React.ReactNode, currency: string }) {
   return (
