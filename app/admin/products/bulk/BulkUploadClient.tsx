@@ -239,7 +239,7 @@ export default function BulkUploadClient() {
 
     // Mark as submitted
     updateCard(cardIndex, { isSubmitted: true })
-    toast.success(`⚡ تمت إضافة "${card.name}" إلى طابور المعالجة بالخلفية!`)
+    toast.success(`تمت إضافة "${card.name}" إلى طابور المعالجة بالخلفية`)
 
     // Auto-advance to the next unsubmitted card if available
     const nextUnsubmittedIndex = products.findIndex((p, idx) => idx > cardIndex && !p.isSubmitted)
@@ -265,12 +265,12 @@ export default function BulkUploadClient() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-black/5 shadow-sm">
         <div>
           <div className="flex items-center gap-2 text-brand font-bold text-xs mb-1">
-            <Zap className="w-4 h-4 fill-brand" />
-            <span>نظام الإدخال المتعدد الفائق</span>
+            <Layers className="w-4 h-4 text-brand" />
+            <span>نظام الإدخال المتعدد</span>
           </div>
-          <h1 className="text-2xl font-black text-gray-900">إضافة متعددة للمنتجات ⚡</h1>
+          <h1 className="text-2xl font-black text-gray-900">إضافة متعددة للمنتجات</h1>
           <p className="text-xs text-gray-500 mt-1">
-            اختر كل الصور مرة واحدة من الاستوديو، وسيتكفل النظام بفتح نموذج لكل منتج مع تقدم تلقائي فائق السرعة!
+            تحديد صور المنتجات دفعة واحدة مع نماذج إدخال متسلسلة وسريعة.
           </p>
         </div>
 
@@ -620,7 +620,7 @@ export default function BulkUploadClient() {
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-black hover:bg-gray-800 text-white font-black text-sm rounded-xl shadow-md transition-all active:scale-95"
                 >
                   <Zap className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span>{currentCard.isSubmitted ? 'تحديث الإضافة للطابور' : 'إضافة هذا المنتج والتمرير للتالي ⚡'}</span>
+                  <span>{currentCard.isSubmitted ? 'تحديث الإضافة للطابور' : 'إضافة هذا المنتج والتمرير للتالي'}</span>
                 </button>
               </div>
             </div>

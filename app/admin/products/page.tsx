@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma'
 import DeleteButton from './DeleteButton'
 import CollectionFilter from './CollectionFilter'
 import SubCategoryAssignButton from './SubCategoryAssignButton'
+import ProductsTableClient from './ProductsTableClient'
 import { Prisma } from '@prisma/client'
 
 type ProductRow = {
@@ -97,7 +98,7 @@ export default async function ProductsPage({
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-gray-950 text-sm font-black rounded-md hover:bg-amber-400 shrink-0 shadow-sm transition-all"
           >
             <Zap className="w-4 h-4 fill-gray-950" />
-            إضافة متعددة ⚡
+            إضافة متعددة
           </Link>
           <Link 
             href="/admin/products/new"
@@ -110,126 +111,10 @@ export default async function ProductsPage({
       </div>
 
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الصورة
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  اسم المنتج
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  المجموعة الفرعية
-                </th>
-                {/* Actions placed directly after SubCategory */}
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الإجراءات
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  السعر
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  المخزون
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الحالة
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  المجموعة
-                </th>
-                {/* Brand Column hidden on mobile */}
-                <th scope="col" className="hidden md:table-cell px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الماركة
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {products.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-6 py-8 text-center text-sm text-gray-500">
-                    لا توجد منتجات مطابقة لهذا الفلتر أو لم يتم إضافة منتجات بعد.
-                  </td>
-                </tr>
-              ) : (
-                products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {product.imageUrl ? (
-                        <Image src={product.imageUrl} alt={product.name} width={40} height={40} className="w-10 h-10 object-cover rounded-md border border-gray-200" />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-100 border border-gray-200 rounded-md flex items-center justify-center text-[10px] text-gray-400 font-bold">بدون</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-gray-900 line-clamp-1">{product.name}</div>
-                      <div className="text-xs text-gray-400 font-mono mt-0.5 line-clamp-1" dir="ltr">/{product.slug}</div>
-                    </td>
-                    {/* 3rd Column: SubCategory Modal Button */}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <SubCategoryAssignButton
-                        productId={product.id}
-                        productName={product.name}
-                        collection={product.collection}
-                        currentSubCategory={product.subCategory}
-                        availableSubCategories={subCategories}
-                      />
-                    </td>
-                    {/* Actions cell */}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <Link 
-                          href={`/admin/products/${product.id}/edit`} 
-                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
-                          title="تعديل المنتج"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
-                        <DeleteButton id={product.id} />
-                        <Link 
-                          href={`/products/${product.slug}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                          title="معاينة في المتجر"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-bold" dir="ltr">
-                      {Number(product.price).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      <span className={`font-semibold ${product.stock <= 3 ? 'text-red-600 font-bold' : ''}`}>
-                        {product.stock}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 inline-flex text-xs font-bold rounded-full ${product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {product.isActive ? 'فعال' : 'غير فعال'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
-                      {product.collection?.name ? (
-                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded font-medium">
-                          {product.collection.name}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    {/* Brand cell hidden on mobile */}
-                    <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {product.brand || '—'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ProductsTableClient 
+          products={products}
+          subCategories={subCategories}
+        />
         
         {/* Pagination Controls */}
         {totalCount > limit && (

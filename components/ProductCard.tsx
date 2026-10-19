@@ -43,11 +43,11 @@ export default function ProductCard({ product, currency, priority = false }: Pro
     const shortUrl = `${window.location.origin}/p/${code}`;
 
     const lines = [
-      '✨ متجر شهرزاد',
-      `🛍️ ${product.name}`,
-      `💰 السعر: ${product.price} ${currency}`,
+      'متجر شهرزاد',
+      `المنتج: ${product.name}`,
+      `السعر: ${product.price} ${currency}`,
       '',
-      '🔗 رابط المنتج:',
+      'رابط المنتج:',
       shortUrl,
     ];
     const shareText = lines.join('\n');

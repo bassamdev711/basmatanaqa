@@ -63,7 +63,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [activeImage, setActiveImage] = useState(defaultInitialImage)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
-  
+
   const { addToCart } = useCart()
   const { flyToCart } = useCartAnimation()
   const { showToast } = useToast()
@@ -78,23 +78,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: product.id })
       })
-      .then(() => sessionStorage.setItem(sessionKey, 'true'))
-      .catch(() => {})
+        .then(() => sessionStorage.setItem(sessionKey, 'true'))
+        .catch(() => { })
     }
   }, [product.id])
 
   // Variants state
   const hasVariants = product.variants && product.variants.length > 0
   const sizeParam = searchParams.get('size')
-  
-  const initialVariant = hasVariants 
+
+  const initialVariant = hasVariants
     ? (sizeParam ? product.variants!.find(v => v.size === sizeParam) || product.variants![0] : product.variants![0])
     : null
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(initialVariant)
 
   // Dynamic Sizes State
-  const initialDynamicSize = product.hasSizes && product.availableSizes && product.availableSizes.length > 0 
-    ? (sizeParam && product.availableSizes.includes(sizeParam) ? sizeParam : product.availableSizes[0]) 
+  const initialDynamicSize = product.hasSizes && product.availableSizes && product.availableSizes.length > 0
+    ? (sizeParam && product.availableSizes.includes(sizeParam) ? sizeParam : product.availableSizes[0])
     : null
   const [selectedDynamicSize, setSelectedDynamicSize] = useState<string | null>(initialDynamicSize)
 
@@ -106,7 +106,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   // Calculate Discount Percentage
   const hasDiscount = currentCompareAtPrice && currentCompareAtPrice > currentPrice
-  const discountPercentage = hasDiscount 
+  const discountPercentage = hasDiscount
     ? Math.round(((currentCompareAtPrice - currentPrice) / currentCompareAtPrice) * 100)
     : 0
 
@@ -126,15 +126,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     }
 
     addToCart({
-      id: selectedVariant 
-        ? `${product.id}-${selectedVariant.id}` 
-        : selectedDynamicSize 
-          ? `${product.id}-${selectedDynamicSize}` 
+      id: selectedVariant
+        ? `${product.id}-${selectedVariant.id}`
+        : selectedDynamicSize
+          ? `${product.id}-${selectedDynamicSize}`
           : product.id,
-      name: selectedVariant 
-        ? `${product.name} (${selectedVariant.size})` 
-        : selectedDynamicSize 
-          ? `${product.name} (${selectedDynamicSize})` 
+      name: selectedVariant
+        ? `${product.name} (${selectedVariant.size})`
+        : selectedDynamicSize
+          ? `${product.name} (${selectedDynamicSize})`
           : product.name,
       slug: product.slug,
       price: currentPrice,
@@ -143,17 +143,17 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       maxStock: currentStock,
       selectedSize: selectedDynamicSize || undefined,
     })
-    
+
     // Fly-to-cart animation
     const btn = e?.currentTarget || addToCartBtnRef.current
     if (btn) flyToCart(btn)
-    
+
     // Track add to cart
     fetch('/api/track/cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId: product.id })
-    }).catch(() => {})
+    }).catch(() => { })
 
     return true
   }
@@ -175,25 +175,25 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
     const shortUrl = `${window.location.origin}/p/${code}${queryString}`
 
-    // Compose elegant multi-line message
+    // Compose formal multi-line message
     const lines = [
-      '✨ متجر شهرزاد',
-      `🛍️ ${product.name}`,
-      `💰 السعر: ${currentPrice} ${currency}`,
+      'متجر شهرزاد',
+      `المنتج: ${product.name}`,
+      `السعر: ${currentPrice} ${currency}`,
     ]
 
     if (product.collection?.name) {
-      lines.push(`📂 القسم: ${product.collection.name}`)
+      lines.push(`القسم: ${product.collection.name}`)
     }
     if (product.subCategory?.name) {
-      lines.push(`🏷️ التصنيف: ${product.subCategory.name}`)
+      lines.push(`التصنيف: ${product.subCategory.name}`)
     }
     if (chosenSize) {
-      lines.push(`📏 المقاس المختار: ${chosenSize}`)
+      lines.push(`المقاس المختار: ${chosenSize}`)
     }
 
     lines.push('')
-    lines.push('🔗 رابط المنتج:')
+    lines.push('رابط المنتج:')
     lines.push(shortUrl)
 
     const shareText = lines.join('\n')
@@ -258,12 +258,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     <>
       <div className="relative bg-surface text-foreground pb-16" dir="rtl">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
-          
+
           {/* ======= Left: Image Gallery ======= */}
           <div className="w-full lg:w-5/12 flex flex-col gap-3">
-            
+
             {/* Main Image Stage */}
-            <div 
+            <div
               className="w-full mx-auto aspect-square max-h-[400px] md:max-h-[550px] bg-white relative overflow-hidden border border-black/5 flex items-center justify-center cursor-zoom-in group rounded-lg"
               onClick={() => setLightboxOpen(true)}
             >
@@ -304,9 +304,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   <button
                     key={i}
                     onClick={() => setActiveImage(img)}
-                    className={`relative w-16 h-16 bg-white border shrink-0 transition-all rounded-md overflow-hidden ${
-                      activeImage === img ? 'border-brand shadow-sm scale-105' : 'border-black/5 opacity-60 hover:opacity-100 hover:border-black/20'
-                    }`}
+                    className={`relative w-16 h-16 bg-white border shrink-0 transition-all rounded-md overflow-hidden ${activeImage === img ? 'border-brand shadow-sm scale-105' : 'border-black/5 opacity-60 hover:opacity-100 hover:border-black/20'
+                      }`}
                   >
                     <div className="relative w-full h-full">
                       <Image
@@ -339,7 +338,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     </span>
                     <h1 className="text-2xl md:text-4xl font-black text-foreground mb-2">{product.name}</h1>
                   </div>
-                  <button 
+                  <button
                     onClick={handleShare}
                     className="flex flex-col items-center justify-center gap-1 px-3 py-2 mt-1 bg-white border border-black/10 rounded-xl text-foreground hover:bg-black/5 hover:border-black/20 transition-all shadow-sm shrink-0 active:scale-95 group"
                     title="مشاركة المنتج"
@@ -432,22 +431,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               <div className="flex flex-col gap-3 mb-6">
                 <div className="flex items-center gap-3 w-full">
                   <div className="flex items-center border border-black/10 bg-white h-14 w-32 rounded-lg shrink-0">
-                    <button 
+                    <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       className="w-10 h-full flex items-center justify-center text-foreground/50 hover:text-foreground transition-colors"
                     >
                       <Minus size={16} />
                     </button>
                     <span className="flex-1 text-center font-bold text-lg">{quantity}</span>
-                    <button 
+                    <button
                       onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
                       className="w-10 h-full flex items-center justify-center text-foreground/50 hover:text-foreground transition-colors"
                     >
                       <Plus size={16} />
                     </button>
                   </div>
-                  
-                  <button 
+
+                  <button
                     onClick={handleAddToCartClick}
                     disabled={currentStock <= 0}
                     className="btn btn-outline flex-1 h-14 gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -456,8 +455,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     أضف إلى السلة
                   </button>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={handleBuyNow}
                   disabled={currentStock <= 0}
                   className="btn btn-primary w-full h-14 text-lg gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -466,7 +465,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   اشترِ الآن
                 </button>
 
-                <button 
+                <button
                   onClick={handleWhatsAppOrder}
                   disabled={currentStock <= 0}
                   className="w-full h-14 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-base md:text-lg gap-2.5 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -483,11 +482,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         {/* Fixed Bottom Bar for Mobile */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 p-2.5 pb-[calc(env(safe-area-inset-bottom)+10px)] flex items-center justify-between gap-2 z-40 shadow-[0_-10px_30px_rgba(0,0,0,0.1)]" dir="rtl">
           <div className="flex flex-col shrink-0">
-             <span className="text-[10px] text-foreground/60 font-bold">الإجمالي</span>
-             <span className="text-sm font-black text-brand leading-none">{Number(currentPrice * quantity).toLocaleString('ar-SA')} {currency}</span>
+            <span className="text-[10px] text-foreground/60 font-bold">الإجمالي</span>
+            <span className="text-sm font-black text-brand leading-none">{Number(currentPrice * quantity).toLocaleString('ar-SA')} {currency}</span>
           </div>
           <div className="flex items-center gap-1.5 flex-1 justify-end">
-            <button 
+            <button
               onClick={handleAddToCartClick}
               disabled={currentStock <= 0}
               className="btn btn-outline btn-icon shrink-0 rounded-lg disabled:opacity-50 h-11 w-11"
@@ -495,14 +494,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             >
               <ShoppingBag size={18} />
             </button>
-            <button 
+            <button
               onClick={handleBuyNow}
               disabled={currentStock <= 0}
               className="btn btn-primary rounded-lg disabled:opacity-50 text-xs px-3 h-11"
             >
               اشترِ الآن
             </button>
-            <button 
+            <button
               onClick={handleWhatsAppOrder}
               disabled={currentStock <= 0}
               className="bg-[#25D366] hover:bg-[#1EBE5D] text-white rounded-lg flex items-center gap-1.5 px-3 h-11 font-bold text-xs disabled:opacity-50 shrink-0 shadow-sm"
@@ -526,7 +525,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             onClick={() => setLightboxOpen(false)}
             dir="ltr"
           >
-            <button 
+            <button
               className="absolute top-6 right-6 md:top-10 md:right-10 bg-surface text-foreground p-3 rounded-full hover:bg-accent transition-colors z-[101] shadow-lg"
               onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
             >
