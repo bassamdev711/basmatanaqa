@@ -120,14 +120,6 @@ export default function ProductCard({ product, currency, priority = false }: Pro
             product={product}
             className="bg-white/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
           />
-          {/* Share Button */}
-          <button
-            onClick={handleShare}
-            className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform flex items-center justify-center text-black/60 hover:text-black"
-            title="مشاركة"
-          >
-            <Share2 size={16} />
-          </button>
         </div>
       </div>
 

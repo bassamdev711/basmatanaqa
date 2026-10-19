@@ -340,10 +340,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   </div>
                   <button 
                     onClick={handleShare}
-                    className="p-3 mt-1 bg-white border border-black/10 rounded-full text-foreground hover:bg-black/5 transition-colors shadow-sm shrink-0"
+                    className="flex flex-col items-center justify-center gap-1 px-3 py-2 mt-1 bg-white border border-black/10 rounded-xl text-foreground hover:bg-black/5 hover:border-black/20 transition-all shadow-sm shrink-0 active:scale-95 group"
                     title="مشاركة المنتج"
                   >
-                    <Share2 size={20} />
+                    <div className="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-foreground group-hover:text-brand transition-colors">
+                      <Share2 size={18} />
+                    </div>
+                    <span className="text-[11px] font-bold text-foreground/80 group-hover:text-foreground">مشاركة</span>
                   </button>
                 </div>
                 <div className="flex items-center gap-3 mt-4">
