@@ -4,7 +4,7 @@ import { useToast } from '@/components/ToastProvider'
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { Upload, X, ImagePlus, Loader2 } from 'lucide-react'
+import { Upload, X, ImagePlus, Loader2, Camera } from 'lucide-react'
 import { compressImageClientSide } from '@/lib/compress'
 
 interface ImageUploadProps {
@@ -26,10 +26,12 @@ export default function ImageUpload({
   const [uploadingMain, setUploadingMain] = useState(false)
   const [uploadingExtra, setUploadingExtra] = useState(false)
   const mainInputRef = useRef<HTMLInputElement>(null)
+  const mainCameraRef = useRef<HTMLInputElement>(null)
   const extraInputRef = useRef<HTMLInputElement>(null)
+  const extraCameraRef = useRef<HTMLInputElement>(null)
 
   const uploadFile = async (file: File): Promise<string> => {
-    // ضغط الصورة
+    // ضغط الصورة تلقائياً وتحويلها لـ webp عالية الجودة وخفيفة الحجم
     const compressedFile = await compressImageClientSide(file)
     
     const form = new FormData()
@@ -54,10 +56,12 @@ export default function ImageUpload({
     try {
       const url = await uploadFile(file)
       onMainImageChange(url)
+      showToast('success', 'تم رفع وضغط الصورة بنجاح!')
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'فشل رفع الصورة')
+      showToast('error', err instanceof Error ? err.message : 'فشل رفع الصورة')
     } finally {
       setUploadingMain(false)
+      if (e.target) e.target.value = ''
     }
   }
 
@@ -65,17 +69,19 @@ export default function ImageUpload({
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     if (additionalImages.length + files.length > 5) {
-      showToast('success', 'الحد الأقصى للصور الإضافية هو 5 صور')
+      showToast('error', 'الحد الأقصى للصور الإضافية هو 5 صور')
       return
     }
     setUploadingExtra(true)
     try {
       const urls = await Promise.all(files.map(uploadFile))
       if (onAdditionalImagesChange) onAdditionalImagesChange([...additionalImages, ...urls])
+      showToast('success', 'تم رفع الصور وضغطها بنجاح!')
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'فشل رفع الصورة')
+      showToast('error', err instanceof Error ? err.message : 'فشل رفع الصور')
     } finally {
       setUploadingExtra(false)
+      if (e.target) e.target.value = ''
     }
   }
 
@@ -87,7 +93,32 @@ export default function ImageUpload({
     <div className="space-y-6">
       {/* Main Image */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">الصورة الرئيسية</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-gray-700">الصورة الرئيسية</label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => mainCameraRef.current?.click()}
+              disabled={uploadingMain}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+              title="التقاط صورة مباشرة بالكاميرا"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>فتح الكاميرا</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => mainInputRef.current?.click()}
+              disabled={uploadingMain}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+              title="اختيار من المعرض أو الملفات"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>اختيار ملف</span>
+            </button>
+          </div>
+        </div>
+
         <div
           onClick={() => mainInputRef.current?.click()}
           className="relative w-full h-56 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-black transition-colors bg-gray-50 flex items-center justify-center"
@@ -95,40 +126,79 @@ export default function ImageUpload({
           {mainImage ? (
             <Image src={mainImage} alt="الصورة الرئيسية" fill className="object-cover" />
           ) : (
-            <div className="text-center text-gray-400">
+            <div className="text-center text-gray-400 p-4">
               {uploadingMain ? (
-                <Loader2 className="w-10 h-10 mx-auto animate-spin mb-2" />
+                <>
+                  <Loader2 className="w-10 h-10 mx-auto animate-spin mb-2 text-emerald-600" />
+                  <p className="text-sm font-bold text-gray-700">جارٍ معالجة وضغط ورفع الصورة...</p>
+                  <p className="text-xs text-gray-400 mt-1">يتم تقليص حجم الصورة تلقائياً لتسريع المتجر</p>
+                </>
               ) : (
-                <Upload className="w-10 h-10 mx-auto mb-2" />
+                <>
+                  <Upload className="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm font-semibold text-gray-700">انقر لاختيار صورة أو استخدم زر الكاميرا بالأعلى</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP — يتم ضغط صور الكاميرا تلقائياً</p>
+                </>
               )}
-              <p className="text-sm">{uploadingMain ? 'جارٍ الرفع...' : 'انقر لرفع الصورة الرئيسية'}</p>
-              <p className="text-xs mt-1">JPG, PNG, WebP — أقل من 5MB</p>
             </div>
           )}
           {mainImage && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onMainImageChange('') }}
-              className="absolute top-2 left-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 z-10"
+              className="absolute top-2 left-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 z-10 shadow"
             >
               <X className="w-4 h-4" />
             </button>
           )}
           {mainImage && (
-            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs py-1 text-center">
+            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs py-1.5 text-center">
               انقر لتغيير الصورة
             </div>
           )}
         </div>
-        <input type="file" ref={mainInputRef} onChange={handleMainUpload} className="hidden" accept="image/*" />
+
+        {/* Regular file picker */}
+        <input
+          type="file"
+          ref={mainInputRef}
+          onChange={handleMainUpload}
+          className="hidden"
+          accept="image/*"
+        />
+
+        {/* Direct Camera capture input */}
+        <input
+          type="file"
+          ref={mainCameraRef}
+          onChange={handleMainUpload}
+          className="hidden"
+          accept="image/*"
+          capture="environment"
+        />
       </div>
 
       {/* Additional Images */}
       {!singleOnly && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            صور إضافية ({additionalImages.length}/5)
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              صور إضافية ({additionalImages.length}/5)
+            </label>
+            {additionalImages.length < 5 && (
+              <button
+                type="button"
+                onClick={() => extraCameraRef.current?.click()}
+                disabled={uploadingExtra}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+                title="تصوير بالكاميرا"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>تصوير إضافي</span>
+              </button>
+            )}
+          </div>
+
           <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
             {additionalImages.map((url, i) => (
               <div key={i} className="relative aspect-square rounded-md overflow-hidden border border-gray-200">
@@ -146,17 +216,37 @@ export default function ImageUpload({
               <button
                 type="button"
                 onClick={() => extraInputRef.current?.click()}
+                disabled={uploadingExtra}
                 className="aspect-square rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-black hover:text-black transition-colors"
               >
                 {uploadingExtra ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
                 ) : (
                   <ImagePlus className="w-6 h-6" />
                 )}
               </button>
             )}
           </div>
-          <input type="file" ref={extraInputRef} onChange={handleExtraUpload} className="hidden" accept="image/*" multiple />
+
+          {/* Regular multi-file picker */}
+          <input
+            type="file"
+            ref={extraInputRef}
+            onChange={handleExtraUpload}
+            className="hidden"
+            accept="image/*"
+            multiple
+          />
+
+          {/* Camera capture for additional image */}
+          <input
+            type="file"
+            ref={extraCameraRef}
+            onChange={handleExtraUpload}
+            className="hidden"
+            accept="image/*"
+            capture="environment"
+          />
         </div>
       )}
     </div>
