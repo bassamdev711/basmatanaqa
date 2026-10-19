@@ -97,6 +97,7 @@ export async function createSubCategory(data: { name: string, slug: string, desc
   try {
     await prisma.subCategory.create({ data });
     revalidatePath(`/admin/collections/${data.collectionId}`);
+    revalidatePath('/admin/products');
     return { success: true };
   } catch (error: any) {
     if (error.code === 'P2002') return { success: false, error: 'الرابط الدائم مستخدم مسبقاً.' };
@@ -109,6 +110,7 @@ export async function updateSubCategory(id: string, data: { name: string, slug: 
   try {
     await prisma.subCategory.update({ where: { id }, data });
     revalidatePath(`/admin/collections/${data.collectionId}`);
+    revalidatePath('/admin/products');
     return { success: true };
   } catch (error: any) {
     if (error.code === 'P2002') return { success: false, error: 'الرابط الدائم مستخدم مسبقاً.' };
@@ -121,6 +123,7 @@ export async function deleteSubCategory(id: string, collectionId: string) {
   try {
     await prisma.subCategory.delete({ where: { id } });
     revalidatePath(`/admin/collections/${collectionId}`);
+    revalidatePath('/admin/products');
     return { success: true };
   } catch {
     return { success: false, error: 'حدث خطأ. ربما يكون هناك منتجات مرتبطة بهذا التصنيف.' };

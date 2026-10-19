@@ -63,11 +63,19 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
   }
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.slug) return showToast('success', 'يرجى تعبئة الحقول المطلوبة (الاسم، الرابط الدائم)')
+    if (!formData.name.trim()) {
+      return showToast('error', 'يرجى كتابة اسم المجموعة الفرعية')
+    }
+    
+    // If slug is empty, generate from name or random
+    const finalSlug = (formData.slug.trim() || formData.name.trim().toLowerCase().replace(/[\s\W-]+/g, '-')) || `sub-${Date.now()}`
+
     setIsSubmitting(true)
 
     const payload = {
       ...formData,
+      name: formData.name.trim(),
+      slug: finalSlug,
       collectionId: collection.id
     }
 
@@ -79,9 +87,10 @@ export default function SubCategoriesClient({ collection }: { collection: Collec
     }
 
     if (res.success) {
+      showToast('success', editingId ? 'تم تعديل المجموعة الفرعية بنجاح' : 'تم إنشاء المجموعة الفرعية بنجاح')
       window.location.reload()
     } else {
-      showToast('error', res.error || 'حدث خطأ')
+      showToast('error', res.error || 'حدث خطأ أثناء الحفظ')
       setIsSubmitting(false)
     }
   }
