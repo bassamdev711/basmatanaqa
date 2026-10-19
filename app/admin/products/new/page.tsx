@@ -190,7 +190,16 @@ export default function NewProductPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">إضافة منتج جديد</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-gray-900">إضافة منتج جديد</h2>
+          <Link 
+            href="/admin/products/bulk"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold rounded-lg transition-colors border border-amber-300"
+          >
+            <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+            <span>تجربة الإضافة المتعددة ⚡</span>
+          </Link>
+        </div>
         <Link href="/admin/products" className="text-sm text-gray-500 hover:text-gray-900">العودة</Link>
       </div>
 

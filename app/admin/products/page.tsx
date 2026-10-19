@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Plus, Edit, ExternalLink } from 'lucide-react'
+import { Plus, Edit, ExternalLink, Zap } from 'lucide-react'
 import prisma from '@/lib/prisma'
 import DeleteButton from './DeleteButton'
 import CollectionFilter from './CollectionFilter'
@@ -92,6 +92,13 @@ export default async function ProductsPage({
             collections={collections}
             selectedCollectionId={selectedCollectionId}
           />
+          <Link 
+            href="/admin/products/bulk"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-gray-950 text-sm font-black rounded-md hover:bg-amber-400 shrink-0 shadow-sm transition-all"
+          >
+            <Zap className="w-4 h-4 fill-gray-950" />
+            إضافة متعددة ⚡
+          </Link>
           <Link 
             href="/admin/products/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 shrink-0 shadow-sm"
