@@ -145,17 +145,25 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
           uploadedMainUrl = await uploadWithRetry(nextItem.mainImageFileUrl, 3);
         }
 
-        // 2. Upload Extra Images
+        // 2. Upload Extra Images (resilient: one failed extra image does not cancel product creation)
         let uploadedExtraUrls: string[] = [];
         if (nextItem.extraImageFiles && nextItem.extraImageFiles.length > 0) {
           for (const extraFile of nextItem.extraImageFiles) {
-            const url = await uploadWithRetry(extraFile, 3);
-            uploadedExtraUrls.push(url);
+            try {
+              const url = await uploadWithRetry(extraFile, 3);
+              uploadedExtraUrls.push(url);
+            } catch (err) {
+              console.warn('[Queue Upload] One extra image failed to upload, continuing with remaining images:', err);
+            }
           }
         } else if (nextItem.extraImageFileUrls && nextItem.extraImageFileUrls.length > 0) {
           for (const extraUrl of nextItem.extraImageFileUrls) {
-            const url = await uploadWithRetry(extraUrl, 3);
-            uploadedExtraUrls.push(url);
+            try {
+              const url = await uploadWithRetry(extraUrl, 3);
+              uploadedExtraUrls.push(url);
+            } catch (err) {
+              console.warn('[Queue Upload] One extra image URL failed to upload, continuing with remaining images:', err);
+            }
           }
         }
 

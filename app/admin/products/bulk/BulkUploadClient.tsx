@@ -15,11 +15,13 @@ import {
   Upload, 
   ArrowRight,
   Sparkles,
-  Camera
+  Camera,
+  Crop
 } from 'lucide-react'
 import { useProductQueue } from '../ProductQueueContext'
 import { getCollections, getSubCategories } from '../../collections/actions'
 import SizeSelector from '../SizeSelector'
+import ImageEditorModal from '../ImageEditorModal'
 import { toast } from 'react-hot-toast'
 import { compressImageClientSide } from '@/lib/compress'
 
@@ -64,6 +66,58 @@ export default function BulkUploadClient() {
   const [defaultCollectionId, setDefaultCollectionId] = useState('')
   const [products, setProducts] = useState<BulkProductCard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+
+  // Image Editor Modal state
+  const [editingImage, setEditingImage] = useState<{
+    isOpen: boolean
+    type: 'main' | 'extra'
+    cardIndex: number
+    extraIndex?: number
+    imageUrl: string
+  }>({
+    isOpen: false,
+    type: 'main',
+    cardIndex: 0,
+    imageUrl: '',
+  })
+
+  const handleOpenEditor = (type: 'main' | 'extra', cardIndex: number, extraIndex?: number) => {
+    const card = products[cardIndex]
+    if (!card) return
+    const targetUrl = type === 'main' ? card.mainImageBlobUrl : (card.extraImagesBlobUrls[extraIndex || 0] || '')
+    if (!targetUrl) return
+    setEditingImage({
+      isOpen: true,
+      type,
+      cardIndex,
+      extraIndex,
+      imageUrl: targetUrl,
+    })
+  }
+
+  const handleSaveEditor = (newBlobUrl: string, newFile: File) => {
+    const { type, cardIndex, extraIndex } = editingImage
+    const card = products[cardIndex]
+    if (!card) return
+
+    if (type === 'main') {
+      updateCard(cardIndex, {
+        mainImageBlobUrl: newBlobUrl,
+        mainImageFile: newFile,
+      })
+      toast.success('تم تحديث الصورة الرئيسية')
+    } else if (type === 'extra' && typeof extraIndex === 'number') {
+      const copyBlobUrls = [...card.extraImagesBlobUrls]
+      const copyFiles = [...(card.extraImageFiles || [])]
+      copyBlobUrls[extraIndex] = newBlobUrl
+      copyFiles[extraIndex] = newFile
+      updateCard(cardIndex, {
+        extraImagesBlobUrls: copyBlobUrls,
+        extraImageFiles: copyFiles,
+      })
+      toast.success('تم تحديث الصورة الإضافية')
+    }
+  }
 
   // Auto focus name input on current card change (both desktop and mobile)
   useEffect(() => {
@@ -188,26 +242,50 @@ export default function BulkUploadClient() {
     updateCard(cardIndex, { subCategoryIds: updated })
   }
 
-  // Add extra image to current card
+  // Add extra images to current card with multiple support and auto-reset
   const handleAddExtraImage = async (files: FileList | null) => {
     if (!files || files.length === 0 || !products[currentIndex]) return
-    const file = files[0]
+    const fileArray = Array.from(files)
+    
+    // Reset file input value immediately so selecting the same file later works reliably
+    if (extraImgInputRef.current) {
+      extraImgInputRef.current.value = ''
+    }
+
+    const currentExtras = products[currentIndex].extraImagesBlobUrls || []
+    const currentExtraFiles = products[currentIndex].extraImageFiles || []
+    const availableSlots = 10 - currentExtras.length
+
+    if (availableSlots <= 0) {
+      toast.error('الحد الأقصى هو 10 صور إضافية للمنتج')
+      return
+    }
+
+    const filesToProcess = fileArray.slice(0, availableSlots)
+    const toastId = toast.loading(filesToProcess.length > 1 ? `جاري تجهيز ${filesToProcess.length} صور إضافية...` : 'جاري تجهيز الصورة الإضافية...')
+
     try {
-      const compressed = await compressImageClientSide(file)
-      const blobUrl = URL.createObjectURL(compressed)
-      const currentExtras = products[currentIndex].extraImagesBlobUrls || []
-      const currentExtraFiles = products[currentIndex].extraImageFiles || []
-      if (currentExtras.length >= 10) {
-        toast.error('الحد الأقصى هو 10 صور إضافية')
-        return
-      }
+      const processedResults = await Promise.all(
+        filesToProcess.map(async (file) => {
+          const compressed = await compressImageClientSide(file)
+          const blobUrl = URL.createObjectURL(compressed)
+          return { blobUrl, file: compressed }
+        })
+      )
+
+      const newBlobUrls = processedResults.map(r => r.blobUrl)
+      const newFiles = processedResults.map(r => r.file)
+
       updateCard(currentIndex, { 
-        extraImagesBlobUrls: [...currentExtras, blobUrl],
-        extraImageFiles: [...currentExtraFiles, compressed],
+        extraImagesBlobUrls: [...currentExtras, ...newBlobUrls],
+        extraImageFiles: [...currentExtraFiles, ...newFiles],
       })
-      toast.success('تمت إضافة صورة إضافية')
+
+      toast.dismiss(toastId)
+      toast.success(newFiles.length > 1 ? `تمت إضافة ${newFiles.length} صور إضافية بنجاح` : 'تمت إضافة الصورة الإضافية بنجاح')
     } catch {
-      toast.error('فشل معالجة الصورة')
+      toast.dismiss(toastId)
+      toast.error('فشل معالجة بعض الصور الإضافية')
     }
   }
 
@@ -469,34 +547,63 @@ export default function BulkUploadClient() {
 
               <div className="flex flex-col sm:flex-row items-start gap-4">
                 {/* Main Image Stage */}
-                <div className="relative w-44 h-44 sm:w-52 sm:h-52 bg-gray-50 rounded-2xl border border-black/10 overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
+                <div className="relative w-44 h-44 sm:w-52 sm:h-52 bg-gray-50 rounded-2xl border border-black/10 overflow-hidden shrink-0 flex items-center justify-center shadow-inner group">
                   <img 
                     src={currentCard.mainImageBlobUrl} 
                     alt="الصورة الرئيسية"
                     className="w-full h-full object-contain p-2"
                   />
-                  <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full pointer-events-none">
                     الصورة الأساسية
                   </div>
+
+                  {/* Edit / Crop Button on Main Image */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditor('main', currentIndex)}
+                    className="absolute bottom-2 left-2 bg-black/80 hover:bg-black text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 shadow-md backdrop-blur-sm transition-all active:scale-95"
+                    title="قص وتعديل الصورة وتشويش الخلفية"
+                  >
+                    <Crop className="w-3.5 h-3.5 text-amber-400" />
+                    <span>تعديل الصورة</span>
+                  </button>
                 </div>
 
                 {/* Additional Images Section */}
                 <div className="flex-1 space-y-2 w-full">
-                  <span className="text-xs font-bold text-gray-600 block">
-                    صور إضافية لنفس المنتج (حتى 10 صور فرعية):
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700">
+                      صور إضافية لنفس المنتج:
+                    </span>
+                    <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {currentCard.extraImagesBlobUrls.length} من 10
+                    </span>
+                  </div>
 
                   <div className="flex flex-wrap gap-2 items-center">
                     {currentCard.extraImagesBlobUrls.map((extraImg, imgIdx) => (
                       <div key={imgIdx} className="relative w-16 h-16 rounded-xl border border-black/10 overflow-hidden bg-gray-50 group">
                         <img src={extraImg} alt="" className="w-full h-full object-contain p-1" />
-                        <button
-                          type="button"
-                          onClick={() => removeExtraImage(currentIndex, imgIdx)}
-                          className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        
+                        {/* Hover Overlay with Edit & Delete */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditor('extra', currentIndex, imgIdx)}
+                            className="p-1 bg-white/20 hover:bg-white text-white hover:text-black rounded-lg transition-colors"
+                            title="تعديل وقص"
+                          >
+                            <Crop className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeExtraImage(currentIndex, imgIdx)}
+                            className="p-1 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors"
+                            title="حذف"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
 
@@ -505,6 +612,7 @@ export default function BulkUploadClient() {
                         <input 
                           type="file" 
                           ref={extraImgInputRef}
+                          multiple
                           accept="image/*"
                           className="hidden"
                           onChange={(e) => handleAddExtraImage(e.target.files)}
@@ -536,6 +644,51 @@ export default function BulkUploadClient() {
                   onChange={(e) => updateCard(currentIndex, { name: e.target.value })}
                   className="w-full rounded-xl border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
                 />
+                
+                {/* كلمات مساعدة سريعة لاسم المنتج */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="text-[10px] text-gray-400 font-bold ml-1">مساعد الاسم:</span>
+                  {[
+                    'فستان',
+                    'نسائي',
+                    'بنطلون',
+                    'جينز',
+                    'طقم',
+                    'قطعتين',
+                    'ولادي',
+                    'بناتي',
+                    'اطفال',
+                    'بيبي',
+                    'روب',
+                    'سهره',
+                  ].map((word) => (
+                    <button
+                      key={word}
+                      type="button"
+                      onClick={() => {
+                        const current = currentCard.name.trim()
+                        const updated = current ? `${current} ${word}` : word
+                        updateCard(currentIndex, { name: updated })
+                        nameInputRef.current?.focus()
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200 active:bg-amber-100 text-gray-800 border border-gray-200 transition-all hover:scale-105 select-none"
+                    >
+                      + {word}
+                    </button>
+                  ))}
+                  {currentCard.name && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateCard(currentIndex, { name: '' })
+                        nameInputRef.current?.focus()
+                      }}
+                      className="text-[11px] text-red-500 hover:underline px-1.5 font-bold mr-auto"
+                    >
+                      مسح
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -734,12 +887,19 @@ export default function BulkUploadClient() {
           <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
             <Upload className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-black text-gray-900">لا توجد صور محددة حالياً</h3>
           <p className="text-xs text-gray-500 max-w-md mx-auto">
             انقر على زر &quot;فتح الاستوديو واختيار الصور&quot; بالأعلى واختر 20 أو 30 صورة معاً لتبدأ الإضافة بسرعة البرق!
           </p>
         </div>
       )}
+
+      {/* Client-Side Image Editor Modal */}
+      <ImageEditorModal
+        isOpen={editingImage.isOpen}
+        imageUrl={editingImage.imageUrl}
+        onClose={() => setEditingImage(prev => ({ ...prev, isOpen: false }))}
+        onSave={handleSaveEditor}
+      />
 
     </div>
   )

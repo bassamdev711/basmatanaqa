@@ -225,6 +225,50 @@ export default function NewProductPage() {
                 setSlug(generateSlug(e.target.value))
               }}
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+              
+              {/* كلمات مساعدة سريعة لاسم المنتج */}
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[10px] text-gray-400 font-bold ml-1">مساعد الاسم:</span>
+                {[
+                  'فستان',
+                  'نسائي',
+                  'بنطلون',
+                  'جينز',
+                  'طقم',
+                  'قطعتين',
+                  'ولادي',
+                  'بناتي',
+                  'اطفال',
+                  'بيبي',
+                  'روب',
+                  'سهره',
+                ].map((word) => (
+                  <button
+                    key={word}
+                    type="button"
+                    onClick={() => {
+                      const updated = name.trim() ? `${name.trim()} ${word}` : word
+                      setName(updated)
+                      setSlug(generateSlug(updated))
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200 active:bg-amber-100 text-gray-800 border border-gray-200 transition-all hover:scale-105 select-none"
+                  >
+                    + {word}
+                  </button>
+                ))}
+                {name && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName('')
+                      setSlug('')
+                    }}
+                    className="text-[11px] text-red-500 hover:underline px-1.5 font-bold mr-auto"
+                  >
+                    مسح
+                  </button>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">السعر (ر.ي) *</label>
