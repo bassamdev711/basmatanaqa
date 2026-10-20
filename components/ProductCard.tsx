@@ -120,9 +120,8 @@ export default function ProductCard({ product, currency, priority = false }: Pro
           )}
           {/* New in 48h Badge */}
           {product.isNew48h && (
-            <div className="bg-brand text-white text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-md pointer-events-auto shadow-sm flex items-center gap-1">
-              <span>✨</span>
-              <span>جديد اليومين</span>
+            <div className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-md pointer-events-auto shadow-sm">
+              جديد
             </div>
           )}
         </div>

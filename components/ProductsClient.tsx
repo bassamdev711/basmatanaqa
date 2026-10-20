@@ -509,9 +509,8 @@ export default function ProductsClient({
                       </div>
                     )}
                     {product.isNew48h && (
-                      <div className="absolute top-2 left-2 bg-brand text-white font-bold text-[9px] px-2 py-0.5 rounded shadow z-10 flex items-center gap-0.5">
-                        <span>✨</span>
-                        <span>جديد اليومين</span>
+                      <div className="absolute top-2 left-2 bg-red-600 text-white font-bold text-[9px] px-2 py-0.5 rounded shadow z-10">
+                        جديد
                       </div>
                     )}
                     {product.offerEndDate && <Countdown targetDate={product.offerEndDate} />}
@@ -597,9 +596,8 @@ export default function ProductsClient({
                       </div>
                     )}
                     {product.isNew48h && (
-                      <div className="absolute top-4 left-4 bg-brand text-white font-bold text-xs px-3 py-1 rounded-full shadow z-10 flex items-center gap-1">
-                        <span>✨</span>
-                        <span>جديد اليومين</span>
+                      <div className="absolute top-4 left-4 bg-red-600 text-white font-bold text-xs px-3 py-1 rounded-full shadow z-10">
+                        جديد
                       </div>
                     )}
                     {product.offerEndDate && <Countdown targetDate={product.offerEndDate} />}
