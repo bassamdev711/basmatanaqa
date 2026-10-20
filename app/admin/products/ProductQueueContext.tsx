@@ -57,6 +57,11 @@ async function uploadWithRetry(fileOrUrl: File | string, maxRetries = 3): Promis
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      if (typeof fileOrUrl === 'string' && fileOrUrl.startsWith('https://')) {
+        // إذا كانت الصورة مرفوعة مسبقاً برابط خارجي أو سحابي نعيده مباشرة
+        return fileOrUrl;
+      }
+
       let file: File;
 
       if (fileOrUrl instanceof File) {
