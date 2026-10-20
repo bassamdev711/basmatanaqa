@@ -82,10 +82,14 @@ export default async function SearchPage({
             id: true,
             name: true,
             slug: true,
+            shortCode: true,
             price: true,
             compareAtPrice: true,
             imageUrl: true,
-            brand: true
+            brand: true,
+            createdAt: true,
+            collection: { select: { name: true } },
+            subCategory: { select: { name: true } },
           }
         }),
         prisma.product.count({ where: whereClause })
@@ -140,23 +144,30 @@ export default async function SearchPage({
             <ProductDiscoveryFilters totalProducts={totalCount} availableBrands={availableBrands} />
             <div className="px-3 md:px-12 max-w-7xl mx-auto w-full">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-8">
-                {products.map((product, index) => (
-                  <ProductCard 
-                    key={product.id}
-                    product={{
-                      id: product.id,
-                      name: product.name,
-                      slug: product.slug,
-                      price: Number(product.price),
-                      compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
-                      imageUrl: product.imageUrl || '',
-                      brand: product.brand || undefined,
-                      hasSizes: product.hasSizes,
-                    }}
-                    currency={currency}
-                    priority={index < 4}
-                  />
-                ))}
+                {products.map((product: any, index) => {
+                  const hours48AgoTime = Date.now() - 48 * 60 * 60 * 1000;
+                  return (
+                    <ProductCard 
+                      key={product.id}
+                      product={{
+                        id: product.id,
+                        name: product.name,
+                        slug: product.slug,
+                        shortCode: product.shortCode,
+                        price: Number(product.price),
+                        compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+                        imageUrl: product.imageUrl || '',
+                        brand: product.brand || undefined,
+                        collectionName: product.collection?.name || null,
+                        subCategoryName: product.subCategory?.name || null,
+                        isNew48h: product.createdAt ? new Date(product.createdAt).getTime() >= hours48AgoTime : false,
+                        hasSizes: product.hasSizes,
+                      }}
+                      currency={currency}
+                      priority={index < 4}
+                    />
+                  );
+                })}
               </div>
               <PaginationControls currentPage={page} totalPages={Math.ceil(totalCount / pageSize)} />
             </div>

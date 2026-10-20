@@ -64,7 +64,14 @@ export default async function Home() {
       {/* 3. Categories (Collections) */}
       <CollectionsSection brandName={store.name} />
 
-      {/* 4. Marketing collection: bestsellers */}
+      {/* 4. Latest Added (Last 48 Hours / Newest Arrivals) */}
+      <ProductsServer
+        type="latest-48h"
+        title="أضيف حديثاً"
+        subtitle="منتجات الساعات الـ 48 الماضية"
+      />
+
+      {/* 5. Marketing collection: bestsellers */}
       <ProductsServer
         type="bestsellers"
         title="الأكثر مبيعًا"

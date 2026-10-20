@@ -112,8 +112,13 @@ export default async function ProductDetailPage({
       name: true,
       price: true,
       imageUrl: true,
+      createdAt: true,
+      collection: { select: { name: true } },
+      subCategory: { select: { name: true } },
     },
   })
+
+  const hours48AgoTime = Date.now() - 48 * 60 * 60 * 1000
 
   return (
     <main className="min-h-screen bg-surface text-foreground font-sans">
@@ -161,7 +166,7 @@ export default async function ProductDetailPage({
           <div className="max-w-7xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-black text-foreground mb-6 md:mb-10 text-center">قد يعجبك أيضاً</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-              {related.map((p) => (
+              {related.map((p: any) => (
                 <ProductCard 
                   key={p.id}
                   product={{
@@ -172,6 +177,9 @@ export default async function ProductDetailPage({
                     price: Number(p.price),
                     compareAtPrice: null,
                     imageUrl: p.imageUrl || '',
+                    collectionName: p.collection?.name || null,
+                    subCategoryName: p.subCategory?.name || null,
+                    isNew48h: p.createdAt ? new Date(p.createdAt).getTime() >= hours48AgoTime : false,
                   }}
                   currency={currency}
                 />

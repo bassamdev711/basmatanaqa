@@ -23,6 +23,9 @@ interface ProductCardProps {
     imageUrl: string;
     engName?: string;
     brand?: string;
+    collectionName?: string | null;
+    subCategoryName?: string | null;
+    isNew48h?: boolean;
     hasSizes?: boolean;
     availableSizes?: string[];
   };
@@ -107,12 +110,22 @@ export default function ProductCard({ product, currency, priority = false }: Pro
     <div className="relative bg-white cursor-pointer group transition-all duration-300 rounded-xl md:rounded-2xl flex flex-col overflow-hidden h-full border border-black/5 hover:border-black/10">
       {/* Top badges & buttons */}
       <div className="absolute top-2 md:top-4 w-full px-2 md:px-4 flex justify-between items-start z-20 pointer-events-none">
-        {/* Discount Badge */}
-        {product.compareAtPrice && product.compareAtPrice > product.price ? (
-          <div className="bg-red-500/90 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-md pointer-events-auto shadow-sm">
-            -{Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}%
-          </div>
-        ) : <div />}
+        {/* Badges Container */}
+        <div className="flex flex-col gap-1 items-start">
+          {/* Discount Badge */}
+          {product.compareAtPrice && product.compareAtPrice > product.price && (
+            <div className="bg-red-500/90 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-md pointer-events-auto shadow-sm">
+              -{Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}%
+            </div>
+          )}
+          {/* New in 48h Badge */}
+          {product.isNew48h && (
+            <div className="bg-brand text-white text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-md pointer-events-auto shadow-sm flex items-center gap-1">
+              <span>✨</span>
+              <span>جديد اليومين</span>
+            </div>
+          )}
+        </div>
         
         {/* Buttons Wrapper */}
         <div className="flex flex-col gap-2 pointer-events-auto">
@@ -145,10 +158,25 @@ export default function ProductCard({ product, currency, priority = false }: Pro
       </div>
 
       <div className="flex flex-col flex-1 p-3 md:p-4 bg-white z-20 relative text-right">
-        {/* Brand / Category */}
-        <p className="text-black/50 text-[10px] md:text-xs tracking-wider uppercase mb-1 line-clamp-1">
-          {product.brand || product.engName || 'منتج مميز'}
-        </p>
+        {/* Category: SubCategory first, then Collection, then brand/engName */}
+        <div className="flex items-center gap-1.5 mb-1 line-clamp-1">
+          {product.subCategoryName ? (
+            <span className="text-brand font-bold text-[10px] md:text-xs tracking-wide">
+              {product.subCategoryName}
+              {product.collectionName && (
+                <span className="text-black/30 font-normal mr-1.5">({product.collectionName})</span>
+              )}
+            </span>
+          ) : product.collectionName ? (
+            <span className="text-brand/90 font-medium text-[10px] md:text-xs tracking-wide">
+              {product.collectionName}
+            </span>
+          ) : (
+            <span className="text-black/50 text-[10px] md:text-xs tracking-wider uppercase">
+              {product.brand || product.engName || 'منتج مميز'}
+            </span>
+          )}
+        </div>
         
         {/* Title */}
         <h3 className="text-sm md:text-base font-medium text-black mb-2 line-clamp-2 md:line-clamp-1 group-hover:text-brand transition-colors">

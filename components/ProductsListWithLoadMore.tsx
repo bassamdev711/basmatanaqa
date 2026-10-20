@@ -8,8 +8,12 @@ import { Loader2, ArrowDownCircle, CheckCircle2 } from 'lucide-react'
 export interface ProductItemData {
   id: string
   slug: string
+  shortCode?: string | null
   name: string
   brand?: string | null
+  collectionName?: string | null
+  subCategoryName?: string | null
+  isNew48h?: boolean
   price: number
   compareAtPrice?: number | null
   imageUrl: string
@@ -93,10 +97,14 @@ export default function ProductsListWithLoadMore({
               id: product.id,
               name: product.name,
               slug: product.slug,
+              shortCode: product.shortCode,
               price: product.price,
               compareAtPrice: product.compareAtPrice ?? null,
               imageUrl: product.imageUrl,
               brand: product.brand || undefined,
+              collectionName: product.collectionName,
+              subCategoryName: product.subCategoryName,
+              isNew48h: product.isNew48h,
               hasSizes: product.hasSizes,
             }}
             currency={currency}

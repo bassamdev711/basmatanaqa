@@ -39,6 +39,9 @@ interface ProductItem {
   compareAtPrice?: number
   offerEndDate?: string
   stock: number
+  collectionName?: string | null
+  subCategoryName?: string | null
+  isNew48h?: boolean
   variants: ProductVariant[]
 }
 
@@ -505,10 +508,20 @@ export default function ProductsClient({
                         خصم {Math.round(((product.compareAtPrice - product.rawPrice) / product.compareAtPrice) * 100)}%
                       </div>
                     )}
+                    {product.isNew48h && (
+                      <div className="absolute top-2 left-2 bg-brand text-white font-bold text-[9px] px-2 py-0.5 rounded shadow z-10 flex items-center gap-0.5">
+                        <span>✨</span>
+                        <span>جديد اليومين</span>
+                      </div>
+                    )}
                     {product.offerEndDate && <Countdown targetDate={product.offerEndDate} />}
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center p-3 text-center bg-white z-10 border-t border-black/10">
-                    <h3 className="text-base font-black text-foreground mb-0.5">{product.name}</h3>
+                    {/* Category Label: Subcategory first, then Collection */}
+                    <div className="text-[10px] text-brand font-bold mb-0.5 line-clamp-1">
+                      {product.subCategoryName || product.collectionName || product.color || ''}
+                    </div>
+                    <h3 className="text-base font-black text-foreground mb-0.5 line-clamp-1">{product.name}</h3>
                     <p className="text-accent text-[9px] tracking-widest uppercase mb-1.5">{product.engName}</p>
                     <div className="flex items-center gap-1.5 mb-2">
                       <p className="text-brand font-bold text-sm">{product.price}</p>
@@ -583,10 +596,27 @@ export default function ProductsClient({
                         خصم {Math.round(((product.compareAtPrice - product.rawPrice) / product.compareAtPrice) * 100)}%
                       </div>
                     )}
+                    {product.isNew48h && (
+                      <div className="absolute top-4 left-4 bg-brand text-white font-bold text-xs px-3 py-1 rounded-full shadow z-10 flex items-center gap-1">
+                        <span>✨</span>
+                        <span>جديد اليومين</span>
+                      </div>
+                    )}
                     {product.offerEndDate && <Countdown targetDate={product.offerEndDate} />}
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white z-10 border-t border-black/10">
-                    <h3 className="text-2xl font-black text-foreground mb-2">{product.name}</h3>
+                    {/* Category Label: Subcategory first, then Collection */}
+                    <div className="text-xs text-brand font-bold mb-1 line-clamp-1">
+                      {product.subCategoryName ? (
+                        <span>
+                          {product.subCategoryName}
+                          {product.collectionName && <span className="text-black/30 font-normal mr-1">({product.collectionName})</span>}
+                        </span>
+                      ) : (
+                        product.collectionName || product.color || ''
+                      )}
+                    </div>
+                    <h3 className="text-2xl font-black text-foreground mb-2 line-clamp-1">{product.name}</h3>
                     <p className="text-accent text-xs tracking-[0.2em] uppercase">{product.engName}</p>
                     <div className="flex items-center gap-2 my-4">
                       <p className="text-brand font-bold text-lg">{product.price}</p>

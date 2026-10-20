@@ -84,6 +84,7 @@ export async function GET(req: Request) {
         select: {
           id: true,
           slug: true,
+          shortCode: true,
           name: true,
           brand: true,
           price: true,
@@ -91,16 +92,25 @@ export async function GET(req: Request) {
           imageUrl: true,
           featured: true,
           hasSizes: true,
+          createdAt: true,
+          collection: { select: { name: true } },
+          subCategory: { select: { name: true } },
         },
       }),
       prisma.product.count({ where: whereClause }),
     ])
 
+    const hours48AgoTime = Date.now() - 48 * 60 * 60 * 1000
+
     const formattedProducts = products.map((p) => ({
       id: p.id,
       slug: p.slug,
+      shortCode: p.shortCode,
       name: p.name,
       brand: p.brand,
+      collectionName: p.collection?.name || null,
+      subCategoryName: p.subCategory?.name || null,
+      isNew48h: p.createdAt ? new Date(p.createdAt).getTime() >= hours48AgoTime : false,
       price: Number(p.price),
       compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null,
       imageUrl: p.imageUrl || '',

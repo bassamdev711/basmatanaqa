@@ -121,6 +121,7 @@ export default async function ProductsPage({
             select: {
               id: true,
               slug: true,
+              shortCode: true,
               name: true,
               brand: true,
               price: true,
@@ -128,6 +129,9 @@ export default async function ProductsPage({
               imageUrl: true,
               featured: true,
               hasSizes: true,
+              createdAt: true,
+              collection: { select: { name: true } },
+              subCategory: { select: { name: true } },
             },
           }),
           prisma.product.count({ where })
@@ -233,16 +237,23 @@ export default async function ProductsPage({
             </div>
           ) : (
             <ProductsListWithLoadMore
-              initialProducts={products.map((p) => ({
-                id: p.id,
-                slug: p.slug,
-                name: p.name,
-                brand: p.brand,
-                price: Number(p.price),
-                compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null,
-                imageUrl: p.imageUrl || '',
-                hasSizes: p.hasSizes,
-              }))}
+              initialProducts={products.map((p: any) => {
+                const hours48AgoTime = Date.now() - 48 * 60 * 60 * 1000;
+                return {
+                  id: p.id,
+                  slug: p.slug,
+                  shortCode: p.shortCode,
+                  name: p.name,
+                  brand: p.brand,
+                  collectionName: p.collection?.name || null,
+                  subCategoryName: p.subCategory?.name || null,
+                  isNew48h: p.createdAt ? new Date(p.createdAt).getTime() >= hours48AgoTime : false,
+                  price: Number(p.price),
+                  compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null,
+                  imageUrl: p.imageUrl || '',
+                  hasSizes: p.hasSizes,
+                };
+              })}
               totalCount={totalCount}
               pageSize={pageSize}
               currency={currency}

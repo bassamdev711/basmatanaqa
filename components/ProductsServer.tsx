@@ -33,14 +33,14 @@ type ProductRecord = {
 export const revalidate = 3600 // Cache for 1 hour to boost speed
 
 interface ProductsServerProps {
-  type: 'bestsellers' | 'offers' | 'featured'
+  type: 'bestsellers' | 'offers' | 'featured' | 'latest-48h'
   title: string
   subtitle: string
 }
 
 export default async function ProductsServer({ type, title, subtitle }: ProductsServerProps) {
   const currency = await getCurrency()
-  let products: ProductRecord[] = []
+  let products: any[] = []
   
   try {
     const whereClause: Prisma.ProductWhereInput = { isActive: true, stock: { gt: 0 } }
@@ -48,14 +48,53 @@ export default async function ProductsServer({ type, title, subtitle }: Products
 
     if (type === 'featured') {
       whereClause.featured = true
-    } else if (type === 'offers') {
-      // Products where compareAtPrice is strictly greater than price
-      // Since they are strings/decimals in Prisma, we use raw query or filter in JS if complex.
-      // But for simplicity, we can fetch all active and filter in JS if we don't have a specific field.
-      // A better way is using Prisma's gt if it's stored as Float/Decimal, but if it's String it's tricky.
-      // Assuming compareAtPrice is a number or convertible. Let's just fetch recent and filter if needed.
     } else if (type === 'bestsellers') {
       whereClause.bestseller = true
+    } else if (type === 'latest-48h') {
+      // آخر 48 ساعة
+      const hours48Ago = new Date(Date.now() - 48 * 60 * 60 * 1000)
+      whereClause.createdAt = { gte: hours48Ago }
+    }
+
+    const selectFields = {
+      id: true,
+      slug: true,
+      name: true,
+      brand: true,
+      description: true,
+      price: true,
+      compareAtPrice: true,
+      sku: true,
+      category: true,
+      size: true,
+      gender: true,
+      imageUrl: true,
+      images: true,
+      stock: true,
+      createdAt: true,
+      collection: {
+        select: { name: true }
+      },
+      subCategory: {
+        select: { name: true }
+      },
+      variants: {
+        select: {
+          id: true,
+          size: true,
+          price: true,
+          compareAtPrice: true,
+          stock: true,
+        },
+      },
+      offers: {
+        where: {
+          isActive: true,
+          endDate: { gt: new Date() }
+        },
+        orderBy: { createdAt: 'desc' as const },
+        take: 1
+      }
     }
 
     const getCachedProducts = unstable_cache(
@@ -72,40 +111,18 @@ export default async function ProductsServer({ type, title, subtitle }: Products
           } : whereClause,
           orderBy: type === 'offers' ? undefined : orderByClause,
           take: type === 'offers' ? 20 : 8,
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            brand: true,
-            description: true,
-            price: true,
-            compareAtPrice: true,
-            sku: true,
-            category: true,
-            size: true,
-            gender: true,
-            imageUrl: true,
-            images: true,
-            stock: true,
-            variants: {
-              select: {
-                id: true,
-                size: true,
-                price: true,
-                compareAtPrice: true,
-                stock: true,
-              },
-            },
-            offers: {
-              where: {
-                isActive: true,
-                endDate: { gt: new Date() }
-              },
-              orderBy: { createdAt: 'desc' },
-              take: 1
-            }
-          },
+          select: selectFields,
         })
+
+        // في حال اختيار قسم 48 ساعة ولم تكن هناك منتجات كافية مضافة في آخر 48 ساعة، نظهر أحدث المنتجات وصولاً كبديل أنيق
+        if (type === 'latest-48h' && fetchedProducts.length === 0) {
+          fetchedProducts = await prisma.product.findMany({
+            where: { isActive: true, stock: { gt: 0 } },
+            orderBy: { createdAt: 'desc' },
+            take: 8,
+            select: selectFields,
+          })
+        }
 
         if (type === 'offers') {
           fetchedProducts = fetchedProducts.slice(0, 8) // Take top 8 offers
@@ -113,7 +130,7 @@ export default async function ProductsServer({ type, title, subtitle }: Products
         return fetchedProducts
       },
       [`products-${type}`],
-      { revalidate: 1800, tags: ['products'] }
+      { revalidate: 900, tags: ['products'] }
     )
 
     products = await getCachedProducts()
@@ -122,10 +139,13 @@ export default async function ProductsServer({ type, title, subtitle }: Products
     console.error('Could not load products from DB', e)
   }
 
+  const hours48AgoTime = Date.now() - 48 * 60 * 60 * 1000
+
   const mapped = products.map((p: any) => {
     const activeOffer = p.offers?.[0]
     const price = activeOffer ? Number(activeOffer.offerPrice) : Number(p.price)
     const compareAtPrice = activeOffer ? Number(activeOffer.originalPrice) : (p.compareAtPrice ? Number(p.compareAtPrice) : undefined)
+    const isNew48h = p.createdAt ? new Date(p.createdAt).getTime() >= hours48AgoTime : false
     
     return {
     id: p.slug,
@@ -145,6 +165,9 @@ export default async function ProductsServer({ type, title, subtitle }: Products
     images: p.images || [],
     stock: p.stock ?? 0,
     slug: p.slug,
+    collectionName: p.collection?.name || null,
+    subCategoryName: p.subCategory?.name || null,
+    isNew48h,
     variants: (p.variants || []).map((v: ProductVariantRecord) => ({
       id: v.id,
       size: v.size || '',
