@@ -184,10 +184,11 @@ export default function ImageUpload({
               <button
                 type="button"
                 onClick={() => onMainImageChange('')}
-                className="absolute top-2 left-2 bg-red-600/90 hover:bg-red-700 text-white p-1 rounded-full shadow-md z-10 transition-colors"
-                title="حذف الصورة"
+                className="absolute top-2 left-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-xl shadow-lg z-20 transition-all flex items-center gap-1 active:scale-90"
+                title="إزالة هذه الصورة"
               >
-                <X className="w-3.5 h-3.5" />
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold px-0.5">إزالة</span>
               </button>
             </>
           ) : (
@@ -213,8 +214,8 @@ export default function ImageUpload({
 
         {/* Side Actions & Additional Images Section */}
         <div className="flex-1 space-y-3 w-full">
-          {/* Quick upload buttons for Main Image */}
-          <div className="flex items-center gap-2">
+          {/* Quick upload & remove buttons for Main Image */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => mainInputRef.current?.click()}
@@ -233,6 +234,17 @@ export default function ImageUpload({
               <Camera className="w-3.5 h-3.5" />
               <span>فتح الكاميرا</span>
             </button>
+            {mainImage && (
+              <button
+                type="button"
+                onClick={() => onMainImageChange('')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all shadow-sm active:scale-95"
+                title="إزالة الصورة الأساسية بالكامل"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>إزالة الصورة</span>
+              </button>
+            )}
           </div>
 
           {!singleOnly && (
