@@ -98,6 +98,7 @@ export default function ProductCard({ product, currency, priority = false }: Pro
       currency,
       quantity: 1,
       slug: product.slug,
+      shortCode: product.shortCode,
     });
     window.open(url, '_blank');
   };

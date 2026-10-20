@@ -241,6 +241,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     }
 
     const chosenSize = selectedVariant?.size || selectedDynamicSize || product.size || null
+    const activeImageIdx = allImages.findIndex(img => img === activeImage)
 
     const url = getProductWhatsAppLink({
       name: product.name,
@@ -249,6 +250,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       currency,
       quantity,
       slug: product.slug,
+      shortCode: product.shortCode,
+      imageIndex: activeImageIdx >= 0 ? activeImageIdx : 0,
+      categoryName: product.collection?.name || null,
+      subCategoryName: product.subCategory?.name || null,
     })
     window.open(url, '_blank')
   }

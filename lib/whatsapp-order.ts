@@ -18,7 +18,7 @@ export function formatWhatsAppPhone(rawPhone: string = STORE_WHATSAPP_NUMBER): s
 }
 
 /**
- * رابط طلب منتج واحد عبر واتساب
+ * رابط طلب منتج واحد عبر واتساب بتصميم وتنسيق أنيق مشابه لزر المشاركة
  */
 export function getProductWhatsAppLink({
   name,
@@ -27,6 +27,10 @@ export function getProductWhatsAppLink({
   currency,
   quantity = 1,
   slug,
+  shortCode,
+  imageIndex,
+  categoryName,
+  subCategoryName,
   phone = STORE_WHATSAPP_NUMBER,
 }: {
   name: string
@@ -35,23 +39,57 @@ export function getProductWhatsAppLink({
   currency: string
   quantity?: number
   slug: string
+  shortCode?: string | null
+  imageIndex?: number | null
+  categoryName?: string | null
+  subCategoryName?: string | null
   phone?: string
 }): string {
   const targetPhone = formatWhatsAppPhone(phone)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://shahrazadstore.online'
-  const productUrl = `${baseUrl}/products/${slug}`
-
-  let message = `مرحباً، أود طلب هذا المنتج من متجركم:\n`
-  message += `• المنتج: ${name}\n`
-  if (size && size.trim()) {
-    message += `• المقاس: ${size.trim()}\n`
+  
+  // نستخدم الرابط المختصر الذكي الذي يحتوي على المعاينة المباشرة للصورة (Open Graph)
+  const code = shortCode || slug
+  const queryParts: string[] = []
+  if (imageIndex !== undefined && imageIndex !== null && imageIndex > 0) {
+    queryParts.push(`img=${imageIndex}`)
   }
-  message += `• السعر: ${Number(price).toLocaleString('ar-SA')} ${currency}\n`
-  message += `• الكمية: ${quantity}\n`
-  message += `• رابط المنتج: ${productUrl}\n`
-  message += `أرجو تأكيد توفره.`
+  if (size && size.trim()) {
+    queryParts.push(`size=${encodeURIComponent(size.trim())}`)
+  }
+  const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
+  const productPreviewUrl = `${baseUrl}/p/${encodeURIComponent(code)}${queryString}`
 
-  return `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`
+  const lines = [
+    '✨ متجر شهرزاد ✨',
+    'مرحباً، أود طلب هذا المنتج من متجركم:',
+    '',
+    `🛍️ المنتج: ${name}`,
+  ]
+
+  if (categoryName) {
+    lines.push(`🏷️ القسم: ${categoryName}`)
+  }
+  if (subCategoryName) {
+    lines.push(`📂 التصنيف: ${subCategoryName}`)
+  }
+  if (size && size.trim()) {
+    lines.push(`📏 المقاس: ${size.trim()}`)
+  }
+  if (quantity && quantity > 1) {
+    lines.push(`🔢 الكمية: ${quantity}`)
+    lines.push(`💰 الإجمالي: ${Number(price * quantity).toLocaleString('ar-SA')} ${currency} (${Number(price).toLocaleString('ar-SA')} ${currency} للقطعة)`)
+  } else {
+    lines.push(`💰 السعر: ${Number(price).toLocaleString('ar-SA')} ${currency}`)
+  }
+
+  lines.push('')
+  lines.push('🔗 رابط وتفاصيل المنتج والصورة:')
+  lines.push(productPreviewUrl)
+  lines.push('')
+  lines.push('أرجو تأكيد توفره.')
+
+  return `https://wa.me/${targetPhone}?text=${encodeURIComponent(lines.join('\n'))}`
 }
 
 /**
