@@ -696,28 +696,84 @@ export default function BulkUploadClient() {
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 items-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-1">
                     {currentCard.extraImagesBlobUrls.map((extraImg, imgIdx) => (
-                      <div key={imgIdx} className="relative w-16 h-16 rounded-xl border border-black/10 overflow-hidden bg-gray-50 group">
-                        <img src={extraImg} alt="" className="w-full h-full object-contain p-1" />
+                      <div 
+                        key={imgIdx} 
+                        className="relative w-full aspect-square bg-gray-50 rounded-2xl border border-black/10 overflow-hidden shadow-sm group flex items-center justify-center"
+                      >
+                        <img 
+                          src={extraImg} 
+                          alt={`صورة إضافية ${imgIdx + 1}`} 
+                          className="w-full h-full object-contain p-2" 
+                        />
                         
-                        {/* Hover Overlay with Edit & Delete */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
+                        {/* Badge */}
+                        <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full pointer-events-none z-10">
+                          صورة {imgIdx + 1}
+                        </div>
+
+                        {/* Delete button (Top Left) */}
+                        <button
+                          type="button"
+                          onClick={() => removeExtraImage(currentIndex, imgIdx)}
+                          className="absolute top-2 left-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-xl shadow-lg z-20 transition-all flex items-center gap-1 active:scale-90"
+                          title="إزالة هذه الصورة"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-bold px-0.5">حذف</span>
+                        </button>
+
+                        {/* Action Buttons on Image Bottom (Replace & Edit) */}
+                        <div className="absolute bottom-2 inset-x-2 flex items-center justify-between gap-1.5 z-10">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const input = document.createElement('input')
+                              input.type = 'file'
+                              input.accept = 'image/*'
+                              input.onchange = async (e: any) => {
+                                const file = e.target?.files?.[0]
+                                if (!file) return
+                                try {
+                                  let compressed = file
+                                  try {
+                                    compressed = await compressImageClientSide(file)
+                                  } catch (compErr) {
+                                    console.warn('Compression error:', compErr)
+                                  }
+                                  const validFile = (compressed && compressed.size > 0) ? compressed : file
+                                  const newBlobUrl = URL.createObjectURL(validFile)
+                                  const copyBlobUrls = [...currentCard.extraImagesBlobUrls]
+                                  const copyFiles = [...(currentCard.extraImageFiles || [])]
+                                  copyBlobUrls[imgIdx] = newBlobUrl
+                                  copyFiles[imgIdx] = validFile
+                                  updateCard(currentIndex, {
+                                    extraImagesBlobUrls: copyBlobUrls,
+                                    extraImageFiles: copyFiles,
+                                  })
+                                  toast.success('تم استبدال الصورة الإضافية بنجاح')
+                                } catch (err: any) {
+                                  toast.error('فشل استبدال الصورة الإضافية')
+                                }
+                              }
+                              input.click()
+                            }}
+                            className="flex-1 bg-white/95 hover:bg-white text-gray-900 px-1.5 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95 border border-black/10"
+                            title="استبدال هذه الصورة"
+                          >
+                            <RefreshCw className="w-3 h-3 text-amber-600" />
+                            <span>استبدال</span>
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => handleOpenEditor('extra', currentIndex, imgIdx)}
-                            className="p-1 bg-white/20 hover:bg-white text-white hover:text-black rounded-lg transition-colors"
-                            title="تعديل وقص"
+                            className="flex-1 bg-black/85 hover:bg-black text-white px-1.5 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95"
+                            title="تعديل وقص الصورة"
                           >
-                            <Crop className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeExtraImage(currentIndex, imgIdx)}
-                            className="p-1 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors"
-                            title="حذف"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Crop className="w-3 h-3 text-amber-400" />
+                            <span>تعديل</span>
                           </button>
                         </div>
                       </div>
@@ -736,10 +792,14 @@ export default function BulkUploadClient() {
                         <button
                           type="button"
                           onClick={() => extraImgInputRef.current?.click()}
-                          className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 hover:border-black flex flex-col items-center justify-center text-gray-400 hover:text-black transition-colors"
+                          className="w-full aspect-square rounded-2xl border-2 border-dashed border-gray-300 hover:border-black flex flex-col items-center justify-center text-gray-400 hover:text-black transition-all bg-gray-50/50 hover:bg-gray-50 active:scale-95 min-h-[140px]"
+                          title="إضافة صور إضافية"
                         >
-                          <Plus className="w-5 h-5" />
-                          <span className="text-[9px] font-bold mt-0.5">إضافة</span>
+                          <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center mb-1.5">
+                            <Plus className="w-5 h-5 text-gray-700" />
+                          </div>
+                          <span className="text-xs font-bold text-gray-700">إضافة صورة</span>
+                          <span className="text-[10px] text-gray-400 mt-0.5">أو أكثر من ألبومك</span>
                         </button>
                       </>
                     )}
