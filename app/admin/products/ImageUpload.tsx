@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { Upload, X, Plus, Loader2, Camera, RefreshCw, Crop, Trash2 } from 'lucide-react'
 import { compressImageClientSide } from '@/lib/compress'
 import ImageEditorModal from './ImageEditorModal'
-import { toast } from 'react-hot-toast'
 
 interface ImageUploadProps {
   mainImage: string
@@ -71,18 +70,12 @@ export default function ImageUpload({
     const file = e.target.files?.[0]
     if (!file) return
     setUploadingMain(true)
-    const toastId = toast.loading('جاري معالجة ورفع الصورة...')
     try {
       const url = await uploadFile(file)
       onMainImageChange(url)
-      toast.dismiss(toastId)
-      toast.success('تم رفع الصورة بنجاح!')
-      showToast('success', 'تم رفع وضغط الصورة بنجاح!')
     } catch (err: unknown) {
-      toast.dismiss(toastId)
       const errorMsg = err instanceof Error ? err.message : 'فشل رفع الصورة'
       console.error('Image upload failed:', err)
-      toast.error(errorMsg, { duration: 6000 })
       showToast('error', errorMsg)
     } finally {
       setUploadingMain(false)
@@ -94,23 +87,16 @@ export default function ImageUpload({
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     if (additionalImages.length + files.length > 10) {
-      toast.error('الحد الأقصى للصور الإضافية هو 10 صور')
       showToast('error', 'الحد الأقصى للصور الإضافية هو 10 صور')
       return
     }
     setUploadingExtra(true)
-    const toastId = toast.loading(files.length > 1 ? `جاري معالجة ورفع ${files.length} صور...` : 'جاري معالجة ورفع الصورة...')
     try {
       const urls = await Promise.all(files.map(uploadFile))
       if (onAdditionalImagesChange) onAdditionalImagesChange([...additionalImages, ...urls])
-      toast.dismiss(toastId)
-      toast.success('تم رفع الصور وضغطها بنجاح!')
-      showToast('success', 'تم رفع الصور وضغطها بنجاح!')
     } catch (err: unknown) {
-      toast.dismiss(toastId)
       const errorMsg = err instanceof Error ? err.message : 'فشل رفع الصور'
       console.error('Extra images upload failed:', err)
-      toast.error(errorMsg, { duration: 6000 })
       showToast('error', errorMsg)
     } finally {
       setUploadingExtra(false)
@@ -135,20 +121,17 @@ export default function ImageUpload({
 
   const handleSaveEditor = async (newBlobUrl: string, newFile: File) => {
     const { type, extraIndex } = editorState
-    showToast('info', 'جاري حفظ الصورة المعدلة...')
     try {
       const uploadedUrl = await uploadFile(newFile)
       if (type === 'main') {
         onMainImageChange(uploadedUrl)
-        showToast('success', 'تم تعديل وحفظ الصورة الرئيسية بنجاح!')
       } else if (type === 'extra' && typeof extraIndex === 'number' && onAdditionalImagesChange) {
         const copy = [...additionalImages]
         copy[extraIndex] = uploadedUrl
         onAdditionalImagesChange(copy)
-        showToast('success', 'تم تعديل وحفظ الصورة الإضافية بنجاح!')
       }
     } catch (err: any) {
-      showToast('error', err?.message || 'فشل حفظ الصورة المعدلة')
+      showToast('error', err?.message || 'فشل حفظ الصورة')
     }
   }
 
