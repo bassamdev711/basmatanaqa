@@ -302,6 +302,11 @@ export default function BulkUploadClient() {
       })
       toast.success(`تم فتح ${newCards.length} نموذج بنجاح. يمكنك الآن إدخال البيانات والتمرير.`)
     }
+
+    // Reset file input so selecting files again will trigger onChange reliably
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const updateCard = (index: number, updates: Partial<BulkProductCard>) => {
@@ -445,24 +450,22 @@ export default function BulkUploadClient() {
 
     // Mark as submitted
     updateCard(cardIndex, { isSubmitted: true })
-    toast.success(`تمت إضافة "${card.name}" إلى طابور المعالجة بالخلفية`)
+    toast.success(`تمت إضافة "${card.name}" إلى طابور المعالجة بالخلفية 🚀`)
 
-    // Check if this was the last remaining unsubmitted card
-    const remainingUnsubmitted = products.filter((p, idx) => idx !== cardIndex && !p.isSubmitted).length
-    if (remainingUnsubmitted === 0) {
-      toast.success(`اكتملت إضافة جميع المنتجات (${products.length} من ${products.length}) بنجاح!`, { duration: 6000 })
-      return
-    }
-
-    // Auto-advance to the next unsubmitted card if available
+    // Check if there are remaining unsubmitted cards in the batch
     const nextUnsubmittedIndex = products.findIndex((p, idx) => idx > cardIndex && !p.isSubmitted)
     if (nextUnsubmittedIndex !== -1) {
       setCurrentIndex(nextUnsubmittedIndex)
+      window.scrollTo({ top: 120, behavior: 'smooth' })
     } else {
       // Look from the start
       const anyUnsubmittedIndex = products.findIndex((p, idx) => idx !== cardIndex && !p.isSubmitted)
       if (anyUnsubmittedIndex !== -1) {
         setCurrentIndex(anyUnsubmittedIndex)
+        window.scrollTo({ top: 120, behavior: 'smooth' })
+      } else {
+        // All cards in current batch are completed
+        toast.success(`اكتملت جميع المنتجات (${products.length} من ${products.length}) بنجاح! يمكنك إضافة دفعة أخرى متى شئت. ✨`, { duration: 6000 })
       }
     }
   }
@@ -969,16 +972,46 @@ export default function BulkUploadClient() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 {currentCard.isSubmitted ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-600 text-white font-black text-sm rounded-xl shadow-sm cursor-default"
-                  >
-                    <Check className="w-4 h-4 stroke-[3]" />
-                    <span>تمت إضافة هذا المنتج للطابور</span>
-                  </button>
+                  <>
+                    <div className="flex items-center gap-1.5 px-4 py-3 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs rounded-xl">
+                      <Check className="w-4 h-4 stroke-[3] text-emerald-600" />
+                      <span>تمت إضافة هذا المنتج للطابور</span>
+                    </div>
+
+                    {products.some(p => !p.isSubmitted) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextIdx = products.findIndex((p, idx) => idx > currentIndex && !p.isSubmitted)
+                          if (nextIdx !== -1) {
+                            setCurrentIndex(nextIdx)
+                            window.scrollTo({ top: 120, behavior: 'smooth' })
+                          } else {
+                            const anyIdx = products.findIndex(p => !p.isSubmitted)
+                            if (anyIdx !== -1) {
+                              setCurrentIndex(anyIdx)
+                              window.scrollTo({ top: 120, behavior: 'smooth' })
+                            }
+                          }
+                        }}
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-black hover:bg-gray-800 text-white font-bold text-xs rounded-xl shadow transition-all active:scale-95"
+                      >
+                        <span>الانتقال للمنتج غير المكتمل</span>
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center justify-center gap-1.5 px-4 py-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs rounded-xl shadow transition-all active:scale-95"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>إضافة صور أخرى</span>
+                    </button>
+                  </>
                 ) : (
                   <button
                     type="button"
