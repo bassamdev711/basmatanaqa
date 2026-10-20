@@ -112,14 +112,27 @@ export async function compressImageClientSide(
     return file;
   }
 
-  const isVeryLarge = file.size > 5 * 1024 * 1024; // أكبر من 5 ميجابايت
+  const isHugeFile = file.size > 4 * 1024 * 1024; // أكبر من 4 ميجابايت (صور الكاميرات العالية)
 
   const defaultOptions = {
     maxSizeMB: options.maxSizeMB || 0.6, // أقصى حجم 600 كيلوبايت
     maxWidthOrHeight: options.maxWidthOrHeight || 1440, // أقصى دقة 1440px فائقة الوضوح
-    useWebWorker: !isVeryLarge, // الملفات الضخمة من الكاميرا يتم ضغطها دون web worker لتفادي انهيار الخيط المنفصل في الهواتف
-    fileType: 'image/webp', // تحويل إلى webp لأفضل جودة وحجم
+    useWebWorker: true,
+    fileType: 'image/webp',
   };
+
+  // إذا كانت الصورة ضخمة من الكاميرا (> 4MB)، نستخدم محرك Canvas المباشر فوراً
+  // لأن مكتبة browser-image-compression تستهلك مئات الميجابايت من الرام في المتصفح وتنهار
+  if (isHugeFile) {
+    try {
+      const canvasFile = await compressViaCanvas(file, defaultOptions.maxWidthOrHeight, 0.82);
+      if (canvasFile && canvasFile.size > 0 && canvasFile.size < file.size) {
+        return canvasFile;
+      }
+    } catch (canvasErr) {
+      console.warn('Direct canvas failed for huge file, falling back:', canvasErr);
+    }
+  }
 
   try {
     const compressedBlob = await imageCompression(file, defaultOptions);

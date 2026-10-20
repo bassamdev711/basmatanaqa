@@ -131,8 +131,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const isImageFile = file.type.startsWith('image/')
-  const isAllowedType = ALLOWED_MIME_TYPES.has(file.type) || isImageFile
+  // بعض المتصفحات والهواتف ترسل file.type فارغاً أو application/octet-stream لصور الكاميرا
+  const fileName = (file.name || '').toLowerCase()
+  const isImageByName = /\.(jpe?g|png|webp|avif|heic|heif|gif|bmp|tiff|svg)$/i.test(fileName)
+  const isImageFile = file.type.startsWith('image/') || isImageByName
+  const isAllowedType = ALLOWED_MIME_TYPES.has(file.type) || isImageFile || file.type === '' || file.type === 'application/octet-stream'
 
   if (!isAllowedType || file.size <= 0 || file.size > MAX_FILE_SIZE) {
     return NextResponse.json({ error: 'نوع الملف أو حجمه غير مدعوم.' }, { status: file.size > MAX_FILE_SIZE ? 413 : 400 })
@@ -145,13 +148,11 @@ export async function POST(request: NextRequest) {
   }
 
   if (!detectedType) {
-    // If detection completely fails but it's an image, let's just assume it's valid
-    // to prevent blocking valid user uploads that have weird headers.
-    if (file.type.startsWith('image/')) {
-      detectedType = { ext: file.type.split('/')[1] || 'jpg', mime: file.type }
-    } else {
-      return NextResponse.json({ error: 'محتوى الملف لا يطابق النوع المُعلن عنه.' }, { status: 415 })
-    }
+    // محاولة استنتاج النوع من امتداد الملف إذا أرسل المتصفح ترويسة غير معيارية
+    const extMatch = fileName.match(/\.([a-z0-9]+)$/i)
+    const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg'
+    const mime = file.type && file.type.startsWith('image/') ? file.type : `image/${ext === 'jpg' ? 'jpeg' : ext}`
+    detectedType = { ext, mime }
   }
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN
