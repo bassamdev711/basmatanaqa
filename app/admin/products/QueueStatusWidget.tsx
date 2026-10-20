@@ -87,7 +87,7 @@ export default function QueueStatusWidget() {
           {queue.map((item) => (
             <div
               key={item.id}
-              className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 transition-colors ${
+              className={`p-2 rounded-xl border text-xs flex items-center justify-between gap-2.5 transition-colors ${
                 item.status === 'processing'
                   ? 'bg-blue-50/60 border-blue-200'
                   : item.status === 'success'
@@ -97,21 +97,37 @@ export default function QueueStatusWidget() {
                   : 'bg-white border-gray-200'
               }`}
             >
+              {/* Product Thumbnail Preview */}
+              <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-black/10 bg-gray-100 flex items-center justify-center">
+                {item.mainImageFileUrl ? (
+                  <img
+                    src={item.mainImageFileUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Layers className="w-5 h-5 text-gray-400" />
+                )}
+                {item.status === 'processing' && (
+                  <div className="absolute inset-0 bg-blue-900/40 backdrop-blur-[1px] flex items-center justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  </div>
+                )}
+                {item.status === 'success' && (
+                  <div className="absolute inset-0 bg-emerald-600/50 backdrop-blur-[1px] flex items-center justify-center">
+                    <Check className="w-4 h-4 text-white stroke-[3]" />
+                  </div>
+                )}
+                {item.status === 'error' && (
+                  <div className="absolute inset-0 bg-red-600/50 backdrop-blur-[1px] flex items-center justify-center">
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  </div>
+                )}
+              </div>
+
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  {item.status === 'processing' && (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 shrink-0" />
-                  )}
-                  {item.status === 'success' && (
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  )}
-                  {item.status === 'error' && (
-                    <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  )}
-                  {item.status === 'pending' && (
-                    <Layers className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                  )}
-                  <span className="font-bold text-gray-900 truncate block">{item.name}</span>
+                  <span className="font-bold text-gray-900 truncate block">{item.name || 'بدون اسم'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
                   <span>{item.price} ر.س</span>

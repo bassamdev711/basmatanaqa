@@ -99,27 +99,17 @@ export default function BulkUploadClient() {
   })
 
   // Handle replacing the main image of a card with a new chosen photo
-  const handleReplaceMainImage = async (files: FileList | null) => {
+  const handleReplaceMainImage = (files: FileList | null) => {
     if (!files || files.length === 0 || !products[currentIndex]) return
     const file = files[0]
-    const toastId = toast.loading('جاري استبدال وضغط الصورة الجديدة...')
     try {
-      let compressed = file
-      try {
-        compressed = await compressImageClientSide(file)
-      } catch (cErr) {
-        console.warn('Replace main image compression fallback:', cErr)
-      }
-      const validFile = (compressed && compressed.size > 0) ? compressed : file
-      const blobUrl = URL.createObjectURL(validFile)
+      const blobUrl = URL.createObjectURL(file)
       updateCard(currentIndex, {
         mainImageBlobUrl: blobUrl,
-        mainImageFile: validFile,
+        mainImageFile: file,
       })
-      toast.dismiss(toastId)
       toast.success('تم استبدال الصورة بنجاح!')
     } catch {
-      toast.dismiss(toastId)
       toast.error('فشل استبدال الصورة')
     } finally {
       if (replaceMainInputRef.current) {
@@ -225,32 +215,21 @@ export default function BulkUploadClient() {
   }
 
   // Handle Bulk Image Selection
-  const handleFilesSelected = async (files: FileList | null) => {
+  const handleFilesSelected = (files: FileList | null) => {
     if (!files || files.length === 0) return
 
     const fileArray = Array.from(files)
-    const toastId = toast.loading(`جاري تجهيز وتوليد نماذج لـ ${fileArray.length} منتج...`)
-
     const newCards: BulkProductCard[] = []
 
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
       try {
-        let compressed = file
-        try {
-          compressed = await compressImageClientSide(file)
-        } catch (compErr) {
-          console.warn('Image compression fallback to original file:', compErr)
-        }
-
-        // If compressed file is invalid or 0 bytes, use original
-        const validFile = (compressed && compressed.size > 0) ? compressed : file
-        const blobUrl = URL.createObjectURL(validFile)
+        const blobUrl = URL.createObjectURL(file)
 
         newCards.push({
           id: `bulk-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
           mainImageBlobUrl: blobUrl,
-          mainImageFile: validFile,
+          mainImageFile: file,
           extraImagesBlobUrls: [],
           extraImageFiles: [],
           name: '',
@@ -265,33 +244,9 @@ export default function BulkUploadClient() {
           isSubmitted: false,
         })
       } catch (err) {
-        console.error('Failed to process image file, fallback to raw:', err)
-        try {
-          const rawUrl = URL.createObjectURL(file)
-          newCards.push({
-            id: `bulk-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
-            mainImageBlobUrl: rawUrl,
-            mainImageFile: file,
-            extraImagesBlobUrls: [],
-            extraImageFiles: [],
-            name: '',
-            price: '',
-            stock: '10',
-            costPrice: '',
-            collectionId: defaultCollectionId,
-            subCategoryIds: [],
-            hasSizes: false,
-            availableSizes: [],
-            description: '',
-            isSubmitted: false,
-          })
-        } catch (rawErr) {
-          console.error('Critical failure loading image:', rawErr)
-        }
+        console.error('Failed to process image file:', err)
       }
     }
-
-    toast.dismiss(toastId)
 
     if (newCards.length > 0) {
       setProducts(prev => {
@@ -300,7 +255,7 @@ export default function BulkUploadClient() {
         if (prev.length === 0) setCurrentIndex(0)
         return updated
       })
-      toast.success(`تم فتح ${newCards.length} نموذج بنجاح. يمكنك الآن إدخال البيانات والتمرير.`)
+      toast.success(`تم فتح ${newCards.length} منتج بنجاح وبكامل جودة الصور!`)
     }
 
     // Reset file input so selecting files again will trigger onChange reliably
@@ -330,7 +285,7 @@ export default function BulkUploadClient() {
   }
 
   // Add extra images to current card with multiple support and auto-reset
-  const handleAddExtraImage = async (files: FileList | null) => {
+  const handleAddExtraImage = (files: FileList | null) => {
     if (!files || files.length === 0 || !products[currentIndex]) return
     const fileArray = Array.from(files)
     
@@ -349,37 +304,25 @@ export default function BulkUploadClient() {
     }
 
     const filesToProcess = fileArray.slice(0, availableSlots)
-    const toastId = toast.loading(filesToProcess.length > 1 ? `جاري تجهيز ${filesToProcess.length} صور إضافية...` : 'جاري تجهيز الصورة الإضافية...')
+    const newBlobUrls: string[] = []
+    const newFiles: File[] = []
 
-    try {
-      const processedResults = await Promise.all(
-        filesToProcess.map(async (file) => {
-          let compressed = file
-          try {
-            compressed = await compressImageClientSide(file)
-          } catch (e) {
-            console.warn('Extra image compression fallback:', e)
-          }
-          const validFile = (compressed && compressed.size > 0) ? compressed : file
-          const blobUrl = URL.createObjectURL(validFile)
-          return { blobUrl, file: validFile }
-        })
-      )
-
-      const newBlobUrls = processedResults.map(r => r.blobUrl)
-      const newFiles = processedResults.map(r => r.file)
-
-      updateCard(currentIndex, { 
-        extraImagesBlobUrls: [...currentExtras, ...newBlobUrls],
-        extraImageFiles: [...currentExtraFiles, ...newFiles],
-      })
-
-      toast.dismiss(toastId)
-      toast.success(newFiles.length > 1 ? `تمت إضافة ${newFiles.length} صور إضافية بنجاح` : 'تمت إضافة الصورة الإضافية بنجاح')
-    } catch {
-      toast.dismiss(toastId)
-      toast.error('فشل معالجة بعض الصور الإضافية')
+    for (const file of filesToProcess) {
+      try {
+        const blobUrl = URL.createObjectURL(file)
+        newBlobUrls.push(blobUrl)
+        newFiles.push(file)
+      } catch (err) {
+        console.error('Error reading extra image:', err)
+      }
     }
+
+    updateCard(currentIndex, { 
+      extraImagesBlobUrls: [...currentExtras, ...newBlobUrls],
+      extraImageFiles: [...currentExtraFiles, ...newFiles],
+    })
+
+    toast.success(newFiles.length > 1 ? `تمت إضافة ${newFiles.length} صور إضافية بنجاح` : 'تمت إضافة الصورة الإضافية بنجاح')
   }
 
   const removeExtraImage = (cardIndex: number, imgIndex: number) => {
