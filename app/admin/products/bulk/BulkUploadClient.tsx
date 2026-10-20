@@ -104,11 +104,17 @@ export default function BulkUploadClient() {
     const file = files[0]
     const toastId = toast.loading('جاري استبدال وضغط الصورة الجديدة...')
     try {
-      const compressed = await compressImageClientSide(file)
-      const blobUrl = URL.createObjectURL(compressed)
+      let compressed = file
+      try {
+        compressed = await compressImageClientSide(file)
+      } catch (cErr) {
+        console.warn('Replace main image compression fallback:', cErr)
+      }
+      const validFile = (compressed && compressed.size > 0) ? compressed : file
+      const blobUrl = URL.createObjectURL(validFile)
       updateCard(currentIndex, {
         mainImageBlobUrl: blobUrl,
-        mainImageFile: compressed,
+        mainImageFile: validFile,
       })
       toast.dismiss(toastId)
       toast.success('تم استبدال الصورة بنجاح!')
@@ -230,14 +236,21 @@ export default function BulkUploadClient() {
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
       try {
-        // Compress client side immediately for smooth UI
-        const compressed = await compressImageClientSide(file)
-        const blobUrl = URL.createObjectURL(compressed)
+        let compressed = file
+        try {
+          compressed = await compressImageClientSide(file)
+        } catch (compErr) {
+          console.warn('Image compression fallback to original file:', compErr)
+        }
+
+        // If compressed file is invalid or 0 bytes, use original
+        const validFile = (compressed && compressed.size > 0) ? compressed : file
+        const blobUrl = URL.createObjectURL(validFile)
 
         newCards.push({
           id: `bulk-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
           mainImageBlobUrl: blobUrl,
-          mainImageFile: compressed,
+          mainImageFile: validFile,
           extraImagesBlobUrls: [],
           extraImageFiles: [],
           name: '',
@@ -252,7 +265,29 @@ export default function BulkUploadClient() {
           isSubmitted: false,
         })
       } catch (err) {
-        console.error('Failed to process image file:', err)
+        console.error('Failed to process image file, fallback to raw:', err)
+        try {
+          const rawUrl = URL.createObjectURL(file)
+          newCards.push({
+            id: `bulk-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+            mainImageBlobUrl: rawUrl,
+            mainImageFile: file,
+            extraImagesBlobUrls: [],
+            extraImageFiles: [],
+            name: '',
+            price: '',
+            stock: '10',
+            costPrice: '',
+            collectionId: defaultCollectionId,
+            subCategoryIds: [],
+            hasSizes: false,
+            availableSizes: [],
+            description: '',
+            isSubmitted: false,
+          })
+        } catch (rawErr) {
+          console.error('Critical failure loading image:', rawErr)
+        }
       }
     }
 
@@ -314,9 +349,15 @@ export default function BulkUploadClient() {
     try {
       const processedResults = await Promise.all(
         filesToProcess.map(async (file) => {
-          const compressed = await compressImageClientSide(file)
-          const blobUrl = URL.createObjectURL(compressed)
-          return { blobUrl, file: compressed }
+          let compressed = file
+          try {
+            compressed = await compressImageClientSide(file)
+          } catch (e) {
+            console.warn('Extra image compression fallback:', e)
+          }
+          const validFile = (compressed && compressed.size > 0) ? compressed : file
+          const blobUrl = URL.createObjectURL(validFile)
+          return { blobUrl, file: validFile }
         })
       )
 

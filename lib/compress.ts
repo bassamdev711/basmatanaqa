@@ -1,13 +1,29 @@
 import imageCompression from 'browser-image-compression';
 
 async function compressViaCanvas(file: File, maxDim = 1280, quality = 0.8): Promise<File> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
+    // If running in an environment without document/window or if file is invalid
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !file || file.size === 0) {
+      return resolve(file);
+    }
+
     const img = document.createElement('img');
     const url = URL.createObjectURL(file);
+
+    const cleanup = () => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+    };
+
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      cleanup();
       let width = img.naturalWidth || img.width;
       let height = img.naturalHeight || img.height;
+
+      if (!width || !height) {
+        return resolve(file);
+      }
 
       if (width > maxDim || height > maxDim) {
         if (width > height) {
@@ -26,24 +42,52 @@ async function compressViaCanvas(file: File, maxDim = 1280, quality = 0.8): Prom
       if (!ctx) {
         return resolve(file);
       }
-      ctx.drawImage(img, 0, 0, width, height);
 
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) return resolve(file);
-          const finalFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), {
-            type: 'image/webp',
-          });
-          resolve(finalFile);
-        },
-        'image/webp',
-        quality
-      );
+      try {
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Try webp first, fallback to jpeg if browser doesn't support webp encoding
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size === 0) {
+              // Try jpeg if webp failed or produced 0-byte blob
+              canvas.toBlob(
+                (jpegBlob) => {
+                  if (!jpegBlob || jpegBlob.size === 0) {
+                    return resolve(file);
+                  }
+                  const finalFile = new File([jpegBlob], file.name.replace(/\.[^/.]+$/, '.jpg'), {
+                    type: 'image/jpeg',
+                  });
+                  resolve(finalFile);
+                },
+                'image/jpeg',
+                quality
+              );
+              return;
+            }
+
+            const targetExt = blob.type === 'image/webp' ? '.webp' : '.jpg';
+            const finalFile = new File([blob], file.name.replace(/\.[^/.]+$/, targetExt), {
+              type: blob.type || 'image/webp',
+            });
+            resolve(finalFile);
+          },
+          'image/webp',
+          quality
+        );
+      } catch (drawErr) {
+        console.warn('Canvas drawImage failed, using original file:', drawErr);
+        resolve(file);
+      }
     };
+
     img.onerror = () => {
-      URL.revokeObjectURL(url);
+      cleanup();
+      // If image failed to load in <img> (e.g. HEIC or raw unsupported format), preserve original file
       resolve(file);
     };
+
     img.src = url;
   });
 }
@@ -58,8 +102,13 @@ export async function compressImageClientSide(
   file: File,
   options: { maxSizeMB?: number; maxWidthOrHeight?: number } = {}
 ): Promise<File> {
-  // إذا لم يكن الملف صورة، نعيده كما هو (مثل PDF)
-  if (!file.type.startsWith('image/')) {
+  // إذا لم يكن الملف صورة أو كان تالفاً/فارغاً، نعيده كما هو
+  if (!file || file.size === 0 || !file.type.startsWith('image/')) {
+    return file;
+  }
+
+  // إذا كانت الصورة مضغوطة مسبقاً وبحجم ملائم (< 500KB) لا نضغطها مجدداً حتى لا تتشوه الجودة
+  if (file.type === 'image/webp' && file.size < 500 * 1024) {
     return file;
   }
 
@@ -72,6 +121,10 @@ export async function compressImageClientSide(
 
   try {
     const compressedBlob = await imageCompression(file, defaultOptions);
+    if (!compressedBlob || compressedBlob.size === 0) {
+      throw new Error('Empty compressed blob returned');
+    }
+
     const fileExt = compressedBlob.type === 'image/jpeg' ? '.jpg' : compressedBlob.type === 'image/png' ? '.png' : '.webp';
     return new File([compressedBlob], file.name.replace(/\.[^/.]+$/, fileExt), {
       type: compressedBlob.type,
@@ -79,9 +132,13 @@ export async function compressImageClientSide(
   } catch (error) {
     console.warn('browser-image-compression فشل، جاري المحاولة عبر canvas:', error);
     try {
-      return await compressViaCanvas(file, defaultOptions.maxWidthOrHeight, 0.8);
+      const canvasFile = await compressViaCanvas(file, defaultOptions.maxWidthOrHeight, 0.8);
+      if (canvasFile && canvasFile.size > 0) {
+        return canvasFile;
+      }
+      return file;
     } catch (fallbackError) {
-      console.error('فشل ضغط الصورة نهائياً:', fallbackError);
+      console.error('فشل ضغط الصورة نهائياً، استخدام الملف الأصلي:', fallbackError);
       return file;
     }
   }

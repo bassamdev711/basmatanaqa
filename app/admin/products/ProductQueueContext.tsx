@@ -71,12 +71,15 @@ async function uploadWithRetry(fileOrUrl: File | string, maxRetries = 3): Promis
         file = new File([blob], `product-photo-${Date.now()}.webp`, { type: blob.type || 'image/webp' });
       }
 
-      // Compress client side
+      // Compress client side only if needed (don't recompress already optimized webp images)
       let compressedFile = file;
-      try {
-        compressedFile = await compressImageClientSide(file);
-      } catch (cErr) {
-        console.warn('Client compression fallback to original file:', cErr);
+      const isAlreadyCompressed = file.type === 'image/webp' && file.size < 1024 * 1024;
+      if (!isAlreadyCompressed) {
+        try {
+          compressedFile = await compressImageClientSide(file);
+        } catch (cErr) {
+          console.warn('Client compression fallback to original file:', cErr);
+        }
       }
 
       const formData = new FormData();
