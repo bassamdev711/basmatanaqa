@@ -60,6 +60,7 @@ export default function NewProductPage() {
   const [seoPhrases, setSeoPhrases] = useState<string[]>([])
   const [seoScore, setSeoScore] = useState<number>(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showStockAndSupplier, setShowStockAndSupplier] = useState(false)
 
   const toggleSubCategory = (id: string) => {
     setSelectedSubCategories(prev => 
@@ -292,12 +293,7 @@ export default function NewProductPage() {
                 ))}
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">الكمية المتوفرة</label>
-              <input type="number" name="stock" value={stock} onChange={e => setStock(e.target.value)} min="0" dir="ltr"
-                className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
-              <p className="text-xs text-gray-500 mt-1">القيمة الافتراضية 10 لتسريع الإضافة</p>
-            </div>
+            {/* المجموعة الرئيسية */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">المجموعة (Collection)</label>
               <select name="collectionId" value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
@@ -307,6 +303,8 @@ export default function NewProductPage() {
                 ))}
               </select>
             </div>
+
+            {/* المجموعات الفرعية */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 المجموعات الفرعية (يمكن اختيار أكثر من مجموعة)
@@ -349,20 +347,70 @@ export default function NewProductPage() {
                 </div>
               )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">المورد</label>
-              <select name="supplierId" value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)} className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black">
-                <option value="">بدون مورد</option>
-                {suppliers.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">سعر التكلفة (من المورد)</label>
-              <input type="number" name="costPrice" value={costPrice} onChange={e => setCostPrice(e.target.value)} step="0.01" min="0" dir="ltr"
-                className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
-              <p className="text-xs text-gray-500 mt-1">لا يظهر للعميل — لحساب الربح فقط</p>
+
+            {/* زر القائمة المنسدلة لإظهار/إخفاء الكمية المتوفرة والمورد معاً في نفس السطر على الهاتف */}
+            <div className="md:col-span-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setShowStockAndSupplier(!showStockAndSupplier)}
+                className="w-full flex items-center justify-between p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-bold transition-all border border-gray-200"
+              >
+                <span className="flex items-center gap-2">
+                  <span>الكمية المتوفرة والمورد</span>
+                  <span className="text-[11px] font-normal text-gray-500">
+                    (الكمية: {stock || 10} {selectedSupplier ? `• المورد: ${suppliers.find(s => s.id === selectedSupplier)?.name || ''}` : ''})
+                  </span>
+                </span>
+                {showStockAndSupplier ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+              </button>
+
+              {showStockAndSupplier && (
+                <div className="grid grid-cols-2 gap-3 mt-3 p-3 bg-gray-50/50 rounded-xl border border-gray-200 animate-in fade-in duration-200">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">الكمية المتوفرة</label>
+                    <input 
+                      type="number" 
+                      name="stock" 
+                      value={stock} 
+                      onChange={e => setStock(e.target.value)} 
+                      min="0" 
+                      dir="ltr"
+                      className="w-full rounded-lg border-gray-300 border p-2.5 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black font-bold" 
+                    />
+                    <p className="text-[10px] text-gray-500 mt-1">افتراضياً: 10</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">المورد</label>
+                    <select 
+                      name="supplierId" 
+                      value={selectedSupplier} 
+                      onChange={e => setSelectedSupplier(e.target.value)} 
+                      className="w-full rounded-lg border-gray-300 border p-2.5 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black font-bold"
+                    >
+                      <option value="">بدون مورد</option>
+                      {suppliers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-span-2 pt-2 border-t border-gray-200/60">
+                    <label className="block text-xs font-bold text-gray-700 mb-1">سعر التكلفة (من المورد)</label>
+                    <input 
+                      type="number" 
+                      name="costPrice" 
+                      value={costPrice} 
+                      onChange={e => setCostPrice(e.target.value)} 
+                      step="0.01" 
+                      min="0" 
+                      dir="ltr"
+                      className="w-full rounded-lg border-gray-300 border p-2.5 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black font-bold" 
+                    />
+                    <p className="text-[10px] text-gray-500 mt-1">لا يظهر للعميل — لحساب الربح فقط</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

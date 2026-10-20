@@ -26,17 +26,24 @@ export const dynamic = 'force-dynamic'
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; collectionId?: string }>
+  searchParams: Promise<{ page?: string; collectionId?: string; subCategoryId?: string }>
 }) {
   const searchParamsResolved = await searchParams;
   const page = parseInt(searchParamsResolved.page || '1', 10);
   const selectedCollectionId = searchParamsResolved.collectionId || '';
+  const selectedSubCategoryId = searchParamsResolved.subCategoryId || '';
   const limit = 50;
   const skip = (page - 1) * limit;
 
   const whereClause: Prisma.ProductWhereInput = {};
   if (selectedCollectionId) {
     whereClause.collectionId = selectedCollectionId;
+  }
+  if (selectedSubCategoryId) {
+    whereClause.OR = [
+      { subCategoryId: selectedSubCategoryId },
+      { subCategoryIds: { has: selectedSubCategoryId } },
+    ];
   }
 
   let products: ProductRow[] = []
@@ -75,7 +82,7 @@ export default async function ProductsPage({
     console.error("Database connection error:", error)
   }
 
-  const paginationCollectionQuery = selectedCollectionId ? `&collectionId=${selectedCollectionId}` : '';
+  const paginationFilterQuery = `${selectedCollectionId ? `&collectionId=${selectedCollectionId}` : ''}${selectedSubCategoryId ? `&subCategoryId=${selectedSubCategoryId}` : ''}`;
 
   return (
     <div className="space-y-6">
@@ -91,7 +98,9 @@ export default async function ProductsPage({
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <CollectionFilter
             collections={collections}
+            subCategories={subCategories}
             selectedCollectionId={selectedCollectionId}
+            selectedSubCategoryId={selectedSubCategoryId}
           />
           <Link 
             href="/admin/products/bulk"
@@ -124,13 +133,13 @@ export default async function ProductsPage({
             </span>
             <div className="flex gap-2">
               <Link
-                href={`/admin/products?page=${page - 1}${paginationCollectionQuery}`}
+                href={`/admin/products?page=${page - 1}${paginationFilterQuery}`}
                 className={`px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 ${page <= 1 ? 'pointer-events-none opacity-50' : ''}`}
               >
                 السابق
               </Link>
               <Link
-                href={`/admin/products?page=${page + 1}${paginationCollectionQuery}`}
+                href={`/admin/products?page=${page + 1}${paginationFilterQuery}`}
                 className={`px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 ${page >= Math.ceil(totalCount / limit) ? 'pointer-events-none opacity-50' : ''}`}
               >
                 التالي

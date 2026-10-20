@@ -121,12 +121,43 @@ export async function updateSubCategory(id: string, data: { name: string, slug: 
 export async function deleteSubCategory(id: string, collectionId: string) {
   await verifyAdmin();
   try {
+    // 1. Unlink any products that have this subCategoryId
+    await prisma.product.updateMany({
+      where: { subCategoryId: id },
+      data: { subCategoryId: null }
+    });
+
+    // 2. Remove this subCategoryId from any products' subCategoryIds array
+    const productsWithArray = await prisma.product.findMany({
+      where: { subCategoryIds: { has: id } },
+      select: { id: true, subCategoryIds: true }
+    });
+
+    for (const prod of productsWithArray) {
+      const updatedIds = prod.subCategoryIds.filter(subId => subId !== id);
+      await prisma.product.update({
+        where: { id: prod.id },
+        data: { subCategoryIds: updatedIds }
+      });
+    }
+
+    // 3. Delete the subcategory itself
     await prisma.subCategory.delete({ where: { id } });
+
+    // 4. Invalidate all relevant caches and pages so customers immediately see the update
+    const { revalidateTag } = await import('next/cache');
+    revalidateTag('subcategories', 'max');
+    revalidateTag('products', 'max');
+    revalidateTag('collections', 'max');
     revalidatePath(`/admin/collections/${collectionId}`);
     revalidatePath('/admin/products');
+    revalidatePath('/products');
+    revalidatePath('/');
+
     return { success: true };
-  } catch {
-    return { success: false, error: 'حدث خطأ. ربما يكون هناك منتجات مرتبطة بهذا التصنيف.' };
+  } catch (error) {
+    console.error('Error deleting subcategory:', error);
+    return { success: false, error: 'حدث خطأ أثناء حذف المجموعة الفرعية.' };
   }
 }
 

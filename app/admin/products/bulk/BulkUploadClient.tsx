@@ -16,14 +16,24 @@ import {
   ArrowRight,
   Sparkles,
   Camera,
-  Crop
+  Crop,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react'
 import { useProductQueue } from '../ProductQueueContext'
 import { getCollections, getSubCategories } from '../../collections/actions'
+import { getSuppliers } from '../../suppliers/actions'
 import SizeSelector from '../SizeSelector'
 import ImageEditorModal from '../ImageEditorModal'
 import { toast } from 'react-hot-toast'
 import { compressImageClientSide } from '@/lib/compress'
+
+type SupplierItem = {
+  id: string
+  name: string
+}
 
 type CollectionItem = {
   id: string
@@ -48,6 +58,7 @@ type BulkProductCard = {
   costPrice: string
   collectionId: string
   subCategoryIds: string[]
+  supplierId?: string
   hasSizes: boolean
   availableSizes: string[]
   description: string
@@ -59,13 +70,19 @@ export default function BulkUploadClient() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const extraImgInputRef = useRef<HTMLInputElement>(null)
+  const replaceMainInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const [collections, setCollections] = useState<CollectionItem[]>([])
+  const [suppliers, setSuppliers] = useState<SupplierItem[]>([])
   const [subCategoriesMap, setSubCategoriesMap] = useState<Record<string, SubCategoryItem[]>>({})
   const [defaultCollectionId, setDefaultCollectionId] = useState('')
   const [products, setProducts] = useState<BulkProductCard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [showStockSupplier, setShowStockSupplier] = useState(false)
+  
+  // Safe delete confirmation modal state
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null)
 
   // Image Editor Modal state
   const [editingImage, setEditingImage] = useState<{
@@ -80,6 +97,30 @@ export default function BulkUploadClient() {
     cardIndex: 0,
     imageUrl: '',
   })
+
+  // Handle replacing the main image of a card with a new chosen photo
+  const handleReplaceMainImage = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !products[currentIndex]) return
+    const file = files[0]
+    const toastId = toast.loading('جاري استبدال وضغط الصورة الجديدة...')
+    try {
+      const compressed = await compressImageClientSide(file)
+      const blobUrl = URL.createObjectURL(compressed)
+      updateCard(currentIndex, {
+        mainImageBlobUrl: blobUrl,
+        mainImageFile: compressed,
+      })
+      toast.dismiss(toastId)
+      toast.success('تم استبدال الصورة بنجاح!')
+    } catch {
+      toast.dismiss(toastId)
+      toast.error('فشل استبدال الصورة')
+    } finally {
+      if (replaceMainInputRef.current) {
+        replaceMainInputRef.current.value = ''
+      }
+    }
+  }
 
   const handleOpenEditor = (type: 'main' | 'extra', cardIndex: number, extraIndex?: number) => {
     const card = products[cardIndex]
@@ -149,6 +190,12 @@ export default function BulkUploadClient() {
             }))
           }
         }
+      }
+    }).catch(console.error)
+
+    getSuppliers().then(data => {
+      if (Array.isArray(data)) {
+        setSuppliers(data.filter(s => s.isActive).map(s => ({ id: s.id, name: s.name })))
       }
     }).catch(console.error)
   }, [])
@@ -345,6 +392,7 @@ export default function BulkUploadClient() {
       collectionId: card.collectionId || null,
       subCategoryId: card.subCategoryIds[0] || null,
       subCategoryIds: card.subCategoryIds,
+      supplierId: card.supplierId || null,
       description: card.description || null,
       mainImageFile: card.mainImageFile,
       mainImageFileUrl: card.mainImageBlobUrl,
@@ -528,11 +576,12 @@ export default function BulkUploadClient() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => removeCard(currentIndex)}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                onClick={() => setConfirmDeleteIndex(currentIndex)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-red-200/60"
+                title="حذف هذا النموذج وعدم إضافته"
               >
-                <Trash2 className="w-4 h-4" />
-                <span className="hidden sm:inline">حذف هذا النموذج</span>
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>حذف النموذج</span>
               </button>
             </div>
           </div>
@@ -557,16 +606,39 @@ export default function BulkUploadClient() {
                     الصورة الأساسية
                   </div>
 
-                  {/* Edit / Crop Button on Main Image */}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditor('main', currentIndex)}
-                    className="absolute bottom-2 left-2 bg-black/80 hover:bg-black text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 shadow-md backdrop-blur-sm transition-all active:scale-95"
-                    title="قص وتعديل الصورة وتشويش الخلفية"
-                  >
-                    <Crop className="w-3.5 h-3.5 text-amber-400" />
-                    <span>تعديل الصورة</span>
-                  </button>
+                  {/* Hidden file input for replacing main image */}
+                  <input
+                    type="file"
+                    ref={replaceMainInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleReplaceMainImage(e.target.files)}
+                  />
+
+                  {/* Action Buttons on Main Image */}
+                  <div className="absolute bottom-2 inset-x-2 flex items-center justify-between gap-1.5">
+                    {/* Replace Image Button */}
+                    <button
+                      type="button"
+                      onClick={() => replaceMainInputRef.current?.click()}
+                      className="flex-1 bg-white/90 hover:bg-white text-gray-900 px-2 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95 border border-black/10"
+                      title="استبدال هذه الصورة بصورة أخرى جديدة من الاستوديو"
+                    >
+                      <RefreshCw className="w-3 h-3 text-brand" />
+                      <span>استبدال</span>
+                    </button>
+
+                    {/* Edit / Crop / Blur Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditor('main', currentIndex)}
+                      className="flex-1 bg-black/85 hover:bg-black text-white px-2 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95"
+                      title="قص وتعديل وطمس الأسعار بالإصبع"
+                    >
+                      <Crop className="w-3 h-3 text-amber-400" />
+                      <span>تعديل</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Additional Images Section */}
@@ -725,7 +797,7 @@ export default function BulkUploadClient() {
 
             {/* 3. المجموعة والمجموعات الفرعية (افتراضياً: الملابس) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-xs font-black text-gray-800 mb-1">
                   المجموعة الرئيسية (افتراضياً: الملابس)
                 </label>
@@ -741,16 +813,52 @@ export default function BulkUploadClient() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-black text-gray-800 mb-1">الكمية المتوفرة</label>
-                <input 
-                  type="number"
-                  value={currentCard.stock}
-                  onChange={(e) => updateCard(currentIndex, { stock: e.target.value })}
-                  min="0"
-                  dir="ltr"
-                  className="w-full rounded-xl border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                />
+              {/* زر القائمة المنسدلة لإظهار/إخفاء الكمية المتوفرة والمورد معاً في نفس السطر على الهاتف */}
+              <div className="md:col-span-2">
+                <button
+                  type="button"
+                  onClick={() => setShowStockSupplier(!showStockSupplier)}
+                  className="w-full flex items-center justify-between p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-bold transition-all border border-gray-200"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>الكمية المتوفرة والمورد</span>
+                    <span className="text-[11px] font-normal text-gray-500">
+                      (الكمية: {currentCard.stock || 10} {currentCard.supplierId ? `• المورد: ${suppliers.find(s => s.id === currentCard.supplierId)?.name || ''}` : ''})
+                    </span>
+                  </span>
+                  {showStockSupplier ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                </button>
+
+                {showStockSupplier && (
+                  <div className="grid grid-cols-2 gap-3 mt-3 p-3 bg-gray-50/50 rounded-xl border border-gray-200 animate-in fade-in duration-200">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">الكمية المتوفرة</label>
+                      <input 
+                        type="number" 
+                        value={currentCard.stock} 
+                        onChange={(e) => updateCard(currentIndex, { stock: e.target.value })} 
+                        min="0" 
+                        dir="ltr"
+                        className="w-full rounded-lg border-gray-300 border p-2.5 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" 
+                      />
+                      <p className="text-[10px] text-gray-500 mt-1">افتراضياً: 10</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">المورد</label>
+                      <select 
+                        value={currentCard.supplierId || ''} 
+                        onChange={(e) => updateCard(currentIndex, { supplierId: e.target.value })} 
+                        className="w-full rounded-lg border-gray-300 border p-2.5 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                      >
+                        <option value="">بدون مورد</option>
+                        {suppliers.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="md:col-span-2">
@@ -900,6 +1008,52 @@ export default function BulkUploadClient() {
         onClose={() => setEditingImage(prev => ({ ...prev, isOpen: false }))}
         onSave={handleSaveEditor}
       />
+
+      {/* Safe Delete Confirmation Modal */}
+      {confirmDeleteIndex !== null && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          dir="rtl"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-gray-100">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6 stroke-[2.5]" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-black text-gray-900">
+                هل أنت متأكد من حذف هذا النموذج؟
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                لن يتم رفع هذا المنتج إلى المتجر وسيتم استبعاده فوراً من قائمة الإضافة الحالية.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteIndex(null)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all"
+              >
+                تراجع
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const idxToDelete = confirmDeleteIndex
+                  setConfirmDeleteIndex(null)
+                  removeCard(idxToDelete)
+                  toast.success('تم حذف النموذج واستبعاده بأمان')
+                }}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl shadow-md transition-all active:scale-95"
+              >
+                نعم، احذف النموذج
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
