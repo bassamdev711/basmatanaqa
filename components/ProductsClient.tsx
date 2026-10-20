@@ -441,7 +441,7 @@ export default function ProductsClient({
           </h2>
           <div className="w-12 md:w-16 h-[2px] bg-brand mx-auto mb-5 md:mb-8" />
           <Link
-            href="/products"
+            href={type === 'latest-48h' ? '/products?collection=new-arrivals' : '/products'}
             className="inline-block text-xs md:text-sm text-brand border-b border-brand/30 pb-1 hover:border-brand transition-colors"
           >
             عرض المجموعة كاملة ←

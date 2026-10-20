@@ -9,6 +9,7 @@ interface FilterChip {
   label: string;
   href: string;
   imageUrl: string | null;
+  customIcon?: 'new' | null;
 }
 
 interface CategoryFilterChipsProps {
@@ -100,6 +101,18 @@ export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'c
                             sizes="(max-width: 768px) 56px, 64px"
                             draggable={false}
                           />
+                        ) : f.customIcon === 'new' ? (
+                          <div className="w-full h-full bg-gradient-to-tr from-brand via-[#2b241c] to-brand flex items-center justify-center relative">
+                            {/* Crown / Sparkle royal icon */}
+                            <svg className="w-6 h-6 text-accent animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2L14.4 8.6L21.5 9.2L16.2 13.8L17.8 20.8L12 17.2L6.2 20.8L7.8 13.8L2.5 9.2L9.6 8.6L12 2Z" />
+                            </svg>
+                            {/* Red pulse live dot */}
+                            <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                            </span>
+                          </div>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <LayoutGrid className={`w-5 h-5 md:w-6 md:h-6 transition-all ${
@@ -109,10 +122,13 @@ export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'c
                         )}
                       </div>
                     </div>
-                    <span className={`text-[10px] md:text-xs font-bold transition-all duration-300 pointer-events-none text-center whitespace-nowrap px-1 ${
-                      isActive ? 'text-brand scale-105' : 'text-foreground/70 group-hover:text-brand'
+                    <span className={`text-[10px] md:text-xs font-bold transition-all duration-300 pointer-events-none text-center whitespace-nowrap px-1 flex items-center gap-1 ${
+                      isActive ? 'text-brand scale-105 font-black' : f.customIcon === 'new' ? 'text-brand font-extrabold' : 'text-foreground/70 group-hover:text-brand'
                     }`}>
                       {f.label}
+                      {f.customIcon === 'new' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                      )}
                     </span>
                   </>
                 ) : (

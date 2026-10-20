@@ -87,10 +87,15 @@ export default async function ProductsPage({
       }
     }
 
+    const isNewArrivals = collection === 'new-arrivals';
+    const hours48Ago = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
     const whereClause: Prisma.ProductWhereInput = {
       isActive: true,
       stock: { gt: 0 },
-      ...(collection ? { collection: { slug: collection } } : {}),
+      ...(isNewArrivals 
+        ? { createdAt: { gte: hours48Ago } } 
+        : collection ? { collection: { slug: collection } } : {}),
       ...subCategoryFilterObj,
       ...(minPrice !== undefined || maxPrice !== undefined ? {
          price: {
@@ -192,6 +197,7 @@ export default async function ProductsPage({
 
   const chipFilters = [
     { label: 'الكل', href: '/products', imageUrl: null },
+    { label: 'جديد شهرزاد', href: '/products?collection=new-arrivals', imageUrl: null, customIcon: 'new' as const },
     ...dbCollections.map(c => ({
       label: c.name,
       href: `/products?collection=${c.slug}`,

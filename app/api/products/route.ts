@@ -42,10 +42,15 @@ export async function GET(req: Request) {
       }
     }
 
+    const isNewArrivals = collection === 'new-arrivals'
+    const hours48Ago = new Date(Date.now() - 48 * 60 * 60 * 1000)
+
     const whereClause: Prisma.ProductWhereInput = {
       isActive: true,
       stock: { gt: 0 },
-      ...(collection ? { collection: { slug: collection } } : {}),
+      ...(isNewArrivals
+        ? { createdAt: { gte: hours48Ago } }
+        : collection ? { collection: { slug: collection } } : {}),
       ...subCategoryFilterObj,
       ...(minPrice !== undefined || maxPrice !== undefined
         ? {
