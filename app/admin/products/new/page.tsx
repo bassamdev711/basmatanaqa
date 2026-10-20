@@ -213,8 +213,25 @@ export default function NewProductPage() {
         <input type="hidden" name="hasSizes" value={hasSizes.toString()} />
         <input type="hidden" name="availableSizes" value={JSON.stringify(availableSizes)} />
 
-        {/* --- الأقسام الأساسية المرئية دائماً --- */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-6">
+        {/* --- 1. صورة المنتج الأساسية والصور الإضافية في قمة النموذج --- */}
+        <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6 space-y-4">
+          <div className="flex items-center justify-between border-b pb-3">
+            <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-amber-500" />
+              <span>صورة المنتج الأساسية والصور الإضافية *</span>
+            </h3>
+            <span className="text-xs text-gray-400 font-bold">يمكنك القص، التعديل، وطمس الأسعار بالإصبع</span>
+          </div>
+          <ImageUpload
+            mainImage={mainImage}
+            additionalImages={extraImages}
+            onMainImageChange={setMainImage}
+            onAdditionalImagesChange={setExtraImages}
+          />
+        </div>
+
+        {/* --- 2. الأقسام الأساسية المرئية دائماً --- */}
+        <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6 space-y-6">
           <h3 className="text-lg font-bold text-gray-900 border-b pb-3 flex items-center gap-2">
             <Info className="w-5 h-5 text-gray-500" /> المعلومات الأساسية
           </h3>
@@ -425,18 +442,6 @@ export default function NewProductPage() {
             <textarea name="description" rows={4} value={description} onChange={e => setDescription(e.target.value)} 
               className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
           </div>
-        </div>
-
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-4">
-          <h3 className="text-lg font-bold text-gray-900 border-b pb-3 flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-gray-500" /> صور المنتج
-          </h3>
-          <ImageUpload
-            mainImage={mainImage}
-            additionalImages={extraImages}
-            onMainImageChange={setMainImage}
-            onAdditionalImagesChange={setExtraImages}
-          />
         </div>
 
         {/* --- حالة الظهور والتمييز --- */}

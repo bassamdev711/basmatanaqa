@@ -136,22 +136,94 @@ export default function EditProductClient({
         <input type="hidden" name="hasSizes" value={hasSizes.toString()} />
         <input type="hidden" name="availableSizes" value={JSON.stringify(availableSizes)} />
 
-        {/* --- الأقسام الأساسية المرئية دائماً --- */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-6">
+        {/* --- 1. صورة المنتج الأساسية والصور الإضافية في قمة النموذج --- */}
+        <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6 space-y-4">
+          <div className="flex items-center justify-between border-b pb-3">
+            <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-amber-500" />
+              <span>صورة المنتج الأساسية والصور الإضافية *</span>
+            </h3>
+            <span className="text-xs text-gray-400 font-bold">يمكنك القص، التعديل، وطمس الأسعار بالإصبع</span>
+          </div>
+          <ImageUpload
+            mainImage={mainImage}
+            additionalImages={extraImages}
+            onMainImageChange={setMainImage}
+            onAdditionalImagesChange={setExtraImages}
+          />
+        </div>
+
+        {/* --- 2. المعلومات الأساسية مع المساعدات الذكية --- */}
+        <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6 space-y-6">
           <h3 className="text-lg font-bold text-gray-900 border-b pb-3 flex items-center gap-2">
             <Info className="w-5 h-5 text-gray-500" /> المعلومات الأساسية
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">اسم المنتج *</label>
-              <input type="text" name="name" required value={name} onChange={e => setName(e.target.value)}
+              <input type="text" name="name" required value={name} onChange={e => {
+                setName(e.target.value)
+                setSlug(generateSlug(e.target.value))
+              }}
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+              
+              {/* كلمات مساعدة سريعة لاسم المنتج */}
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[10px] text-gray-400 font-bold ml-1">مساعد الاسم:</span>
+                {[
+                  'فستان',
+                  'نسائي',
+                  'بنطلون',
+                  'جينز',
+                  'طقم',
+                  'قطعتين',
+                  'ولادي',
+                  'بناتي',
+                  'اطفال',
+                  'بيبي',
+                  'روب',
+                  'سهره',
+                ].map((word) => (
+                  <button
+                    key={word}
+                    type="button"
+                    onClick={() => {
+                      const updated = name.trim() ? `${name.trim()} ${word}` : word
+                      setName(updated)
+                      setSlug(generateSlug(updated))
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200 active:bg-amber-100 text-gray-800 border border-gray-200 transition-all hover:scale-105 select-none"
+                  >
+                    + {word}
+                  </button>
+                ))}
+              </div>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">السعر (ر.ي) *</label>
               <input type="number" name="price" step="0.01" min="0" required defaultValue={product.price} dir="ltr"
+                id="edit-price-input"
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
+              
+              {/* أزرار مساعدة سريعة للأسعار الشائعة */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {['1000', '2000', '2200', '2500', '2700', '3000', '3200', '4000'].map((presetPrice) => (
+                  <button
+                    key={presetPrice}
+                    type="button"
+                    onClick={() => {
+                      const priceInput = document.getElementById('edit-price-input') as HTMLInputElement
+                      if (priceInput) priceInput.value = presetPrice
+                    }}
+                    className="px-2 py-1 rounded-lg text-xs font-black transition-all border bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200 hover:border-gray-300"
+                  >
+                    {presetPrice}
+                  </button>
+                ))}
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">الكمية المتوفرة</label>
               <input type="number" name="stock" min="0" defaultValue={product.stock} dir="ltr"
@@ -203,18 +275,6 @@ export default function EditProductClient({
             <textarea name="description" rows={4} value={description} onChange={e => setDescription(e.target.value)}
               className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
           </div>
-        </div>
-
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-4">
-          <h3 className="text-lg font-bold text-gray-900 border-b pb-3 flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-gray-500" /> صور المنتج
-          </h3>
-          <ImageUpload
-            mainImage={mainImage}
-            additionalImages={extraImages}
-            onMainImageChange={setMainImage}
-            onAdditionalImagesChange={setExtraImages}
-          />
         </div>
 
         {/* --- حالة الظهور والتمييز --- */}
