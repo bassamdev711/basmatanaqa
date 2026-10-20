@@ -9,16 +9,24 @@ import crypto from 'crypto'
 
 export const runtime = 'nodejs'
 
-const MAX_FILE_SIZE = 12 * 1024 * 1024
-const WARN_FILE_SIZE = 4 * 1024 * 1024
+const MAX_FILE_SIZE = 25 * 1024 * 1024 // رفع الحد الأقصى إلى 25 ميجابايت للتعامل مع الصور الاحترافية والكاميرات
+const WARN_FILE_SIZE = 8 * 1024 * 1024
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/jpg',
+  'image/pjpeg',
   'image/png',
   'image/webp',
   'image/avif',
   'image/heic',
   'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
+  'image/gif',
+  'image/bmp',
+  'image/x-ms-bmp',
+  'image/tiff',
+  'image/svg+xml',
   'application/pdf',
 ])
 
@@ -32,9 +40,16 @@ const MAGIC_BYTES: Record<string, { magic: Buffer; ext: string; mime: string }[]
   'image/webp': [
     { magic: Buffer.from([0x52, 0x49, 0x46, 0x46]), ext: 'webp', mime: 'image/webp' }
   ],
+  'image/gif': [
+    { magic: Buffer.from([0x47, 0x49, 0x46, 0x38]), ext: 'gif', mime: 'image/gif' }
+  ],
+  'image/bmp': [
+    { magic: Buffer.from([0x42, 0x4d]), ext: 'bmp', mime: 'image/bmp' }
+  ],
   'image/heic': [
     { magic: Buffer.from([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]), ext: 'heic', mime: 'image/heic' },
-    { magic: Buffer.from([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]), ext: 'heic', mime: 'image/heic' }
+    { magic: Buffer.from([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]), ext: 'heic', mime: 'image/heic' },
+    { magic: Buffer.from([0x00, 0x00, 0x00, 0x1c, 0x66, 0x74, 0x79, 0x70]), ext: 'heic', mime: 'image/heic' }
   ],
   'application/pdf': [
     { magic: Buffer.from([0x25, 0x50, 0x44, 0x46]), ext: 'pdf', mime: 'application/pdf' }
@@ -116,7 +131,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (!ALLOWED_MIME_TYPES.has(file.type) || file.size <= 0 || file.size > MAX_FILE_SIZE) {
+  const isImageFile = file.type.startsWith('image/')
+  const isAllowedType = ALLOWED_MIME_TYPES.has(file.type) || isImageFile
+
+  if (!isAllowedType || file.size <= 0 || file.size > MAX_FILE_SIZE) {
     return NextResponse.json({ error: 'نوع الملف أو حجمه غير مدعوم.' }, { status: file.size > MAX_FILE_SIZE ? 413 : 400 })
   }
 
