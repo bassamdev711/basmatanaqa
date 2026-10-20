@@ -23,6 +23,7 @@ export default function Hero({ data = {}, brandName = 'شهرزاد' }: {
   brandNameLatin?: string
 }) {
   const scrollToProducts = () => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToLatest = () => document.getElementById("latest-48h")?.scrollIntoView({ behavior: "smooth" });
   const title = data.heroTitle || brandName || brandDefaults.title;
   const subtitle = data.heroSubtitle || brandDefaults.subtitle;
   const description = data.heroDescription || brandDefaults.description;
@@ -41,7 +42,22 @@ export default function Hero({ data = {}, brandName = 'شهرزاد' }: {
           <h1 className="mb-5 text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-7xl lg:text-[6.2rem]">{title}</h1>
           <p className="mb-6 text-2xl font-light leading-snug text-brand sm:text-3xl">{subtitle}</p>
           <p className="mx-auto mb-10 max-w-xl whitespace-pre-line text-base leading-8 text-foreground/65 lg:mx-0">{description}</p>
-          <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+          <div className="flex flex-wrap items-center justify-center gap-3.5 lg:justify-start">
+            {/* زر إيش الجديد؟ بلمسة شهرزاد الفاخرة */}
+            <button
+              onClick={scrollToLatest}
+              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-xl border border-accent/40 bg-gradient-to-r from-brand via-[#241f19] to-brand px-6 py-4 text-sm font-bold text-surface shadow-[0_4px_20px_rgba(184,138,69,0.25)] transition-all duration-300 hover:scale-[1.03] hover:border-accent hover:shadow-[0_6px_25px_rgba(184,138,69,0.4)] active:scale-95"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
+              </span>
+              <span className="tracking-wide text-accent transition-colors group-hover:text-white">إيش الجديد؟</span>
+              <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
+                جديد
+              </span>
+            </button>
+
             <button onClick={scrollToProducts} className="btn btn-primary btn-lg">{data.heroPrimaryButton || "تسوّق أحدث التشكيلات"}</button>
             <a href="#about" className="btn btn-outline btn-lg">{data.heroSecondaryButton || "قصتنا"}</a>
           </div>
