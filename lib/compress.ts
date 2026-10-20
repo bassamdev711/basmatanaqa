@@ -112,11 +112,13 @@ export async function compressImageClientSide(
     return file;
   }
 
+  const isVeryLarge = file.size > 5 * 1024 * 1024; // أكبر من 5 ميجابايت
+
   const defaultOptions = {
-    maxSizeMB: options.maxSizeMB || 0.4, // أقصى حجم 400 كيلوبايت
-    maxWidthOrHeight: options.maxWidthOrHeight || 1280, // أقصى عرض 1280
-    useWebWorker: true,
-    fileType: 'image/webp', // تحويل إلى webp لأفضل ضغط
+    maxSizeMB: options.maxSizeMB || 0.6, // أقصى حجم 600 كيلوبايت
+    maxWidthOrHeight: options.maxWidthOrHeight || 1440, // أقصى دقة 1440px فائقة الوضوح
+    useWebWorker: !isVeryLarge, // الملفات الضخمة من الكاميرا يتم ضغطها دون web worker لتفادي انهيار الخيط المنفصل في الهواتف
+    fileType: 'image/webp', // تحويل إلى webp لأفضل جودة وحجم
   };
 
   try {
@@ -130,9 +132,9 @@ export async function compressImageClientSide(
       type: compressedBlob.type,
     });
   } catch (error) {
-    console.warn('browser-image-compression فشل، جاري المحاولة عبر canvas:', error);
+    console.warn('browser-image-compression فشل، جاري المحاولة عبر canvas السريع والمباشر:', error);
     try {
-      const canvasFile = await compressViaCanvas(file, defaultOptions.maxWidthOrHeight, 0.8);
+      const canvasFile = await compressViaCanvas(file, defaultOptions.maxWidthOrHeight, 0.82);
       if (canvasFile && canvasFile.size > 0) {
         return canvasFile;
       }
