@@ -45,6 +45,7 @@ interface Product {
   collection?: { name: string } | null
   subCategory?: { name: string } | null
   engName?: string
+  isNew48h?: boolean
   variants?: ProductVariant[]
 }
 
@@ -295,6 +296,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   {hasDiscount && (
                     <div className="absolute top-4 right-4 bg-red-600 text-white font-bold text-sm px-3 py-1 rounded-full shadow-sm z-10">
                       وفر {discountPercentage}%
+                    </div>
+                  )}
+                  {product.isNew48h && (
+                    <div className="absolute top-4 left-4 bg-red-600 text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm z-10">
+                      جديد
                     </div>
                   )}
                 </motion.div>

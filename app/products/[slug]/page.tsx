@@ -147,6 +147,7 @@ export default async function ProductDetailPage({
               ...product,
               price: Number(product.price),
               compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+              isNew48h: product.createdAt ? new Date(product.createdAt).getTime() >= hours48AgoTime : false,
               variants: product.variants.map(v => ({
                 ...v,
                 price: Number(v.price),
