@@ -28,7 +28,9 @@ export async function generateMetadata({
   if (!product) return { robots: { index: false, follow: false } }
   const siteUrl = getSiteUrl(process.env.NEXT_PUBLIC_SITE_URL || store.storeUrl)
   const productUrl = new URL(`/products/${product.slug}`, siteUrl).toString()
-  const imageUrl = product.imageUrl ? new URL(product.imageUrl, siteUrl).toString() : undefined
+  const socialImageUrl = product.imageUrl
+    ? new URL(`/products/${encodeURIComponent(product.slug)}/share-image.jpg`, siteUrl).toString()
+    : undefined
   const description = product.description || `اكتشف ${product.name} من ${store.name}`
   return {
     title: `${product.name} | ${store.name}`,
@@ -41,13 +43,21 @@ export async function generateMetadata({
       url: productUrl,
       siteName: store.name,
       type: 'website',
-      ...(imageUrl ? { images: [{ url: imageUrl, alt: product.name }] } : {}),
+      ...(socialImageUrl ? {
+        images: [{
+          url: socialImageUrl,
+          width: 1200,
+          height: 1200,
+          type: 'image/jpeg',
+          alt: product.name,
+        }],
+      } : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title: `${product.name} | ${store.name}`,
       description,
-      ...(imageUrl ? { images: [imageUrl] } : {}),
+      ...(socialImageUrl ? { images: [socialImageUrl] } : {}),
     },
   }
 }
