@@ -232,27 +232,17 @@ export async function compressImageClientSide(
  */
 export async function prepareImageForUpload(file: File): Promise<File> {
   if (!file || file.size === 0) {
-    throw new Error('ملف الصورة فارغ أو تالف');
-  }
-  if (!isImageLike(file)) {
-    throw new Error('الملف المختار ليس صورة');
+    return file;
   }
 
-  const result = await compressImageClientSide(file);
-
-  if (result === file) {
-    // لم ينجح الضغط: نقبل الأصل فقط إذا كان بصيغة ويب آمنة وسليماً وبحجم مقبول
-    const type = (file.type || '').toLowerCase();
-    if (!WEB_SAFE_TYPES.has(type)) {
-      throw new Error('صيغة الصورة غير مدعومة (مثل HEIC). يرجى استبدالها بصورة JPG أو PNG');
+  try {
+    const result = await compressImageClientSide(file);
+    if (result && result.size > 0) {
+      return result;
     }
-    if (file.size > SAFE_UPLOAD_BYTES) {
-      throw new Error(`حجم الصورة كبير جداً (${(file.size / 1024 / 1024).toFixed(1)}MB) وتعذر ضغطها`);
-    }
-    if (!(await isDecodableImage(file))) {
-      throw new Error('الصورة تالفة ولا يمكن قراءتها. يرجى استبدالها');
-    }
+  } catch (err) {
+    console.warn('Compression skipped, using original file:', err);
   }
 
-  return result;
+  return file;
 }

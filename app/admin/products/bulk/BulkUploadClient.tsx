@@ -28,32 +28,7 @@ import { getSuppliers } from '../../suppliers/actions'
 import SizeSelector from '../SizeSelector'
 import ImageEditorModal from '../ImageEditorModal'
 import { toast } from 'react-hot-toast'
-import { compressImageClientSide, isDecodableImage } from '@/lib/compress'
-
-/** يفصل الصور السليمة عن التالفة أو غير المدعومة في هذا المتصفح (مثل HEIC على أندرويد) */
-async function filterValidImages(files: File[]): Promise<{ valid: File[]; rejected: number }> {
-  const valid: File[] = []
-  let rejected = 0
-  for (const file of files) {
-    if (file && file.size > 0 && (await isDecodableImage(file, false))) {
-      valid.push(file)
-    } else {
-      rejected++
-    }
-  }
-  return { valid, rejected }
-}
-
-const notifyRejected = (count: number) => {
-  if (count > 0) {
-    toast.error(
-      count === 1
-        ? 'تم تجاهل صورة واحدة لأنها تالفة أو بصيغة غير مدعومة (مثل HEIC)'
-        : `تم تجاهل ${count} صور لأنها تالفة أو بصيغة غير مدعومة (مثل HEIC)`,
-      { duration: 6000 }
-    )
-  }
-}
+import { compressImageClientSide } from '@/lib/compress'
 
 type SupplierItem = {
   id: string
@@ -124,27 +99,22 @@ export default function BulkUploadClient() {
   })
 
   // Handle replacing the main image of a card with a new chosen photo
-  const handleReplaceMainImage = async (files: FileList | null) => {
+  const handleReplaceMainImage = (files: FileList | null) => {
     if (!files || files.length === 0 || !products[currentIndex]) return
     const file = files[0]
-    const targetIndex = currentIndex
-    if (replaceMainInputRef.current) {
-      replaceMainInputRef.current.value = ''
-    }
     try {
-      const { valid, rejected } = await filterValidImages([file])
-      if (rejected > 0 || valid.length === 0) {
-        notifyRejected(1)
-        return
-      }
-      const blobUrl = URL.createObjectURL(valid[0])
-      updateCard(targetIndex, {
+      const blobUrl = URL.createObjectURL(file)
+      updateCard(currentIndex, {
         mainImageBlobUrl: blobUrl,
-        mainImageFile: valid[0],
+        mainImageFile: file,
       })
       toast.success('تم استبدال الصورة بنجاح!')
     } catch {
       toast.error('فشل استبدال الصورة')
+    } finally {
+      if (replaceMainInputRef.current) {
+        replaceMainInputRef.current.value = ''
+      }
     }
   }
 
@@ -245,19 +215,10 @@ export default function BulkUploadClient() {
   }
 
   // Handle Bulk Image Selection
-  const handleFilesSelected = async (files: FileList | null) => {
+  const handleFilesSelected = (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    const selected = Array.from(files)
-    // Reset file input so selecting files again will trigger onChange reliably
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-
-    const loadingId = selected.length > 3 ? toast.loading(`جاري فحص ${selected.length} صورة...`) : undefined
-    const { valid: fileArray, rejected } = await filterValidImages(selected)
-    if (loadingId) toast.dismiss(loadingId)
-    notifyRejected(rejected)
+    const fileArray = Array.from(files)
     const newCards: BulkProductCard[] = []
 
     for (let i = 0; i < fileArray.length; i++) {
@@ -296,6 +257,11 @@ export default function BulkUploadClient() {
       })
       toast.success(`تم فتح ${newCards.length} منتج بنجاح وبكامل جودة الصور!`)
     }
+
+    // Reset file input so selecting files again will trigger onChange reliably
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const updateCard = (index: number, updates: Partial<BulkProductCard>) => {
@@ -319,17 +285,17 @@ export default function BulkUploadClient() {
   }
 
   // Add extra images to current card with multiple support and auto-reset
-  const handleAddExtraImage = async (files: FileList | null) => {
+  const handleAddExtraImage = (files: FileList | null) => {
     if (!files || files.length === 0 || !products[currentIndex]) return
-    const targetIndex = currentIndex
-    const selected = Array.from(files)
+    const fileArray = Array.from(files)
     
     // Reset file input value immediately so selecting the same file later works reliably
     if (extraImgInputRef.current) {
       extraImgInputRef.current.value = ''
     }
 
-    const currentExtras = products[targetIndex].extraImagesBlobUrls || []
+    const currentExtras = products[currentIndex].extraImagesBlobUrls || []
+    const currentExtraFiles = products[currentIndex].extraImageFiles || []
     const availableSlots = 10 - currentExtras.length
 
     if (availableSlots <= 0) {
@@ -337,14 +303,11 @@ export default function BulkUploadClient() {
       return
     }
 
-    const { valid, rejected } = await filterValidImages(selected.slice(0, availableSlots))
-    notifyRejected(rejected)
-    if (valid.length === 0) return
-
+    const filesToProcess = fileArray.slice(0, availableSlots)
     const newBlobUrls: string[] = []
     const newFiles: File[] = []
 
-    for (const file of valid) {
+    for (const file of filesToProcess) {
       try {
         const blobUrl = URL.createObjectURL(file)
         newBlobUrls.push(blobUrl)
@@ -354,18 +317,9 @@ export default function BulkUploadClient() {
       }
     }
 
-    // نستخدم الحالة الأحدث لتجنب ضياع صور أُضيفت أثناء الفحص
-    setProducts(prev => {
-      const copy = [...prev]
-      const card = copy[targetIndex]
-      if (card) {
-        copy[targetIndex] = {
-          ...card,
-          extraImagesBlobUrls: [...(card.extraImagesBlobUrls || []), ...newBlobUrls].slice(0, 10),
-          extraImageFiles: [...(card.extraImageFiles || []), ...newFiles].slice(0, 10),
-        }
-      }
-      return copy
+    updateCard(currentIndex, { 
+      extraImagesBlobUrls: [...currentExtras, ...newBlobUrls],
+      extraImageFiles: [...currentExtraFiles, ...newFiles],
     })
 
     toast.success(newFiles.length > 1 ? `تمت إضافة ${newFiles.length} صور إضافية بنجاح` : 'تمت إضافة الصورة الإضافية بنجاح')

@@ -62,23 +62,19 @@ async function resolveAndPrepare(source: File | string): Promise<File> {
   if (source instanceof File) {
     file = source;
   } else {
-    let response: Response;
     try {
-      response = await fetch(source);
+      const response = await fetch(source);
+      const blob = await response.blob();
+      file = new File([blob], `product-photo-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' });
     } catch {
-      throw new PermanentUploadError('تعذر قراءة ملف الصورة من الذاكرة المحلية (قد تكون الصفحة أُعيد تحميلها). يرجى إعادة اختيار الصورة');
+      throw new PermanentUploadError('تعذر قراءة ملف الصورة من الذاكرة المؤقتة، يرجى إعادة اختيارها');
     }
-    if (!response.ok) {
-      throw new PermanentUploadError('تعذر قراءة ملف الصورة من الذاكرة المحلية. يرجى إعادة اختيار الصورة');
-    }
-    const blob = await response.blob();
-    file = new File([blob], `product-photo-${Date.now()}`, { type: blob.type || 'image/jpeg' });
   }
 
   try {
     return await prepareImageForUpload(file);
-  } catch (err: any) {
-    throw new PermanentUploadError(err?.message || 'الصورة غير صالحة للرفع');
+  } catch {
+    return file;
   }
 }
 
