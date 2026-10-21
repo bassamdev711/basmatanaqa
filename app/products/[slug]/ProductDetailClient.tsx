@@ -159,62 +159,24 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     return true
   }
 
-  const handleShare = async () => {
-    // Find active image index in allImages
+  const handleShare = () => {
+    // استخدم نفس مسار واتساب الذي يعرض معاينة المنتج والصورة بنجاح
     const activeImageIdx = allImages.findIndex(img => img === activeImage)
-    const code = product.shortCode || product.slug
-
-    // Build query params for state preservation
-    const queryParts: string[] = []
-    if (activeImageIdx > 0) {
-      queryParts.push(`img=${activeImageIdx}`)
-    }
     const chosenSize = selectedDynamicSize || selectedVariant?.size
-    if (chosenSize) {
-      queryParts.push(`size=${encodeURIComponent(chosenSize)}`)
-    }
-    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
-    const shortUrl = `${window.location.origin}/p/${code}${queryString}`
-
-    // Compose elegant and attractive multi-line message with courteous emojis
-    const lines = [
-      '✨ متجر شهرزاد ✨',
-      `🛍️ المنتج: ${product.name}`,
-      `💰 السعر: ${currentPrice} ${currency}`,
-    ]
-
-    if (product.collection?.name) {
-      lines.push(`🏷️ القسم: ${product.collection.name}`)
-    }
-    if (product.subCategory?.name) {
-      lines.push(`📂 التصنيف: ${product.subCategory.name}`)
-    }
-    if (chosenSize) {
-      lines.push(`📏 المقاس المختار: ${chosenSize}`)
-    }
-
-    lines.push('')
-    lines.push('🔗 رابط وتفاصيل المنتج:')
-    lines.push(shortUrl)
-
-    const shareText = lines.join('\n')
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${product.name} | متجر شهرزاد`,
-          text: lines.slice(0, -2).join('\n'),
-          url: shortUrl,
-        })
-      } catch (err) {
-        if ((err as any)?.name !== 'AbortError') {
-          console.log('Error sharing', err)
-        }
-      }
-    } else {
-      navigator.clipboard.writeText(shareText)
-      showToast('success', 'تم نسخ تفاصيل ورابط المنتج بنجاح!')
-    }
+    const url = getProductWhatsAppLink({
+      name: product.name,
+      size: chosenSize,
+      price: currentPrice,
+      currency,
+      quantity: 1,
+      slug: product.slug,
+      shortCode: product.shortCode,
+      imageIndex: activeImageIdx >= 0 ? activeImageIdx : 0,
+      categoryName: product.collection?.name || null,
+      subCategoryName: product.subCategory?.name || null,
+      purpose: 'share',
+    })
+    window.open(url, '_blank')
   }
 
   const handleBuyNow = (e: React.MouseEvent<HTMLButtonElement>) => {
