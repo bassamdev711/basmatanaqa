@@ -147,6 +147,21 @@ export async function POST(request: NextRequest) {
     detectedType = { ext: 'avif', mime: 'image/avif' }
   }
 
+  if (!isReceiptUpload) {
+    // صور المنتجات: يجب أن يكون المحتوى الفعلي (Magic Bytes) صورة ويب سليمة تعرضها كل المتصفحات.
+    // نرفض الملفات التالفة أو مجهولة النوع أو HEIC بدلاً من تخزين صورة لا تظهر للعملاء.
+    const WEB_DISPLAYABLE = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'])
+    if (!detectedType && isAvif(buffer)) {
+      detectedType = { ext: 'avif', mime: 'image/avif' }
+    }
+    if (!detectedType || !WEB_DISPLAYABLE.has(detectedType.mime)) {
+      return NextResponse.json(
+        { error: detectedType?.mime === 'image/heic' ? 'صيغة HEIC غير مدعومة للعرض. يرجى استخدام صورة JPG أو PNG' : 'ملف الصورة تالف أو بصيغة غير مدعومة' },
+        { status: 415 }
+      )
+    }
+  }
+
   if (!detectedType) {
     // محاولة استنتاج النوع من امتداد الملف إذا أرسل المتصفح ترويسة غير معيارية
     const extMatch = fileName.match(/\.([a-z0-9]+)$/i)

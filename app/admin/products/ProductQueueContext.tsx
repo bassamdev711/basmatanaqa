@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { compressImageClientSide } from '@/lib/compress';
+import { prepareImageForUpload } from '@/lib/compress';
 import { toast } from 'react-hot-toast';
 
 export type QueueProductItem = {
@@ -29,6 +29,10 @@ export type QueueProductItem = {
   seoScore?: number | null;
   isActive?: boolean;
 
+  // Upload progress cache: images already uploaded are never re-uploaded on retry
+  uploadedMainUrl?: string;
+  uploadedExtraUrls?: (string | null)[];
+
   // Queue Status
   status: 'pending' | 'processing' | 'success' | 'error';
   errorMessage?: string;
@@ -47,73 +51,90 @@ interface ProductQueueContextType {
 
 const ProductQueueContext = createContext<ProductQueueContextType | null>(null);
 
-// Upload helper with retries and direct File support
-async function uploadWithRetry(fileOrUrl: File | string, maxRetries = 3): Promise<string> {
-  // If already uploaded (https://), return as is
-  if (typeof fileOrUrl === 'string' && fileOrUrl.startsWith('https://')) return fileOrUrl;
+const UPLOAD_TIMEOUT_MS = 90_000;
 
+/** خطأ لا فائدة من إعادة المحاولة فيه (صورة تالفة، صيغة غير مدعومة، حصة التخزين...) */
+class PermanentUploadError extends Error {}
+
+/** يحول مصدر الصورة (ملف أو رابط blob محلي) إلى ملف جاهز ومضغوط وسليم للرفع */
+async function resolveAndPrepare(source: File | string): Promise<File> {
+  let file: File;
+  if (source instanceof File) {
+    file = source;
+  } else {
+    let response: Response;
+    try {
+      response = await fetch(source);
+    } catch {
+      throw new PermanentUploadError('تعذر قراءة ملف الصورة من الذاكرة المحلية (قد تكون الصفحة أُعيد تحميلها). يرجى إعادة اختيار الصورة');
+    }
+    if (!response.ok) {
+      throw new PermanentUploadError('تعذر قراءة ملف الصورة من الذاكرة المحلية. يرجى إعادة اختيار الصورة');
+    }
+    const blob = await response.blob();
+    file = new File([blob], `product-photo-${Date.now()}`, { type: blob.type || 'image/jpeg' });
+  }
+
+  try {
+    return await prepareImageForUpload(file);
+  } catch (err: any) {
+    throw new PermanentUploadError(err?.message || 'الصورة غير صالحة للرفع');
+  }
+}
+
+/** يرفع ملفاً جاهزاً مع إعادة المحاولة عند أخطاء الشبكة/الخادم فقط */
+async function uploadPreparedFile(file: File, maxRetries = 3): Promise<string> {
   let lastError: any = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
     try {
-      if (typeof fileOrUrl === 'string' && fileOrUrl.startsWith('https://')) {
-        // إذا كانت الصورة مرفوعة مسبقاً برابط خارجي أو سحابي نعيده مباشرة
-        return fileOrUrl;
-      }
-
-      let file: File;
-
-      if (fileOrUrl instanceof File) {
-        file = fileOrUrl;
-      } else {
-        // Fetch blob from local object URL
-        const response = await fetch(fileOrUrl);
-        if (!response.ok) {
-          throw new Error('تعذر قراءة ملف الصورة من الذاكرة المحلية (قد تكون الجلسة انتهت)');
-        }
-        const blob = await response.blob();
-        file = new File([blob], `product-photo-${Date.now()}.webp`, { type: blob.type || 'image/webp' });
-      }
-
-      // Compress client side only if needed (don't recompress already optimized webp images)
-      let compressedFile = file;
-      const isAlreadyCompressed = file.type === 'image/webp' && file.size < 1024 * 1024;
-      if (!isAlreadyCompressed) {
-        try {
-          compressedFile = await compressImageClientSide(file);
-        } catch (cErr) {
-          console.warn('Client compression fallback to original file:', cErr);
-        }
-      }
-
       const formData = new FormData();
-      formData.append('file', compressedFile);
+      formData.append('file', file, file.name || 'photo.webp');
 
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        signal: controller.signal,
       });
 
       if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || `خطأ في خادم الرفع (${res.status})`);
+        const errJson = await res.json().catch(() => ({} as any));
+        const msg = errJson.error || `خطأ في خادم الرفع (${res.status})`;
+        // أخطاء 4xx (عدا المهلة/الضغط) لن تُحل بإعادة المحاولة
+        if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
+          throw new PermanentUploadError(msg);
+        }
+        throw new Error(msg);
       }
 
       const data = await res.json();
-      if (!data.url) throw new Error('لم يرجع خادم التخزين رابط الصورة');
-
+      if (!data?.url || typeof data.url !== 'string' || !data.url.startsWith('https://')) {
+        throw new Error('لم يرجع خادم التخزين رابط صورة صالح');
+      }
       return data.url;
     } catch (err: any) {
-      lastError = err;
+      if (err instanceof PermanentUploadError) throw err;
+      lastError = err?.name === 'AbortError' ? new Error('انتهت مهلة رفع الصورة (اتصال بطيء)') : err;
       console.warn(`[Queue Upload] Attempt ${attempt} failed:`, err);
       if (attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, attempt * 1000));
+        await new Promise((r) => setTimeout(r, attempt * 1500));
       }
+    } finally {
+      clearTimeout(timer);
     }
   }
 
   throw lastError || new Error('فشل رفع الصورة بعد عدة محاولات');
+}
+
+/** يرفع صورة واحدة: إن كانت مرفوعة مسبقاً (https) تُعاد كما هي */
+async function uploadImage(source: File | string): Promise<string> {
+  if (typeof source === 'string' && source.startsWith('https://')) return source;
+  const prepared = await resolveAndPrepare(source);
+  return uploadPreparedFile(prepared, 3);
 }
 
 export function ProductQueueProvider({ children }: { children: React.ReactNode }) {
@@ -126,8 +147,26 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
     queueRef.current = queue;
   }, [queue]);
 
+  // تحذير قبل إغلاق/تحديث الصفحة إذا كانت هناك منتجات لم تُحفظ بعد
+  useEffect(() => {
+    const hasUnsaved = queue.some((q) => q.status === 'pending' || q.status === 'processing');
+    if (!hasUnsaved) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [queue]);
+
   // Main Queue Processor Loop - runs independently via interval
   useEffect(() => {
+    const patchItem = (id: string, patch: Partial<QueueProductItem>) => {
+      setQueue((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+      // تحديث المرجع فوراً حتى لا تضيع حالة التقدم قبل إعادة الرسم
+      queueRef.current = queueRef.current.map((item) => (item.id === id ? { ...item, ...patch } : item));
+    };
+
     const processNext = async () => {
       if (isProcessingRef.current) return;
 
@@ -139,40 +178,40 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
       isProcessingRef.current = true;
 
       // Mark item as processing
-      setQueue((prev) =>
-        prev.map((item) => (item.id === nextItem.id ? { ...item, status: 'processing', errorMessage: undefined } : item))
-      );
+      patchItem(nextItem.id, { status: 'processing', errorMessage: undefined });
 
       try {
-        // 1. Upload Main Image
-        let uploadedMainUrl: string | null = null;
-        if (nextItem.mainImageFile) {
-          uploadedMainUrl = await uploadWithRetry(nextItem.mainImageFile, 3);
-        } else if (nextItem.mainImageFileUrl) {
-          uploadedMainUrl = await uploadWithRetry(nextItem.mainImageFileUrl, 3);
+        // 1. Upload Main Image (skipped if already uploaded in a previous attempt)
+        let uploadedMainUrl: string | null = nextItem.uploadedMainUrl || null;
+        if (!uploadedMainUrl) {
+          const mainSource = nextItem.mainImageFile || nextItem.mainImageFileUrl;
+          if (mainSource) {
+            try {
+              uploadedMainUrl = await uploadImage(mainSource);
+            } catch (err: any) {
+              throw new Error(`الصورة الأساسية: ${err?.message || 'فشل الرفع'}`);
+            }
+            patchItem(nextItem.id, { uploadedMainUrl });
+          }
         }
 
-        // 2. Upload Extra Images (resilient: one failed extra image does not cancel product creation)
-        let uploadedExtraUrls: string[] = [];
-        if (nextItem.extraImageFiles && nextItem.extraImageFiles.length > 0) {
-          for (const extraFile of nextItem.extraImageFiles) {
-            try {
-              const url = await uploadWithRetry(extraFile, 3);
-              uploadedExtraUrls.push(url);
-            } catch (err) {
-              console.warn('[Queue Upload] One extra image failed to upload, continuing with remaining images:', err);
-            }
+        // 2. Upload Extra Images — كل صورة يجب أن تُرفع بنجاح، ولا يُنشأ المنتج بصور ناقصة
+        const extraSources: (File | string)[] =
+          nextItem.extraImageFiles && nextItem.extraImageFiles.length > 0
+            ? nextItem.extraImageFiles
+            : nextItem.extraImageFileUrls || [];
+        const uploadedExtras: (string | null)[] = extraSources.map((_, i) => nextItem.uploadedExtraUrls?.[i] || null);
+
+        for (let i = 0; i < extraSources.length; i++) {
+          if (uploadedExtras[i]) continue;
+          try {
+            uploadedExtras[i] = await uploadImage(extraSources[i]);
+          } catch (err: any) {
+            throw new Error(`الصورة الإضافية رقم ${i + 1}: ${err?.message || 'فشل الرفع'}`);
           }
-        } else if (nextItem.extraImageFileUrls && nextItem.extraImageFileUrls.length > 0) {
-          for (const extraUrl of nextItem.extraImageFileUrls) {
-            try {
-              const url = await uploadWithRetry(extraUrl, 3);
-              uploadedExtraUrls.push(url);
-            } catch (err) {
-              console.warn('[Queue Upload] One extra image URL failed to upload, continuing with remaining images:', err);
-            }
-          }
+          patchItem(nextItem.id, { uploadedExtraUrls: [...uploadedExtras] });
         }
+        const uploadedExtraUrls = uploadedExtras.filter((u): u is string => !!u);
 
         // 3. Save Product to Database via API route (NOT a Server Action):
         // Server Actions with revalidatePath force a router refresh of the open page,
@@ -182,25 +221,25 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-          name: nextItem.name,
-          slug: nextItem.slug,
-          price: nextItem.price,
-          stock: nextItem.stock,
-          compareAtPrice: nextItem.compareAtPrice,
-          costPrice: nextItem.costPrice,
-          collectionId: nextItem.collectionId,
-          subCategoryId: nextItem.subCategoryId,
-          subCategoryIds: nextItem.subCategoryIds,
-          supplierId: nextItem.supplierId,
-          description: nextItem.description,
-          imageUrl: uploadedMainUrl,
-          images: uploadedExtraUrls,
-          sku: nextItem.sku,
-          hasSizes: nextItem.hasSizes,
-          availableSizes: nextItem.availableSizes,
-          seoSearchPhrases: nextItem.seoSearchPhrases,
-          seoScore: nextItem.seoScore,
-          isActive: nextItem.isActive ?? true,
+            name: nextItem.name,
+            slug: nextItem.slug,
+            price: nextItem.price,
+            stock: nextItem.stock,
+            compareAtPrice: nextItem.compareAtPrice,
+            costPrice: nextItem.costPrice,
+            collectionId: nextItem.collectionId,
+            subCategoryId: nextItem.subCategoryId,
+            subCategoryIds: nextItem.subCategoryIds,
+            supplierId: nextItem.supplierId,
+            description: nextItem.description,
+            imageUrl: uploadedMainUrl,
+            images: uploadedExtraUrls,
+            sku: nextItem.sku,
+            hasSizes: nextItem.hasSizes,
+            availableSizes: nextItem.availableSizes,
+            seoSearchPhrases: nextItem.seoSearchPhrases,
+            seoScore: nextItem.seoScore,
+            isActive: nextItem.isActive ?? true,
           }),
         });
         const res: { success: boolean; error?: string } = await saveRes
@@ -208,18 +247,14 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
           .catch(() => ({ success: false, error: `خطأ في الخادم (${saveRes.status})` }));
 
         if (res.success) {
-          setQueue((prev) =>
-            prev.map((item) =>
-              item.id === nextItem.id
-                ? {
-                    ...item,
-                    status: 'success',
-                    mainImageFileUrl: uploadedMainUrl || item.mainImageFileUrl,
-                    extraImageFileUrls: uploadedExtraUrls,
-                  }
-                : item
-            )
-          );
+          // نحرر ملفات الصور من الذاكرة بعد النجاح (مهم عند رفع عشرات المنتجات من الهاتف)
+          patchItem(nextItem.id, {
+            status: 'success',
+            mainImageFile: null,
+            extraImageFiles: undefined,
+            mainImageFileUrl: uploadedMainUrl || nextItem.mainImageFileUrl,
+            extraImageFileUrls: uploadedExtraUrls,
+          });
           toast.success(`تم حفظ "${nextItem.name}" بنجاح`, { duration: 4000 });
         } else {
           throw new Error(res.error || 'فشل حفظ المنتج في قاعدة البيانات');
@@ -227,19 +262,13 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
       } catch (err: any) {
         console.error('Queue processing error:', err);
         const errMsg = err.message || 'حدث خطأ غير متوقع أثناء المعالجة';
-        setQueue((prev) =>
-          prev.map((item) =>
-            item.id === nextItem.id
-              ? {
-                  ...item,
-                  status: 'error',
-                  errorMessage: errMsg,
-                  retryCount: item.retryCount + 1,
-                }
-              : item
-          )
-        );
-        toast.error(`تعذر حفظ "${nextItem.name}": ${errMsg}`, { duration: 5000 });
+        const current = queueRef.current.find((q) => q.id === nextItem.id);
+        patchItem(nextItem.id, {
+          status: 'error',
+          errorMessage: errMsg,
+          retryCount: (current?.retryCount ?? nextItem.retryCount) + 1,
+        });
+        toast.error(`تعذر حفظ "${nextItem.name}": ${errMsg}`, { duration: 6000 });
       } finally {
         isProcessingRef.current = false;
       }
