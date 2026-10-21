@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { createProductAsync } from './actions';
 import { compressImageClientSide } from '@/lib/compress';
 import { toast } from 'react-hot-toast';
 
@@ -175,8 +174,14 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
           }
         }
 
-        // 3. Save Product to Database via Server Action
-        const res = await createProductAsync({
+        // 3. Save Product to Database via API route (NOT a Server Action):
+        // Server Actions with revalidatePath force a router refresh of the open page,
+        // which interrupted the bulk upload form after the first product.
+        const saveRes = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
           name: nextItem.name,
           slug: nextItem.slug,
           price: nextItem.price,
@@ -196,7 +201,11 @@ export function ProductQueueProvider({ children }: { children: React.ReactNode }
           seoSearchPhrases: nextItem.seoSearchPhrases,
           seoScore: nextItem.seoScore,
           isActive: nextItem.isActive ?? true,
+          }),
         });
+        const res: { success: boolean; error?: string } = await saveRes
+          .json()
+          .catch(() => ({ success: false, error: `خطأ في الخادم (${saveRes.status})` }));
 
         if (res.success) {
           setQueue((prev) =>
