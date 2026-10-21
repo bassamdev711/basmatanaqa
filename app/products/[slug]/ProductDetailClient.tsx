@@ -160,23 +160,37 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   }
 
   const handleShare = () => {
-    // استخدم نفس مسار واتساب الذي يعرض معاينة المنتج والصورة بنجاح
+    // مشاركة عامة: يختار المستخدم التطبيق أو ينسخ الرابط
     const activeImageIdx = allImages.findIndex(img => img === activeImage)
+    const code = product.shortCode || product.slug
+    const queryParts: string[] = []
+    if (activeImageIdx > 0) queryParts.push(`img=${activeImageIdx}`)
     const chosenSize = selectedDynamicSize || selectedVariant?.size
-    const url = getProductWhatsAppLink({
-      name: product.name,
-      size: chosenSize,
-      price: currentPrice,
-      currency,
-      quantity: 1,
-      slug: product.slug,
-      shortCode: product.shortCode,
-      imageIndex: activeImageIdx >= 0 ? activeImageIdx : 0,
-      categoryName: product.collection?.name || null,
-      subCategoryName: product.subCategory?.name || null,
-      purpose: 'share',
-    })
-    window.open(url, '_blank')
+    if (chosenSize) queryParts.push(`size=${encodeURIComponent(chosenSize)}`)
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
+    const shortUrl = `${window.location.origin}/p/${encodeURIComponent(code)}${queryString}`
+
+    const lines = [
+      '✨ متجر شهرزاد ✨',
+      `🛍️ المنتج: ${product.name}`,
+      `💰 السعر: ${currentPrice} ${currency}`,
+    ]
+    if (product.collection?.name) lines.push(`🏷️ القسم: ${product.collection.name}`)
+    if (product.subCategory?.name) lines.push(`📂 التصنيف: ${product.subCategory.name}`)
+    if (chosenSize) lines.push(`📏 المقاس المختار: ${chosenSize}`)
+    lines.push('', '🔗 رابط وتفاصيل المنتج والصورة:', shortUrl)
+
+    const shareText = lines.join('\n')
+    if (navigator.share) {
+      navigator.share({
+        title: `${product.name} | متجر شهرزاد`,
+        text: lines.slice(0, -2).join('\n'),
+        url: shortUrl,
+      }).catch(() => { })
+    } else {
+      navigator.clipboard.writeText(shareText)
+      showToast('success', 'تم نسخ تفاصيل ورابط المنتج بنجاح!')
+    }
   }
 
   const handleBuyNow = (e: React.MouseEvent<HTMLButtonElement>) => {

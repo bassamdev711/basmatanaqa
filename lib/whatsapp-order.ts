@@ -31,7 +31,6 @@ export function getProductWhatsAppLink({
   imageIndex,
   categoryName,
   subCategoryName,
-  purpose = 'order',
   phone = STORE_WHATSAPP_NUMBER,
 }: {
   name: string
@@ -44,7 +43,6 @@ export function getProductWhatsAppLink({
   imageIndex?: number | null
   categoryName?: string | null
   subCategoryName?: string | null
-  purpose?: 'order' | 'share'
   phone?: string
 }): string {
   const targetPhone = formatWhatsAppPhone(phone)
@@ -64,9 +62,7 @@ export function getProductWhatsAppLink({
 
   const lines = [
     '✨ متجر شهرزاد ✨',
-    purpose === 'share'
-      ? 'مرحباً، أود مشاركة هذا المنتج معكم:'
-      : 'مرحباً، أود طلب هذا المنتج من متجركم:',
+    'مرحباً، أود طلب هذا المنتج من متجركم:',
     '',
     `🛍️ المنتج: ${name}`,
   ]
@@ -91,7 +87,7 @@ export function getProductWhatsAppLink({
   lines.push('🔗 رابط وتفاصيل المنتج والصورة:')
   lines.push(productPreviewUrl)
   lines.push('')
-  lines.push(purpose === 'share' ? 'أرجو الاطلاع عليه ومشاركته.' : 'أرجو تأكيد توفره.')
+  lines.push('أرجو تأكيد توفره.')
 
   return `https://wa.me/${targetPhone}?text=${encodeURIComponent(lines.join('\n'))}`
 }
