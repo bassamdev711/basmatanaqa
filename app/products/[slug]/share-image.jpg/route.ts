@@ -8,21 +8,27 @@ export const dynamic = 'force-dynamic'
 const SITE_ORIGIN = 'https://shahrazadstore.com'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
   const decodedSlug = decodeURIComponent(slug)
   const product = await prisma.product.findUnique({
     where: { slug: decodedSlug, isActive: true },
-    select: { name: true, imageUrl: true },
+    select: { name: true, imageUrl: true, images: true },
   })
 
   if (!product?.imageUrl) {
     return new NextResponse('Image not found', { status: 404 })
   }
 
-  const imageUrl = new URL(product.imageUrl, SITE_ORIGIN)
+  let sourceImageUrl = product.imageUrl
+  const imageIndex = Number(new URL(request.url).searchParams.get('img') || '0')
+  if (Number.isInteger(imageIndex) && imageIndex > 0 && product.images[imageIndex - 1]) {
+    sourceImageUrl = product.images[imageIndex - 1]
+  }
+
+  const imageUrl = new URL(sourceImageUrl, SITE_ORIGIN)
   if (imageUrl.protocol !== 'https:') {
     return new NextResponse('Unsupported image source', { status: 400 })
   }

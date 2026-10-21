@@ -25,6 +25,7 @@ export async function generateMetadata({
       isActive: true,
     },
     select: {
+      slug: true,
       name: true,
       description: true,
       imageUrl: true,
@@ -39,16 +40,18 @@ export async function generateMetadata({
   const siteUrl = getSiteUrl(process.env.NEXT_PUBLIC_SITE_URL || store.storeUrl);
   
   // Pick active image based on ?img= query parameter
-  let targetImageUrl = product.imageUrl;
+  let targetImageIndex = 0
   if (sParams.img) {
     const imgIdx = parseInt(sParams.img as string, 10);
     const allImages = [product.imageUrl, ...(product.images || [])].filter(Boolean) as string[];
     if (!isNaN(imgIdx) && allImages[imgIdx]) {
-      targetImageUrl = allImages[imgIdx];
+      targetImageIndex = imgIdx
     }
   }
 
-  const absoluteImageUrl = targetImageUrl ? new URL(targetImageUrl, siteUrl).toString() : undefined;
+  const absoluteImageUrl = product.imageUrl
+    ? new URL(`/products/${encodeURIComponent(product.slug)}/share-image.jpg${targetImageIndex > 0 ? `?img=${targetImageIndex}` : ''}`, siteUrl).toString()
+    : undefined
   
   // Build query string to preserve active image/size in canonical and og:url
   const queryParams = new URLSearchParams();
