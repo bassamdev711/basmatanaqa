@@ -353,7 +353,16 @@ function DetailModal({ product, onClose }: { product: ProductItem; onClose: () =
             <div className="flex items-center gap-4 border-t border-dashed border-foreground/10 pt-4 mt-2">
               <Link
                 href={`/products/${product.slug}`}
-                onClick={onClose}
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    try {
+                      sessionStorage.setItem('basmatanaqa_last_clicked_product', product.id);
+                      sessionStorage.setItem('basmatanaqa_last_scroll_y', window.scrollY.toString());
+                      sessionStorage.setItem('basmatanaqa_last_path', window.location.pathname + window.location.search);
+                    } catch (e) {}
+                  }
+                  onClose();
+                }}
                 className="text-xs font-bold text-brand hover:text-brand-hover transition-colors border-b border-brand pb-0.5"
               >
                 عرض تفاصيل المنتج كاملة ←

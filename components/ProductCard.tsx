@@ -106,8 +106,23 @@ export default function ProductCard({ product, currency, priority = false }: Pro
     window.open(url, '_blank');
   };
 
+  const handleProductNavigation = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('basmatanaqa_last_clicked_product', product.id);
+        sessionStorage.setItem('basmatanaqa_last_scroll_y', window.scrollY.toString());
+        sessionStorage.setItem('basmatanaqa_last_path', window.location.pathname + window.location.search);
+      } catch (err) {
+        // Ignore storage errors
+      }
+    }
+  };
+
   return (
-    <div className="relative bg-white cursor-pointer group transition-all duration-300 rounded-xl md:rounded-2xl flex flex-col overflow-hidden h-full border border-black/5 hover:border-black/10">
+    <div 
+      id={`product-${product.id}`}
+      className="relative bg-white cursor-pointer group transition-all duration-300 rounded-xl md:rounded-2xl flex flex-col overflow-hidden h-full border border-black/5 hover:border-black/10"
+    >
       {/* Top badges & buttons */}
       <div className="absolute top-2 md:top-4 w-full px-2 md:px-4 flex justify-between items-start z-20 pointer-events-none">
         {/* Badges Container */}
@@ -137,7 +152,11 @@ export default function ProductCard({ product, currency, priority = false }: Pro
       </div>
 
       <div className="relative w-full aspect-[3/4] bg-[#f9f9f9] transition-colors duration-500 flex items-center justify-center overflow-hidden">
-        <Link href={`/products/${product.slug}`} className="absolute inset-0 z-10" />
+        <Link 
+          href={`/products/${product.slug}`} 
+          onClick={handleProductNavigation}
+          className="absolute inset-0 z-10" 
+        />
         
         {product.imageUrl ? (
           <Image
@@ -179,7 +198,9 @@ export default function ProductCard({ product, currency, priority = false }: Pro
         
         {/* Title */}
         <h3 className="text-sm md:text-base font-medium text-black mb-2 line-clamp-2 md:line-clamp-1 group-hover:text-brand transition-colors">
-          {product.name}
+          <Link href={`/products/${product.slug}`} onClick={handleProductNavigation}>
+            {product.name}
+          </Link>
         </h3>
         
         {/* Prices */}

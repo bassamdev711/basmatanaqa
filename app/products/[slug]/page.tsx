@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ProductDetailClient from './ProductDetailClient'
+import ProductBackHeader from '@/components/ProductBackHeader'
 import ProductReviews from '@/components/ProductReviews'
 import { getCurrency } from '@/lib/currency'
 import { getSiteUrl, getStoreConfig } from '@/lib/store-config'
@@ -75,8 +76,8 @@ export default async function ProductDetailPage({
     where: { slug: decodedSlug, isActive: true },
     include: { 
       variants: true,
-      collection: { select: { name: true } },
-      subCategory: { select: { name: true } }
+      collection: { select: { name: true, slug: true } },
+      subCategory: { select: { name: true, slug: true } }
     }
   })
   if (!product) notFound()
@@ -136,18 +137,12 @@ export default async function ProductDetailPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
 
-      {/* Breadcrumb */}
-      <div className="pt-20 lg:pt-24 pb-2 px-6" dir="rtl">
-        <div className="max-w-5xl mx-auto">
-          <nav className="flex items-center gap-2 text-xs text-foreground/50 font-medium">
-            <Link href="/" className="hover:text-brand transition-colors">الرئيسية</Link>
-            <ChevronRight className="w-3 h-3 rotate-180" />
-            <Link href="/products" className="hover:text-brand transition-colors">المجموعة</Link>
-            <ChevronRight className="w-3 h-3 rotate-180" />
-            <span className="text-brand font-bold">{product.name}</span>
-          </nav>
-        </div>
-      </div>
+      {/* Product Back Header & Breadcrumb */}
+      <ProductBackHeader
+        productName={product.name}
+        collection={product.collection}
+        subCategory={product.subCategory}
+      />
 
       {/* Product Detail */}
       <section className="py-2 px-6">

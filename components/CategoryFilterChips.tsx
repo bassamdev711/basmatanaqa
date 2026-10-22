@@ -26,6 +26,18 @@ export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'c
   const scrollStartRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Scroll active chip into view if activeSlug is set
+  useEffect(() => {
+    if (!scrollRef.current || !activeSlug) return;
+    const timer = setTimeout(() => {
+      const activeEl = scrollRef.current?.querySelector('[data-active="true"]') as HTMLElement | null;
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [activeSlug]);
+
   // Drag to scroll — works with both LTR and RTL scrollLeft
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
@@ -77,6 +89,7 @@ export default function CategoryFilterChips({ filters, activeSlug, paramKey = 'c
               <Link
                 key={f.href}
                 href={f.href}
+                data-active={isActive ? 'true' : undefined}
                 draggable={false}
                 className={`group shrink-0 ${variant === 'circles' ? 'flex flex-col items-center gap-2' : ''}`}
                 onClick={(e) => { if (isDragging) e.preventDefault(); }}

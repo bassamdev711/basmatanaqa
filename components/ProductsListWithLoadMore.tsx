@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useTransition } from 'react'
+import React, { useState, useEffect, useTransition, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ProductCard from './ProductCard'
 import { Loader2, ArrowDownCircle, CheckCircle2 } from 'lucide-react'
@@ -34,18 +34,101 @@ export default function ProductsListWithLoadMore({
   currency,
 }: ProductsListWithLoadMoreProps) {
   const searchParams = useSearchParams()
+  const filterKey = searchParams.toString()
+  const cacheKey = `products_cache_${filterKey}`
+
   const [products, setProducts] = useState<ProductItemData[]>(initialProducts)
   const [page, setPage] = useState<number>(1)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [, startTransition] = useTransition()
+  const isFirstMount = useRef(true)
 
-  // Reset products when filters/search params change (excluding page if any)
-  const filterKey = searchParams.toString()
-
+  // 1. Restore state on mount or reset when filters change
   useEffect(() => {
-    setProducts(initialProducts)
-    setPage(1)
-  }, [filterKey, initialProducts])
+    let restored = false
+
+    try {
+      if (typeof window !== 'undefined') {
+        const lastClicked = sessionStorage.getItem('basmatanaqa_last_clicked_product')
+        const lastScrollY = sessionStorage.getItem('basmatanaqa_last_scroll_y')
+        const cachedRaw = sessionStorage.getItem(cacheKey)
+
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw)
+          if (
+            cached &&
+            Array.isArray(cached.products) &&
+            cached.products.length >= initialProducts.length
+          ) {
+            setProducts(cached.products)
+            setPage(cached.page || 1)
+            restored = true
+          }
+        }
+
+        // Restore scroll position to clicked product
+        if (lastClicked || lastScrollY) {
+          const targetY = lastScrollY ? parseInt(lastScrollY, 10) : null
+
+          const attemptScroll = (retries: number) => {
+            let scrolled = false
+
+            if (lastClicked) {
+              const el = document.getElementById(`product-${lastClicked}`)
+              if (el) {
+                el.scrollIntoView({ block: 'center', behavior: 'instant' })
+                sessionStorage.removeItem('basmatanaqa_last_clicked_product')
+                sessionStorage.removeItem('basmatanaqa_last_scroll_y')
+                scrolled = true
+              }
+            }
+
+            if (!scrolled && targetY !== null && !isNaN(targetY) && targetY > 0) {
+              window.scrollTo({ top: targetY, behavior: 'instant' })
+              sessionStorage.removeItem('basmatanaqa_last_scroll_y')
+              sessionStorage.removeItem('basmatanaqa_last_clicked_product')
+              scrolled = true
+            }
+
+            if (!scrolled && retries > 0) {
+              setTimeout(() => attemptScroll(retries - 1), 60)
+            }
+          }
+
+          // Delay slightly so DOM can finish rendering the list
+          setTimeout(() => attemptScroll(8), 50)
+        }
+      }
+    } catch (e) {
+      console.error('Error during products state restoration:', e)
+    }
+
+    if (!restored) {
+      setProducts(initialProducts)
+      setPage(1)
+    }
+
+    isFirstMount.current = false
+  }, [filterKey, initialProducts, cacheKey])
+
+  // 2. Persist loaded products to sessionStorage
+  useEffect(() => {
+    if (products.length > 0 && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            products,
+            page,
+            totalCount,
+            savedAt: Date.now(),
+          })
+        )
+      } catch (err) {
+        // Ignore quota limits
+      }
+    }
+  }, [products, page, cacheKey, totalCount])
 
   const totalLoaded = products.length
   const hasMore = totalLoaded < totalCount
@@ -71,7 +154,6 @@ export default function ProductsListWithLoadMore({
       if (data.products && Array.isArray(data.products)) {
         startTransition(() => {
           setProducts((prev) => {
-            // Avoid duplicate IDs if already present
             const existingIds = new Set(prev.map((p) => p.id))
             const newUnique = data.products.filter((p: ProductItemData) => !existingIds.has(p.id))
             return [...prev, ...newUnique]
@@ -136,7 +218,7 @@ export default function ProductsListWithLoadMore({
           <button
             onClick={handleLoadMore}
             disabled={isLoading}
-            className="group relative inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-white border border-black/15 hover:border-brand text-foreground hover:text-brand font-bold text-sm rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="group relative inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-white border border-black/15 hover:border-brand text-foreground hover:text-brand font-bold text-sm rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             {isLoading ? (
               <>

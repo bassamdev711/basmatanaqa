@@ -12,6 +12,7 @@ import { getHomepageSettings } from "@/app/actions/homepage";
 import prisma from "@/lib/prisma";
 import CampaignBanner from "@/components/CampaignBanner";
 import { getStoreConfig } from "@/lib/store-config";
+import HomepageScrollRestorer from "@/components/HomepageScrollRestorer";
 
 // Dynamic Imports for components below the fold (Lazy Loading)
 const Experience = dynamic(() => import("@/components/Experience"), { ssr: true })
@@ -50,6 +51,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-surface text-foreground overflow-hidden font-sans">
+      <HomepageScrollRestorer />
       <Navbar storeName={store.name} storeNameLatin={store.nameLatin} />
 
       {/* 1. Store Identity */}
