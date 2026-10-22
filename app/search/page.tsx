@@ -141,7 +141,7 @@ export default async function SearchPage({
           </div>
         ) : products.length > 0 ? (
           <>
-            <ProductDiscoveryFilters totalProducts={totalCount} availableBrands={availableBrands} />
+            <ProductDiscoveryFilters totalProducts={totalCount} availableBrands={availableBrands} currency={currency} />
             <div className="px-3 md:px-12 max-w-7xl mx-auto w-full">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-8">
                 {products.map((product: any, index) => {

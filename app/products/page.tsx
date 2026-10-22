@@ -64,6 +64,7 @@ export default async function ProductsPage({
   
   let dbCollections: Array<{ name: string; slug: string; imageUrl: string | null }> = []
   let dbSubCategories: Array<{ name: string; slug: string; imageUrl: string | null }> = []
+  let allActiveSubCategories: Array<{ name: string; slug: string; collectionSlug: string }> = []
   let dataLoadFailed = false
   let totalCount = 0;
   let availableBrands: string[] = [];
@@ -190,6 +191,26 @@ export default async function ProductsPage({
     )
     dbSubCategories = await getCachedSubcategories(collection)
 
+    const getCachedAllSubcategories = unstable_cache(
+      async () => prisma.subCategory.findMany({
+        where: { isActive: true },
+        select: {
+          name: true,
+          slug: true,
+          collection: { select: { slug: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      ['all-subcategories-discovery-list'],
+      { revalidate: 3600, tags: ['subcategories'] }
+    )
+    const rawAllSubs = await getCachedAllSubcategories()
+    allActiveSubCategories = rawAllSubs.map(s => ({
+      name: s.name,
+      slug: s.slug,
+      collectionSlug: s.collection.slug
+    }))
+
   } catch (error) {
     console.error('Failed to load products page data:', error)
     dataLoadFailed = true
@@ -230,7 +251,13 @@ export default async function ProductsPage({
           )}
         </CategoryScrollWrapper>
 
-        <ProductDiscoveryFilters totalProducts={totalCount} availableBrands={availableBrands} />
+        <ProductDiscoveryFilters 
+          totalProducts={totalCount} 
+          availableBrands={availableBrands} 
+          collections={dbCollections.map(c => ({ name: c.name, slug: c.slug }))}
+          subCategories={allActiveSubCategories}
+          currency={currency}
+        />
 
         <section className="px-3 md:px-12 max-w-7xl mx-auto">
           {dataLoadFailed ? (
