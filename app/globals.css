@@ -13,20 +13,20 @@
   --color-surface:    var(--brand-surface);
   --color-foreground: var(--brand-foreground);
 
-  /* ── مشتقات تلقائية ── */
-  --color-brand-hover:       color-mix(in srgb, var(--brand-color) 80%, black);
-  --color-brand-light:       color-mix(in srgb, var(--brand-color) 15%, white);
-  --color-brand-dark:        color-mix(in srgb, var(--brand-color) 60%, black);
-  --color-accent-light:      color-mix(in srgb, var(--brand-accent) 70%, white);
-  --color-accent-dark:       color-mix(in srgb, var(--brand-accent) 70%, black);
-  --color-surface-alt:       color-mix(in srgb, var(--brand-surface) 95%, black);
-  --color-foreground-dark:   color-mix(in srgb, var(--brand-foreground) 40%, black);
+  /* ── مشتقات ألوان متوافقة بنسبة 100% مع جميع الهواتف ── */
+  --color-brand-hover:       var(--brand-hover);
+  --color-brand-light:       var(--brand-light);
+  --color-brand-dark:        var(--brand-dark);
+  --color-accent-light:      var(--accent-light);
+  --color-accent-dark:       var(--accent-dark);
+  --color-surface-alt:       var(--surface-alt);
+  --color-foreground-dark:   var(--foreground-dark);
 
   /* ── مشتقات زخرفية للهوية ── */
-  --color-brand-deep: color-mix(in srgb, var(--brand-color) 65%, black);
-  --color-brand-soft:   color-mix(in srgb, var(--brand-color) 30%, black);
-  --color-accent-light-strong:   color-mix(in srgb, var(--brand-accent) 85%, white);
-  --color-accent-deep:    color-mix(in srgb, var(--brand-accent) 60%, black);
+  --color-brand-deep:        var(--brand-deep);
+  --color-brand-soft:        var(--brand-soft);
+  --color-accent-light-strong: var(--accent-light-strong);
+  --color-accent-deep:       var(--accent-deep);
 
   /* ── خطوط وحركات ── */
   --font-sans: var(--font-tajawal), Arial, sans-serif;
@@ -46,12 +46,14 @@
 }
 
 :root {
-  --background: var(--color-surface);
-  --foreground: var(--color-foreground);
+  --background: var(--color-surface, #FBF8F2);
+  --foreground: var(--color-foreground, #24211D);
 }
 
 body {
+  background-color: #FBF8F2;
   background-color: var(--background);
+  color: #24211D;
   color: var(--foreground);
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -71,7 +73,7 @@ body.is-admin {
 }
 
 .hover-glow:hover {
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  box-shadow: 0 4px 20px rgba(184, 138, 69, 0.2);
   transform: translateY(-2px);
   transition: all 0.4s ease;
 }
@@ -182,7 +184,7 @@ body.is-admin {
 
   /* Variants */
   .btn-primary {
-    @apply bg-brand text-surface shadow-[0_4px_15px_-3px_color-mix(in_srgb,var(--color-brand)_30%,transparent)] hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_8px_25px_-5px_color-mix(in_srgb,var(--color-brand)_40%,transparent)];
+    @apply bg-brand text-surface shadow-[0_4px_15px_-3px_rgba(23,21,18,0.3)] hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_8px_25px_-5px_rgba(23,21,18,0.4)];
   }
 
   .btn-secondary {

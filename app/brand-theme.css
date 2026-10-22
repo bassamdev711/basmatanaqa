@@ -8,8 +8,24 @@
 */
 
 :root {
+  /* ── الألوان الأساسية ── */
   --brand-color:      #171512;  /* أسود دافئ */
   --brand-accent:     #B88A45;  /* ذهبي شهرزاد */
   --brand-surface:    #FBF8F2;  /* عاجي دافئ */
   --brand-foreground: #24211D;  /* بني أسود */
+
+  /* ── مشتقات ألوان متوافقة بنسبة 100% مع جميع الهواتف والمتصفحات القديمة (بدون الاعتماد على color-mix) ── */
+  --brand-hover:               #12110e;
+  --brand-light:               #dcdcdb;
+  --brand-dark:                #0e0d0b;
+  --accent-light:              #cdad7d;
+  --accent-dark:               #816130;
+  --surface-alt:               #eeece6;
+  --foreground-dark:           #0e0d0c;
+
+  /* ── مشتقات زخرفية للهوية ── */
+  --brand-deep:                #0f0e0c;
+  --brand-soft:                #070605;
+  --accent-light-strong:       #c39c61;
+  --accent-deep:               #6e5329;
 }
