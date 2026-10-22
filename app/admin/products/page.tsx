@@ -84,6 +84,9 @@ export default async function ProductsPage({
 
   const paginationFilterQuery = `${selectedCollectionId ? `&collectionId=${selectedCollectionId}` : ''}${selectedSubCategoryId ? `&subCategoryId=${selectedSubCategoryId}` : ''}`;
 
+  const currentReturnQuery = `${page > 1 ? `page=${page}` : ''}${selectedCollectionId ? `&collectionId=${selectedCollectionId}` : ''}${selectedSubCategoryId ? `&subCategoryId=${selectedSubCategoryId}` : ''}`.replace(/^&/, '');
+  const currentReturnUrl = `/admin/products${currentReturnQuery ? `?${currentReturnQuery}` : ''}`;
+
   return (
     <div className="space-y-6">
       {/* Top Header: Title, Collection Filter, Add Button */}
@@ -110,7 +113,7 @@ export default async function ProductsPage({
             إضافة متعددة
           </Link>
           <Link 
-            href="/admin/products/new"
+            href={`/admin/products/new?returnUrl=${encodeURIComponent(currentReturnUrl)}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 shrink-0 shadow-sm"
           >
             <Plus className="w-4 h-4" />

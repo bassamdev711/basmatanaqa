@@ -41,7 +41,8 @@ export async function createProduct(formData: FormData) {
       ? Number(formData.get('compareAtPrice'))
       : null;
     const sku = formData.get('sku') as string | null;
-    const stock = Number(formData.get('stock'));
+    const rawStock = formData.get('stock');
+    const stock = rawStock !== null && rawStock !== '' && !isNaN(Number(rawStock)) ? Number(rawStock) : 10;
     const isActive = formData.get('isActive') === 'on';
     const featured = formData.get('featured') === 'on';
     const bestseller = formData.get('bestseller') === 'on';
@@ -63,6 +64,7 @@ export async function createProduct(formData: FormData) {
     const hasSizes = formData.get('hasSizes') === 'true';
     const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
     const addAnother = formData.get('addAnother') === 'true';
+    const returnUrl = (formData.get('returnUrl') as string)?.trim() || null;
 
     if (collectionId && subCategoryIds.length > 0) {
       const validSubCats = await prisma.subCategory.findMany({
@@ -178,6 +180,8 @@ export async function createProduct(formData: FormData) {
     
     if (addAnother) {
       redirect('/admin/products/new?success=true');
+    } else if (returnUrl && returnUrl.startsWith('/')) {
+      redirect(returnUrl);
     } else {
       redirect('/admin/products');
     }
@@ -365,7 +369,8 @@ export async function updateProduct(formData: FormData) {
       ? Number(formData.get('compareAtPrice'))
       : null;
     const sku = formData.get('sku') as string | null;
-    const stock = Number(formData.get('stock'));
+    const rawStock = formData.get('stock');
+    const stock = rawStock !== null && rawStock !== '' && !isNaN(Number(rawStock)) ? Number(rawStock) : 10;
     const isActive = formData.get('isActive') === 'on';
     const featured = formData.get('featured') === 'on';
     const bestseller = formData.get('bestseller') === 'on';
@@ -374,13 +379,26 @@ export async function updateProduct(formData: FormData) {
     const seoSearchPhrases = JSON.parse((formData.get('seoSearchPhrases') as string) || '[]');
     const seoScore = formData.get('seoScore') ? Number(formData.get('seoScore')) : null;
 
-    const subCategoryId = formData.get('subCategoryId') as string | null;
+    const rawSubCategoryIds = formData.getAll('subCategoryIds') as string[];
+    let subCategoryId = formData.get('subCategoryId') as string | null;
+    let subCategoryIds = rawSubCategoryIds.filter(Boolean);
+    if (subCategoryId && !subCategoryIds.includes(subCategoryId)) {
+      subCategoryIds.unshift(subCategoryId);
+    }
+    if (!subCategoryId && subCategoryIds.length > 0) {
+      subCategoryId = subCategoryIds[0];
+    }
+
     const hasSizes = formData.get('hasSizes') === 'true';
     const availableSizes = JSON.parse((formData.get('availableSizes') as string) || '[]');
+    const returnUrl = (formData.get('returnUrl') as string)?.trim() || null;
 
-    if (collectionId && subCategoryId) {
-      const subCat = await prisma.subCategory.findUnique({ where: { id: subCategoryId } });
-      if (subCat && subCat.collectionId !== collectionId) {
+    if (collectionId && subCategoryIds.length > 0) {
+      const validSubCats = await prisma.subCategory.findMany({
+        where: { id: { in: subCategoryIds }, collectionId },
+        select: { id: true },
+      });
+      if (validSubCats.length !== subCategoryIds.length) {
         throw new Error('INVALID_SUBCATEGORY');
       }
     }
@@ -433,6 +451,7 @@ export async function updateProduct(formData: FormData) {
           seoSearchPhrases,
           seoScore,
           subCategoryId: subCategoryId || null,
+          subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
           hasSizes,
           availableSizes,
         },
@@ -464,6 +483,7 @@ export async function updateProduct(formData: FormData) {
             seoSearchPhrases,
             seoScore,
             subCategoryId: subCategoryId || null,
+            subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),
             hasSizes,
             availableSizes,
           },
@@ -483,21 +503,24 @@ export async function updateProduct(formData: FormData) {
 
     if (addAnother) {
       redirect('/admin/products/new?success=true');
+    } else if (returnUrl && returnUrl.startsWith('/')) {
+      redirect(returnUrl);
     } else {
       redirect('/admin/products');
     }
   } catch (err: any) {
     if (isNextRedirectError(err)) throw err;
-    // We don't have id available outside the try, wait, let's keep id extract outside or move it above.
     const id = formData.get('id') as string;
+    const returnUrl = (formData.get('returnUrl') as string)?.trim() || null;
+    const returnUrlParam = returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : '';
     if (err.message === 'INVALID_SUBCATEGORY') {
-      redirect(`/admin/products/${id}/edit?error=invalid_subcategory`);
+      redirect(`/admin/products/${id}/edit?error=invalid_subcategory${returnUrlParam}`);
     }
     if (err.code === 'P2002') {
-      redirect(`/admin/products/${id}/edit?error=duplicate_slug`);
+      redirect(`/admin/products/${id}/edit?error=duplicate_slug${returnUrlParam}`);
     }
     console.error(err);
-    redirect(`/admin/products/${id}/edit?error=unknown`);
+    redirect(`/admin/products/${id}/edit?error=unknown${returnUrlParam}`);
   }
 }
 

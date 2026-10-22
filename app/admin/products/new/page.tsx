@@ -61,6 +61,7 @@ export default function NewProductPage() {
   const [seoScore, setSeoScore] = useState<number>(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showStockAndSupplier, setShowStockAndSupplier] = useState(false)
+  const [returnUrl, setReturnUrl] = useState('')
 
   const toggleSubCategory = (id: string) => {
     setSelectedSubCategories(prev => 
@@ -162,6 +163,8 @@ export default function NewProductPage() {
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
+      const ret = params.get('returnUrl')
+      if (ret) setReturnUrl(ret)
       const error = params.get('error')
       const success = params.get('success')
       if (error === 'duplicate_slug') {
@@ -171,7 +174,7 @@ export default function NewProductPage() {
       } else if (success === 'true') {
         toast.success('تمت الإضافة بنجاح! يمكنك إدخال بيانات المنتج التالي الآن.', { duration: 5000 })
         // Remove the query param to prevent toast on refresh
-        window.history.replaceState({}, '', '/admin/products/new')
+        window.history.replaceState({}, '', `/admin/products/new${ret ? `?returnUrl=${encodeURIComponent(ret)}` : ''}`)
       }
     }
   }, [])
@@ -201,11 +204,15 @@ export default function NewProductPage() {
             <span>الإضافة المتعددة</span>
           </Link>
         </div>
-        <Link href="/admin/products" className="text-sm text-gray-500 hover:text-gray-900">العودة</Link>
+        <Link href={returnUrl || "/admin/products"} className="text-sm text-gray-500 hover:text-gray-900 font-bold">
+          العودة
+        </Link>
       </div>
 
       <form action={createProduct} className="space-y-6">
-        {/* Hidden image fields */}
+        {/* Hidden inputs */}
+        <input type="hidden" name="returnUrl" value={returnUrl} />
+        {!showStockAndSupplier && <input type="hidden" name="stock" value={stock || '10'} />}
         <input type="hidden" name="imageUrl" value={mainImage} />
         <input type="hidden" name="images" value={JSON.stringify(extraImages)} />
         <input type="hidden" name="seoSearchPhrases" value={JSON.stringify(seoPhrases)} />
@@ -567,7 +574,7 @@ export default function NewProductPage() {
           </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pb-6 pt-2 border-t border-gray-200">
-          <Link href="/admin/products" className="btn btn-outline text-sm font-bold text-gray-600">
+          <Link href={returnUrl || "/admin/products"} className="btn btn-outline text-sm font-bold text-gray-600">
             العودة للمنتجات
           </Link>
           <div className="flex flex-wrap items-center gap-3">

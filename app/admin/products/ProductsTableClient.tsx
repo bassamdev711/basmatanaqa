@@ -1,8 +1,8 @@
 'use client'
-
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ChevronDown, ChevronUp, Edit, ExternalLink } from 'lucide-react'
 import DeleteButton from './DeleteButton'
 import SubCategoryAssignButton from './SubCategoryAssignButton'
@@ -26,6 +26,11 @@ type Props = {
 }
 
 export default function ProductsTableClient({ products, subCategories }: Props) {
+  const searchParams = useSearchParams()
+  const queryStr = searchParams?.toString()
+  const returnUrl = `/admin/products${queryStr ? `?${queryStr}` : ''}`
+  const editHref = (id: string) => `/admin/products/${id}/edit?returnUrl=${encodeURIComponent(returnUrl)}`
+
   // Track expanded rows on mobile
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
 
@@ -154,7 +159,7 @@ export default function ProductsTableClient({ products, subCategories }: Props) 
                     <span className="text-xs font-bold text-gray-700">الإجراءات:</span>
                     <div className="flex items-center gap-1.5">
                       <Link 
-                        href={`/admin/products/${product.id}/edit`} 
+                        href={editHref(product.id)} 
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
                         title="تعديل المنتج"
                       >
@@ -255,7 +260,7 @@ export default function ProductsTableClient({ products, subCategories }: Props) 
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-1.5">
                     <Link 
-                      href={`/admin/products/${product.id}/edit`} 
+                      href={editHref(product.id)} 
                       className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
                       title="تعديل المنتج"
                     >
