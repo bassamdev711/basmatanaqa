@@ -48,5 +48,18 @@ export async function createAdminNotification(input: AdminNotificationInput) {
     console.error('Admin push notification failed:', error)
   }
 
+  // Telegram alert for notifications other than the initial order creation (which sends a rich order card)
+  if (!input.dedupeKey.endsWith(':created')) {
+    try {
+      const { sendTelegramMessage } = await import('@/lib/telegram')
+      const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://shahrazadstore.online').replace(/\/$/, '')
+      const fullUrl = input.url ? (input.url.startsWith('http') ? input.url : `${baseUrl}${input.url}`) : ''
+      const telegramText = `🔔 <b>${input.title}</b>\n\n${input.body}${fullUrl ? `\n\n🔗 <a href="${fullUrl}">عرض في لوحة الإدارة</a>` : ''}`
+      await sendTelegramMessage(telegramText)
+    } catch (telegramError) {
+      console.error('Admin Telegram notification failed:', telegramError)
+    }
+  }
+
   return { created: true, pushSent, notificationId: notification.id }
 }

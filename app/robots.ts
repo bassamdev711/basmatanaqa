@@ -19,7 +19,6 @@ export default function robots(): MetadataRoute.Robots {
         '/account',
         '/orders',
         '/track',
-        '/_next',
       ],
     },
     sitemap: `${baseUrl}/sitemap.xml`,

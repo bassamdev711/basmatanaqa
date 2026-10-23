@@ -65,3 +65,13 @@ export async function markAllNotificationsRead() {
   })
   return { success: true as const }
 }
+
+export async function testTelegramNotification() {
+  await verifyAdmin()
+  const { sendTelegramMessage } = await import('@/lib/telegram')
+  const time = new Date().toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const result = await sendTelegramMessage(
+    `🎉 <b>مبروك! إشعار تجريبي من متجر بصمة أناقة</b>\n\nتم إعداد والتحقق من اتصال بوت تيليجرام مع هاتفك بنجاح 🚀\nستصلك إشعارات فورية هنا عند قيام أي عميل بطلب جديد!\n⏰ الوقت: ${time}`
+  )
+  return result
+}

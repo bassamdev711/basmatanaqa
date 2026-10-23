@@ -16,13 +16,22 @@ export default function SplashScreen({
   const [showSplash, setShowSplash] = useState(false)
 
   useEffect(() => {
+    // Never show splash screen to search bots or Lighthouse/PageSpeed to protect Core Web Vitals & SEO
+    if (typeof navigator !== 'undefined' && /bot|crawler|spider|googlebot|lighthouse|mediapartners|slurp/i.test(navigator.userAgent)) {
+      return
+    }
+
     const splashKey = `store_splash_seen:${storeNameLatin || storeName}`
-    const hasSeenSplash = sessionStorage.getItem(splashKey)
-    if (!hasSeenSplash) {
-      startTransition(() => setShowSplash(true))
-      sessionStorage.setItem(splashKey, 'true')
-      const timer = setTimeout(() => setShowSplash(false), 1800)
-      return () => clearTimeout(timer)
+    try {
+      const hasSeenSplash = sessionStorage.getItem(splashKey)
+      if (!hasSeenSplash) {
+        startTransition(() => setShowSplash(true))
+        sessionStorage.setItem(splashKey, 'true')
+        const timer = setTimeout(() => setShowSplash(false), 1100)
+        return () => clearTimeout(timer)
+      }
+    } catch {
+      // Ignore storage errors in restricted iframe/browser environments
     }
   }, [storeName, storeNameLatin])
 

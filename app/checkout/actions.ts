@@ -8,6 +8,7 @@ import { CheckoutData } from '@/components/CheckoutProvider'
 import { CartItem } from '@/components/CartProvider'
 import { validateCouponCode } from '@/app/admin/marketing/coupons/actions'
 import { createAdminNotification } from '@/lib/admin-notifications'
+import { sendTelegramNewOrder } from '@/lib/telegram'
 import { createOrderUploadToken, verifyOrderUploadToken } from '@/lib/order-upload-token'
 import { createOrderTrackingToken } from '@/lib/order-tracking-token'
 import { requireCurrentUser, getCurrentUser } from '@/lib/user-auth'
@@ -424,6 +425,34 @@ export async function createOrder(
       url: `/admin/orders/${order.id}`,
       dedupeKey: `order:${order.id}:created`,
     })
+
+    // Send instant rich Telegram alert to phone
+    try {
+      await sendTelegramNewOrder({
+        orderNumber: order.orderNumber || order.id.slice(-6),
+        orderId: order.id,
+        customerName: checkoutData.fullName,
+        customerPhone: checkoutData.phone,
+        governorate: checkoutData.governorate,
+        city: selectedArea.name,
+        address: checkoutData.address,
+        totalAmount: finalTotal,
+        currency: paymentSettings?.currency || 'ر.س',
+        paymentMethod: checkoutData.paymentMethod,
+        items: parsedItems.map((item) => {
+          const dbProd = dbProducts.find((p) => p.id === item.productId)
+          return {
+            name: item.name,
+            quantity: item.quantity,
+            size: item.selectedSize,
+            price: item.clientPrice,
+            slug: dbProd?.slug || null,
+          }
+        }),
+      })
+    } catch (telegramErr) {
+      console.error('[Checkout] Telegram notification error:', telegramErr)
+    }
     if (authenticatedUser) {
       await createUserNotification({
         userId: authenticatedUser.id,

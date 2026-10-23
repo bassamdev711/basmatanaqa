@@ -3,14 +3,24 @@ import Link from 'next/link'
 import { Package, ShoppingCart, TrendingUp, AlertTriangle, ArrowLeft, Clock, CheckCircle, Users, Eye, ShoppingBag, CreditCard } from 'lucide-react'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import RecentOrdersFeedCard, { FeedOrderItem } from './components/RecentOrdersFeedCard'
 
 type DashboardOrder = {
   id: string
   orderNumber: string | null
   customerName: string
+  customerPhone?: string | null
+  city?: string | null
   totalAmount: Prisma.Decimal
   status: string
   createdAt: Date
+  items?: Array<{
+    quantity: number
+    selectedSize: string | null
+    product: {
+      name: string
+    } | null
+  }>
 }
 
 type StockProduct = {
@@ -40,6 +50,7 @@ export default async function AdminDashboard() {
   let recentOrders: DashboardOrder[] = [];
   let lowStockProducts: StockProduct[] = [];
   let outOfStockProducts: StockProduct[] = [];
+  let currency = 'ر.س';
   
   // Analytics
   let totalVisitors = 0;
@@ -49,6 +60,12 @@ export default async function AdminDashboard() {
   let mostPurchasedProducts: RankedProduct[] = [];
   
   try {
+    // 0. Fetch Store Currency
+    const paymentSettings = await prisma.paymentSettings.findUnique({ where: { id: 'singleton' } });
+    if (paymentSettings?.currency) {
+      currency = paymentSettings.currency;
+    }
+
     // 1. Fetch KPI Counts
     productsCount = await prisma.product.count({ where: { isActive: true } });
     totalOrders = await prisma.order.count();
@@ -73,9 +90,23 @@ export default async function AdminDashboard() {
         id: true,
         orderNumber: true,
         customerName: true,
+        customerPhone: true,
+        city: true,
         totalAmount: true,
         status: true,
         createdAt: true,
+        items: {
+          take: 3,
+          select: {
+            quantity: true,
+            selectedSize: true,
+            product: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        }
       }
     });
 
@@ -167,12 +198,31 @@ export default async function AdminDashboard() {
     }
   }
 
+  const serializedRecentOrders: FeedOrderItem[] = recentOrders.map((o) => ({
+    id: o.id,
+    orderNumber: o.orderNumber,
+    customerName: o.customerName,
+    customerPhone: o.customerPhone,
+    city: o.city,
+    totalAmount: Number(o.totalAmount),
+    status: o.status,
+    createdAt: o.createdAt.toISOString(),
+    items: o.items?.map((it) => ({
+      quantity: it.quantity,
+      selectedSize: it.selectedSize,
+      productName: it.product?.name || null,
+    })),
+  }));
+
   return (
     <div className="space-y-8 pb-10" dir="rtl">
       <div>
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900">نظرة عامة على المتجر</h2>
         <p className="text-gray-500 mt-1">ملخص سريع لأداء متجرك وحالة الطلبات.</p>
       </div>
+
+      {/* أول بطاقة رئيسية: آخر 5 طلبات بالتفاصيل والتوقيت النسبي */}
+      <RecentOrdersFeedCard orders={serializedRecentOrders} currency={currency} />
       
       {/* KPI Cards: Responsive Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">

@@ -18,7 +18,9 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
   saveNotificationSettings,
+  testTelegramNotification,
 } from './actions'
+import { Send } from 'lucide-react'
 
 const urlBase64ToUint8Array = (base64String: string) => {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
@@ -50,6 +52,7 @@ export default function NotificationsSettings() {
   const [orderNotifications, setOrderNotifications] = useState(true)
   const [limitNotifications, setLimitNotifications] = useState(true)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [testingTelegram, setTestingTelegram] = useState(false)
 
   const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
@@ -194,6 +197,25 @@ export default function NotificationsSettings() {
     await markAllNotificationsRead()
   }
 
+  const handleTestTelegram = async () => {
+    setTestingTelegram(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await testTelegramNotification()
+      if (res.success) {
+        setMessage('تم إرسال إشعار تجريبي إلى حسابك في تيليجرام بنجاح! تفقد هاتفك الآن 🚀')
+      } else {
+        setError(res.error || 'تعذر إرسال الإشعار لتليجرام. تأكد من إرسال /start للبوت من هاتفك.')
+      }
+    } catch (testError) {
+      console.error('Telegram test failed:', testError)
+      setError('حدث خطأ أثناء محاولة إرسال رسالة الاختبار.')
+    } finally {
+      setTestingTelegram(false)
+    }
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div>
@@ -213,6 +235,55 @@ export default function NotificationsSettings() {
           <p className="font-bold text-sm">{message}</p>
         </div>
       )}
+
+      {/* Telegram Bot Notification Section */}
+      <section className="bg-gradient-to-br from-white to-sky-50/50 rounded-2xl border border-sky-100 p-6 md:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-sky-500 text-white rounded-xl shadow-sm">
+              <Send size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">إشعارات بوت تيليجرام (على الهاتف)</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                تنبيهات فورية لجميع الطلبات الجديدة مباشرة إلى هاتفك عبر بوت تيليجرام (مجاني ومستقر 100%).
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 bg-sky-100 text-sky-800 text-xs font-bold rounded-full">
+            جاهز ومربوط
+          </span>
+        </div>
+
+        <div className="bg-white rounded-xl border border-sky-100 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-gray-800">
+              متغيرات البيئة المربوطة: <code className="bg-gray-100 px-2 py-0.5 rounded text-sky-700 text-xs font-mono">tiligram_bot</code> و <code className="bg-gray-100 px-2 py-0.5 rounded text-sky-700 text-xs font-mono">id_tiligram</code>
+            </p>
+            <p className="text-xs text-gray-500">
+              ملاحظة: إذا لم تكن قد ضغطت <span className="font-bold text-sky-600">Start</span> على البوت من هاتفك، افتح محادثة البوت واضغط Start لمرة واحدة ليتمكن من مراسلتك.
+            </p>
+          </div>
+
+          <button
+            onClick={handleTestTelegram}
+            disabled={testingTelegram}
+            className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-60 cursor-pointer"
+          >
+            {testingTelegram ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                جاري إرسال التجربة...
+              </>
+            ) : (
+              <>
+                <Send size={16} />
+                إرسال إشعار تجريبي للهاتف
+              </>
+            )}
+          </button>
+        </div>
+      </section>
 
       <section className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6">

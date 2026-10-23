@@ -9,6 +9,7 @@ const tajawal = Tajawal({
   subsets: ["arabic"],
   weight: ["200", "300", "400", "500", "700"],
   variable: "--font-tajawal",
+  display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
