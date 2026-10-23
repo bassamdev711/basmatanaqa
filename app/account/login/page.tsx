@@ -3,7 +3,22 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, Phone, ArrowRight, UserCircle2, Mail, Eye, EyeOff } from 'lucide-react'
+import { 
+  Lock, 
+  Phone, 
+  ArrowRight, 
+  UserCircle2, 
+  Mail, 
+  Eye, 
+  EyeOff, 
+  Award, 
+  Package, 
+  Heart, 
+  ShieldCheck, 
+  Gift, 
+  Clock,
+  ArrowLeft
+} from 'lucide-react'
 
 export default function CustomerLoginPage() {
   const [loginType, setLoginType] = useState<'PHONE' | 'EMAIL'>('PHONE')
@@ -35,136 +50,239 @@ export default function CustomerLoginPage() {
         setError(data.error || 'حدث خطأ أثناء تسجيل الدخول')
         setLoading(false)
       }
-    } catch (err) {
+    } catch {
       setError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.')
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col justify-center items-center p-4 font-sans text-foreground" dir="rtl">
-      
-      <Link href="/" className="btn btn-ghost gap-2 absolute top-6 right-6 md:top-8 md:right-8 text-foreground/60 hover:text-brand">
-        <ArrowRight size={20} />
-        العودة للمتجر
-      </Link>
+    <div className="min-h-screen bg-surface flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 font-sans text-foreground relative overflow-hidden" dir="rtl">
+      {/* Decorative ambient background glows */}
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-brand/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-accent/10 p-8">
-        
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center border border-accent/20">
-            <UserCircle2 className="w-8 h-8 text-brand" />
+      {/* Top Header Bar */}
+      <header className="w-full max-w-5xl flex items-center justify-between py-4 mb-4 sm:mb-8 z-10">
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="w-10 h-10 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-accent group-hover:scale-105 transition-transform duration-300">
+            <ShieldCheck className="w-5 h-5 text-accent" />
           </div>
-        </div>
-
-        <h1 className="text-3xl font-bold text-center text-foreground mb-2">تسجيل الدخول</h1>
-        <p className="text-center text-foreground/60 mb-8 text-sm">
-          مرحباً بك مجدداً في شهرزاد
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-semibold text-foreground">
-                {loginType === 'PHONE' ? 'رقم الهاتف' : 'البريد الإلكتروني'}
-              </label>
-              <button 
-                type="button" 
-                onClick={() => { setLoginType(loginType === 'PHONE' ? 'EMAIL' : 'PHONE'); setIdentifier(''); }}
-                className="text-xs font-bold text-brand hover:text-accent transition-colors"
-              >
-                {loginType === 'PHONE' ? 'استخدام البريد الإلكتروني' : 'استخدام رقم الهاتف'}
-              </button>
-            </div>
-
-            {loginType === 'PHONE' ? (
-              <div className="relative flex items-center bg-surface/50 border border-foreground/10 rounded-xl focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all overflow-hidden" dir="ltr">
-                <span className="pl-4 pr-3 font-bold text-foreground/70 select-none border-r border-foreground/10 py-3 flex items-center justify-center bg-black/5">+967</span>
-                <input
-                  type="tel"
-                  value={identifier.replace('+967', '')}
-                  onChange={(e) => {
-                    let digits = e.target.value.replace(/\D/g, '');
-                    digits = digits.replace(/^[^7]+/, '');
-                    setIdentifier('+967' + digits.slice(0, 9));
-                  }}
-                  className="w-full pl-3 pr-12 py-3 bg-transparent outline-none text-foreground"
-                  placeholder="7XXXXXXXX"
-                  minLength={9}
-                  maxLength={9}
-                  required
-                />
-                <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-              </div>
-            ) : (
-              <div className="relative">
-                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-                <input
-                  type="email"
-                  dir="ltr"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all text-left"
-                  placeholder="email@example.com"
-                  required
-                />
-              </div>
-            )}
+            <span className="font-black text-lg md:text-xl text-foreground tracking-tight block">شهرزاد</span>
+            <span className="text-[10px] text-foreground/50 tracking-wider font-semibold block uppercase">بوابة حساب العميل</span>
           </div>
+        </Link>
 
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
-              كلمة المرور
-            </label>
-            <div className="relative">
-              <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-12 py-3 bg-surface/50 border border-foreground/10 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-foreground transition-all"
-                placeholder="أدخل كلمة المرور"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 focus:outline-none"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            {/* <div className="mt-2 text-left">
-              <Link href="/account/forgot-password" className="text-xs text-brand hover:text-accent smooth-transition">
-                نسيت كلمة المرور؟
-              </Link>
-            </div> */}
-          </div>
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-foreground/10 text-xs font-bold text-foreground/70 hover:text-brand hover:border-brand/30 transition-all duration-200 shadow-sm"
+        >
+          <ArrowRight size={16} />
+          <span>العودة للمتجر</span>
+        </Link>
+      </header>
 
-          {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm font-semibold rounded-lg border border-red-100 text-center">
-              {error}
-            </div>
-          )}
+      {/* Main Card Container */}
+      <main className="w-full max-w-md my-auto z-10">
+        <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-foreground/8 overflow-hidden">
+          {/* Top Brand Accent Gradient Bar */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-brand via-accent to-brand-deep" />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary w-full btn-lg mt-2"
-          >
-            {loading ? 'جاري التحقق...' : 'تسجيل الدخول'}
-          </button>
-        </form>
-
-        <div className="mt-8 pt-6 border-t border-foreground/5 text-center">
-          <p className="text-sm text-foreground/60">
-            ليس لديك حساب؟{' '}
-            <Link href="/account/register" className="font-bold text-brand hover:text-accent smooth-transition">
+          {/* Navigation Tabs (Login / Register) */}
+          <div className="grid grid-cols-2 p-2 bg-surface/60 border-b border-foreground/6">
+            <button
+              type="button"
+              className="py-3 text-xs md:text-sm font-bold rounded-2xl bg-white text-brand shadow-sm border border-foreground/5 transition-all text-center"
+            >
+              تسجيل الدخول
+            </button>
+            <Link
+              href="/account/register"
+              className="py-3 text-xs md:text-sm font-bold rounded-2xl text-foreground/60 hover:text-brand hover:bg-white/50 transition-all text-center"
+            >
               إنشاء حساب جديد
             </Link>
-          </p>
+          </div>
+
+          <div className="p-6 sm:p-8">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand/5 border border-brand/15 text-brand mb-3 shadow-inner">
+                <UserCircle2 className="w-8 h-8 text-accent" />
+              </div>
+              <h1 className="text-2xl font-black text-foreground tracking-tight mb-1">مرحباً بك في حسابك</h1>
+              <p className="text-xs text-foreground/60 leading-relaxed">
+                سجّل الدخول للوصول إلى طلباتك، ومكافآتك، وتجربة تسوق راقية
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-bold text-foreground">
+                    {loginType === 'PHONE' ? 'رقم الهاتف' : 'البريد الإلكتروني'}
+                  </label>
+                  <button 
+                    type="button" 
+                    onClick={() => { setLoginType(loginType === 'PHONE' ? 'EMAIL' : 'PHONE'); setIdentifier(''); }}
+                    className="text-xs font-bold text-accent hover:text-brand transition-colors cursor-pointer"
+                  >
+                    {loginType === 'PHONE' ? 'الدخول بالبريد الإلكتروني' : 'الدخول برقم الهاتف'}
+                  </button>
+                </div>
+
+                {loginType === 'PHONE' ? (
+                  <div className="relative flex items-center bg-surface/70 border border-foreground/10 rounded-2xl focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all overflow-hidden" dir="ltr">
+                    <span className="pl-4 pr-3 font-bold text-xs text-foreground/70 select-none border-r border-foreground/10 py-3.5 flex items-center justify-center bg-black/5">
+                      +967
+                    </span>
+                    <input
+                      type="tel"
+                      value={identifier.replace('+967', '')}
+                      onChange={(e) => {
+                        let digits = e.target.value.replace(/\D/g, '');
+                        digits = digits.replace(/^[^7]+/, '');
+                        setIdentifier('+967' + digits.slice(0, 9));
+                      }}
+                      className="w-full pl-3 pr-11 py-3 bg-transparent outline-none text-foreground font-medium text-sm"
+                      placeholder="7XXXXXXXX"
+                      minLength={9}
+                      maxLength={9}
+                      required
+                    />
+                    <Phone className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground/40 w-4 h-4 pointer-events-none" />
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Mail className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground/40 w-4 h-4 pointer-events-none" />
+                    <input
+                      type="email"
+                      dir="ltr"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      className="w-full pl-4 pr-11 py-3 bg-surface/70 border border-foreground/10 rounded-2xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 text-foreground transition-all text-left text-sm font-medium"
+                      placeholder="name@example.com"
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-2">
+                  كلمة المرور
+                </label>
+                <div className="relative">
+                  <Lock className="absolute right-3.5 top-1/2 -translate-y-1/2 text-foreground/40 w-4 h-4 pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-11 pr-11 py-3 bg-surface/70 border border-foreground/10 rounded-2xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 text-foreground transition-all text-sm font-medium"
+                    placeholder="أدخل كلمة المرور"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 focus:outline-none cursor-pointer"
+                    aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-200 text-center animate-fade-in">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 px-4 bg-brand text-surface hover:bg-brand-hover active:scale-[0.99] rounded-2xl text-sm font-bold text-center flex items-center justify-center gap-2 shadow-md shadow-brand/15 transition-all duration-200 cursor-pointer disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-surface/30 border-t-surface rounded-full animate-spin" />
+                    <span>جاري التحقق...</span>
+                  </>
+                ) : (
+                  <span>تسجيل الدخول</span>
+                )}
+              </button>
+            </form>
+
+            {/* Guest Actions Divider */}
+            <div className="relative my-6 text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-foreground/8" />
+              </div>
+              <span className="relative bg-white px-3 text-[11px] font-bold text-foreground/40 uppercase">
+                خدمات سريعة للزوار
+              </span>
+            </div>
+
+            {/* Quick Guest Links */}
+            <div className="space-y-2">
+              <Link
+                href="/track"
+                className="w-full flex items-center justify-between p-3 rounded-2xl bg-surface/60 hover:bg-surface border border-foreground/6 hover:border-accent/30 text-foreground transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-brand/5 border border-brand/10 flex items-center justify-center text-accent">
+                    <Package className="w-4 h-4" />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold block text-foreground">تتبع طلبك كزائر</span>
+                    <span className="text-[10px] text-foreground/50 block">متابعة مسار الشحنة برقم الطلب والهاتف</span>
+                  </div>
+                </div>
+                <ArrowLeft className="w-4 h-4 text-foreground/30 group-hover:-translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                href="/favorites"
+                className="w-full flex items-center justify-between p-3 rounded-2xl bg-surface/60 hover:bg-surface border border-foreground/6 hover:border-accent/30 text-foreground transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-brand/5 border border-brand/10 flex items-center justify-center text-accent">
+                    <Heart className="w-4 h-4" />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold block text-foreground">قائمة المفضلة</span>
+                    <span className="text-[10px] text-foreground/50 block">عرض المنتجات التي قمت بحفظها</span>
+                  </div>
+                </div>
+                <ArrowLeft className="w-4 h-4 text-foreground/30 group-hover:-translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Benefits Strip */}
+        <div className="mt-6 grid grid-cols-3 gap-2 px-2 text-center">
+          <div className="p-2.5 rounded-2xl bg-white/60 border border-foreground/5">
+            <Award className="w-4 h-4 text-accent mx-auto mb-1" />
+            <span className="text-[10px] font-bold text-foreground/70 block">مكافآتي</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-white/60 border border-foreground/5">
+            <Clock className="w-4 h-4 text-accent mx-auto mb-1" />
+            <span className="text-[10px] font-bold text-foreground/70 block">تتبع فوري</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-white/60 border border-foreground/5">
+            <ShieldCheck className="w-4 h-4 text-accent mx-auto mb-1" />
+            <span className="text-[10px] font-bold text-foreground/70 block">أمان وحماية</span>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer copyright */}
+      <footer className="w-full max-w-md text-center py-4 text-[11px] text-foreground/40 font-medium z-10">
+        متجر شهرزاد © جميع الحقوق محفوظة
+      </footer>
     </div>
   )
 }

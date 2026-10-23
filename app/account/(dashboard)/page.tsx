@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { 
   AlertTriangle, 
   ShoppingBag, 
-  Star, 
+  Award, 
   ArrowLeft, 
   Calendar, 
   Phone, 
@@ -11,7 +11,8 @@ import {
   User, 
   Package, 
   Clock, 
-  Sparkles,
+  CreditCard,
+  ShieldCheck,
   ChevronLeft
 } from 'lucide-react'
 import { logoutCustomer } from '../actions'
@@ -101,7 +102,7 @@ export default async function AccountPage() {
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white">
                   {user.name}
                 </h1>
-                <Sparkles className="w-4 h-4 text-accent fill-accent" />
+                <ShieldCheck className="w-4 h-4 text-accent" />
               </div>
               <p className="text-xs sm:text-sm text-surface/80 font-medium">
                 مرحباً بك في لوحة تحكم حسابك الخاص لدى شهرزاد
@@ -161,7 +162,7 @@ export default async function AccountPage() {
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-foreground/50">إجمالي المشتريات</span>
             <div className="w-9 h-9 rounded-xl bg-accent/20 text-brand flex items-center justify-center">
-              <Sparkles size={18} className="text-accent" />
+              <CreditCard size={18} className="text-accent" />
             </div>
           </div>
           <div>
@@ -181,9 +182,9 @@ export default async function AccountPage() {
           className="group bg-surface rounded-2xl p-5 border border-foreground/6 hover:border-brand/30 transition-all duration-200 shadow-sm flex flex-col justify-between"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-foreground/50">نقاط الولاء</span>
+            <span className="text-xs font-bold text-foreground/50">مكافآتي</span>
             <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Star size={18} fill="currentColor" />
+              <Award size={18} />
             </div>
           </div>
           <div>
@@ -192,7 +193,7 @@ export default async function AccountPage() {
               <span className="text-xs font-normal text-foreground/60 mr-1.5">نقطة</span>
             </p>
             <span className="text-[11px] font-bold text-brand group-hover:underline inline-flex items-center gap-1">
-              <span>تفاصيل رصيد المكافآت</span>
+              <span>تفاصيل مكافآتي</span>
               <ChevronLeft size={12} />
             </span>
           </div>

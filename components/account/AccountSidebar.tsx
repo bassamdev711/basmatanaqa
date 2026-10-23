@@ -6,11 +6,11 @@ import { usePathname } from 'next/navigation'
 import { 
   UserCircle2, 
   ShoppingBag, 
-  Star, 
+  Award, 
   LogOut, 
   ArrowRight, 
   Bell, 
-  Store,
+  Store, 
   ChevronLeft
 } from 'lucide-react'
 import { logoutCustomer } from '@/app/account/actions'
@@ -33,9 +33,9 @@ export default function AccountSidebar() {
       exact: false,
     },
     {
-      name: 'نقاطي والمكافآت',
+      name: 'مكافآتي',
       href: '/account/points',
-      icon: Star,
+      icon: Award,
       exact: false,
     },
     {

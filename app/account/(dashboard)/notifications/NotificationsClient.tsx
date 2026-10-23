@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Bell, Check, CheckCheck, BellRing, Sparkles } from 'lucide-react'
+import { Bell, Check, CheckCheck, BellRing } from 'lucide-react'
 import { markNotificationAsRead, markAllNotificationsAsRead } from './actions'
 import { Notification } from '@prisma/client'
 
