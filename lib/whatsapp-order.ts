@@ -31,6 +31,7 @@ export function getProductWhatsAppLink({
   imageIndex,
   categoryName,
   subCategoryName,
+  notes,
   phone = STORE_WHATSAPP_NUMBER,
 }: {
   name: string
@@ -43,6 +44,7 @@ export function getProductWhatsAppLink({
   imageIndex?: number | null
   categoryName?: string | null
   subCategoryName?: string | null
+  notes?: string | null
   phone?: string
 }): string {
   const targetPhone = formatWhatsAppPhone(phone)
@@ -81,6 +83,10 @@ export function getProductWhatsAppLink({
     lines.push(`💰 الإجمالي: ${Number(price * quantity).toLocaleString('ar-SA')} ${currency} (${Number(price).toLocaleString('ar-SA')} ${currency} للقطعة)`)
   } else {
     lines.push(`💰 السعر: ${Number(price).toLocaleString('ar-SA')} ${currency}`)
+  }
+
+  if (notes && notes.trim()) {
+    lines.push(`📝 تفاصيل وملاحظات إضافية: ${notes.trim()}`)
   }
 
   lines.push('')
@@ -135,7 +141,7 @@ export function getCheckoutWhatsAppLink({
   message += `• الهاتف: ${customerPhone}\n`
   message += `• منطقة التوصيل: ${city}${address && address.trim() && address.trim() !== city.trim() ? ` - ${address.trim()}` : ''}\n`
   if (notes && notes.trim()) {
-    message += `• ملاحظات: ${notes.trim()}\n`
+    message += `• تفاصيل وملاحظات إضافية: ${notes.trim()}\n`
   }
 
   message += `\n📦 تفاصيل المنتجات (${items.length}):\n`

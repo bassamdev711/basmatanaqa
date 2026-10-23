@@ -44,7 +44,7 @@ export default async function PurchaseTaskDetail({ params }: { params: Promise<{
         msg += `المقاس/الخيار: ${orderItem.selectedSize}\n`
       }
       if (orderItem.product?.slug) {
-        msg += `الرابط: https://basmatanaqa.com/products/${orderItem.product.slug}\n`
+        msg += `الرابط: https://shahrazadstore.online/products/${orderItem.product.slug}\n`
       }
       msg += `\n`
     })

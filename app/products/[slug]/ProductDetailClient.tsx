@@ -11,6 +11,7 @@ import { useCartAnimation } from '@/components/CartAnimationProvider'
 import { useToast } from '@/components/ToastProvider'
 import { useCurrency } from '@/components/CurrencyProvider'
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon'
+import ProductWhatsAppModal from '@/components/ProductWhatsAppModal'
 import { getProductWhatsAppLink } from '@/lib/whatsapp-order'
 import ScrollableSizesRow from '@/components/ScrollableSizesRow'
 
@@ -64,6 +65,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [activeImage, setActiveImage] = useState(defaultInitialImage)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false)
 
   const { addToCart } = useCart()
   const { flyToCart } = useCartAnimation()
@@ -218,22 +220,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       return
     }
 
-    const chosenSize = selectedVariant?.size || selectedDynamicSize || product.size || null
-    const activeImageIdx = allImages.findIndex(img => img === activeImage)
-
-    const url = getProductWhatsAppLink({
-      name: product.name,
-      size: chosenSize,
-      price: currentPrice,
-      currency,
-      quantity,
-      slug: product.slug,
-      shortCode: product.shortCode,
-      imageIndex: activeImageIdx >= 0 ? activeImageIdx : 0,
-      categoryName: product.collection?.name || null,
-      subCategoryName: product.subCategory?.name || null,
-    })
-    window.open(url, '_blank')
+    setIsWhatsAppModalOpen(true)
   }
 
   return (
@@ -539,6 +526,25 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* WhatsApp Order Modal with Notes */}
+      <ProductWhatsAppModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        product={{
+          name: product.name,
+          price: currentPrice,
+          currency,
+          imageUrl: activeImage || product.imageUrl,
+          size: selectedVariant?.size || selectedDynamicSize || product.size || null,
+          quantity,
+          slug: product.slug,
+          shortCode: product.shortCode,
+          imageIndex: allImages.findIndex(img => img === activeImage) >= 0 ? allImages.findIndex(img => img === activeImage) : 0,
+          categoryName: product.collection?.name || null,
+          subCategoryName: product.subCategory?.name || null,
+        }}
+      />
     </>
   )
 }

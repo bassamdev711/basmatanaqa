@@ -436,6 +436,7 @@ export async function createOrder(
         governorate: checkoutData.governorate,
         city: selectedArea.name,
         address: checkoutData.address,
+        notes: checkoutData.address || checkoutData.notes || null,
         totalAmount: finalTotal,
         currency: paymentSettings?.currency || 'ر.س',
         paymentMethod: checkoutData.paymentMethod,

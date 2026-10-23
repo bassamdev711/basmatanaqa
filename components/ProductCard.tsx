@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,7 @@ import { useCartAnimation } from './CartAnimationProvider';
 import { useToast } from './ToastProvider';
 import { getImageSizes } from '@/lib/image-utils';
 import WhatsAppIcon from './icons/WhatsAppIcon';
+import ProductWhatsAppModal from './ProductWhatsAppModal';
 import { getProductWhatsAppLink } from '@/lib/whatsapp-order';
 
 interface ProductCardProps {
@@ -39,6 +40,7 @@ export default function ProductCard({ product, currency, priority = false }: Pro
   const { addToCart } = useCart();
   const { flyToCart } = useCartAnimation();
   const { showToast } = useToast();
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -99,15 +101,7 @@ export default function ProductCard({ product, currency, priority = false }: Pro
       router.push(`/products/${product.slug}`);
       return;
     }
-    const url = getProductWhatsAppLink({
-      name: product.name,
-      price: product.price,
-      currency,
-      quantity: 1,
-      slug: product.slug,
-      shortCode: product.shortCode,
-    });
-    window.open(url, '_blank');
+    setIsWhatsAppModalOpen(true);
   };
 
   const handleProductNavigation = () => {
@@ -238,6 +232,21 @@ export default function ProductCard({ product, currency, priority = false }: Pro
           </button>
         </div>
       </div>
+
+      {/* WhatsApp Order Modal with Notes */}
+      <ProductWhatsAppModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        product={{
+          name: product.name,
+          price: product.price,
+          currency,
+          imageUrl: product.imageUrl,
+          slug: product.slug,
+          shortCode: product.shortCode,
+          quantity: 1,
+        }}
+      />
     </div>
   );
 }

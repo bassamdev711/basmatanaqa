@@ -16,6 +16,7 @@ export type TelegramOrderNotificationData = {
   governorate?: string
   city: string
   address?: string
+  notes?: string | null
   totalAmount: number
   currency: string
   paymentMethod: string
@@ -145,7 +146,7 @@ export async function sendTelegramNewOrder(data: TelegramOrderNotificationData):
 
   // رابط واتساب مباشر لمحادثة العميل بضغطة زر
   const formattedPhone = formatCustomerWhatsAppPhone(data.customerPhone)
-  const waPreText = encodeURIComponent(`مرحباً ${data.customerName}، معك متجر بصمة أناقة بخصوص طلبك رقم #${data.orderNumber} 🛍️`)
+  const waPreText = encodeURIComponent(`مرحباً ${data.customerName}، معك متجر شهرزاد بخصوص طلبك رقم #${data.orderNumber} 🛍️`)
   const customerWhatsAppLink = `https://wa.me/${formattedPhone}?text=${waPreText}`
 
   // قائمة المنتجات مع المقاس والكمية ورابط كل منتج
@@ -165,13 +166,17 @@ export async function sendTelegramNewOrder(data: TelegramOrderNotificationData):
     .filter(Boolean)
     .join(' - ')
 
+  const notesSection = data.notes && data.notes.trim()
+    ? `\n📝 <b>ملاحظات وتفاصيل إضافية:</b> <i>${escapeHtml(data.notes.trim())}</i>`
+    : ''
+
   const message = `🛍️ <b>طلب جديد في المتجر!</b>
 ━━━━━━━━━━━━━━━━━━
 🔢 <b>رقم الطلب:</b> <code>#${data.orderNumber}</code>
 👤 <b>العميل:</b> ${escapeHtml(data.customerName)}
 📞 <b>الهاتف:</b> <code>${escapeHtml(data.customerPhone)}</code>
 💬 <b>مراسلة واتساب:</b> <a href="${customerWhatsAppLink}">اضغط هنا لفتح محادثة العميل مباشرة 📲</a>
-📍 <b>العنوان:</b> ${escapeHtml(locationText || 'غير محدد')}
+📍 <b>العنوان:</b> ${escapeHtml(locationText || 'غير محدد')}${notesSection}
 💳 <b>طريقة الدفع:</b> ${escapeHtml(paymentText)}
 💰 <b>الإجمالي النهائي:</b> <b>${Number(data.totalAmount).toLocaleString('ar-SA')} ${data.currency}</b>
 ${itemsSection}

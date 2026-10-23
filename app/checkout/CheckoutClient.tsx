@@ -258,7 +258,7 @@ export default function CheckoutClient() {
         customerPhone: formData.phone,
         city: formData.city,
         address: formData.address,
-        notes: formData.notes,
+        notes: formData.address || formData.notes,
         items: cartItems.map(item => ({
           name: item.name,
           size: item.selectedSize,
@@ -286,7 +286,7 @@ export default function CheckoutClient() {
         customerPhone: formData.phone,
         city: formData.city,
         address: formData.address,
-        notes: formData.notes,
+        notes: formData.address || formData.notes,
         items: cartItems.map(item => ({
           name: item.name,
           size: item.selectedSize,
@@ -465,16 +465,16 @@ export default function CheckoutClient() {
 
                 <div className="flex flex-col md:col-span-2">
                   <label htmlFor="address" className="text-sm font-bold text-foreground/80 mb-2">
-                    العنوان التفصيلي أو ملاحظات التوصيل (اختياري)
+                    أدرج أي تفاصيل إضافية تريدها (اختياري)
                   </label>
-                  <input 
-                    type="text" 
+                  <textarea 
                     id="address"
                     name="address"
+                    rows={3}
                     value={formData.address}
                     onChange={handleChange}
-                    placeholder="اسم الحي، الشارع، أو أي تفاصيل إضافية لتسهيل وصول المندوب"
-                    className="bg-surface-alt border border-black/10 rounded-xl px-4 py-3 outline-none focus:border-brand transition-colors text-sm"
+                    placeholder="أدرج أي تفاصيل إضافية تريدها (مثل: العنوان التفصيلي، اللون المطلوب، أو أي ملاحظات خاصة بالطلب)..."
+                    className="bg-surface-alt border border-black/10 rounded-xl px-4 py-3 outline-none focus:border-brand transition-colors text-sm resize-none leading-relaxed"
                   />
                 </div>
               </div>
