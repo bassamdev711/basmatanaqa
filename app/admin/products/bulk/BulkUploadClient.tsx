@@ -20,7 +20,8 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Copy
 } from 'lucide-react'
 import { useProductQueue } from '../ProductQueueContext'
 import { getCollections, getSubCategories } from '../../collections/actions'
@@ -80,6 +81,7 @@ export default function BulkUploadClient() {
   const [products, setProducts] = useState<BulkProductCard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showStockSupplier, setShowStockSupplier] = useState(false)
+  const [autoPrefillFromPrevious, setAutoPrefillFromPrevious] = useState(true)
   
   // Safe delete confirmation modal state
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null)
@@ -340,6 +342,39 @@ export default function BulkUploadClient() {
     }
   }
 
+  // Copy all details (name, price, collection, subcategories, sizes, etc.) from previous card
+  const copyFromPrevious = (targetIndex: number) => {
+    if (targetIndex <= 0) return
+    const prevCard = products[targetIndex - 1]
+    if (!prevCard) return
+
+    updateCard(targetIndex, {
+      name: prevCard.name,
+      price: prevCard.price,
+      costPrice: prevCard.costPrice,
+      stock: prevCard.stock,
+      collectionId: prevCard.collectionId,
+      subCategoryIds: [...prevCard.subCategoryIds],
+      hasSizes: prevCard.hasSizes,
+      availableSizes: [...prevCard.availableSizes],
+      supplierId: prevCard.supplierId,
+      description: prevCard.description,
+    })
+
+    if (prevCard.collectionId && !subCategoriesMap[prevCard.collectionId]) {
+      getSubCategories(prevCard.collectionId).then(subCats => {
+        if (Array.isArray(subCats)) {
+          setSubCategoriesMap(prevMap => ({
+            ...prevMap,
+            [prevCard.collectionId]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: prevCard.collectionId }))
+          }))
+        }
+      }).catch(console.error)
+    }
+
+    toast.success('تم نسخ كافة بيانات المنتج السابق بنجاح ✨')
+  }
+
   // Submit single card to the fast background queue and auto-slide
   const handleSubmitCard = (cardIndex: number) => {
     const card = products[cardIndex]
@@ -391,25 +426,61 @@ export default function BulkUploadClient() {
       availableSizes: card.availableSizes,
     })
 
-    // Mark as submitted
-    updateCard(cardIndex, { isSubmitted: true })
     toast.success(`تمت إضافة "${card.name}" إلى طابور المعالجة بالخلفية 🚀`)
 
     // Check if there are remaining unsubmitted cards in the batch
     const nextUnsubmittedIndex = products.findIndex((p, idx) => idx > cardIndex && !p.isSubmitted)
-    if (nextUnsubmittedIndex !== -1) {
-      setCurrentIndex(nextUnsubmittedIndex)
+    const targetIdx = nextUnsubmittedIndex !== -1 
+      ? nextUnsubmittedIndex 
+      : products.findIndex((p, idx) => idx !== cardIndex && !p.isSubmitted)
+
+    if (targetIdx !== -1) {
+      if (autoPrefillFromPrevious) {
+        setProducts(prev => {
+          const copy = [...prev]
+          if (copy[cardIndex]) {
+            copy[cardIndex] = { ...copy[cardIndex], isSubmitted: true }
+          }
+          const target = copy[targetIdx]
+          if (target && !target.isSubmitted) {
+            copy[targetIdx] = {
+              ...target,
+              // Pre-fill fields from submitted card if target hasn't been specifically filled
+              name: target.name.trim() ? target.name : card.name,
+              price: target.price.trim() ? target.price : card.price,
+              costPrice: target.costPrice || card.costPrice,
+              stock: target.stock || card.stock,
+              collectionId: card.collectionId || target.collectionId,
+              subCategoryIds: (target.subCategoryIds && target.subCategoryIds.length > 0) ? target.subCategoryIds : [...card.subCategoryIds],
+              hasSizes: target.hasSizes || card.hasSizes,
+              availableSizes: (target.availableSizes && target.availableSizes.length > 0) ? target.availableSizes : [...card.availableSizes],
+              supplierId: target.supplierId || card.supplierId,
+              description: target.description || card.description,
+            }
+          }
+          return copy
+        })
+
+        if (card.collectionId && !subCategoriesMap[card.collectionId]) {
+          getSubCategories(card.collectionId).then(subCats => {
+            if (Array.isArray(subCats)) {
+              setSubCategoriesMap(prevMap => ({
+                ...prevMap,
+                [card.collectionId]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: card.collectionId }))
+              }))
+            }
+          }).catch(console.error)
+        }
+      } else {
+        updateCard(cardIndex, { isSubmitted: true })
+      }
+
+      setCurrentIndex(targetIdx)
       window.scrollTo({ top: 120, behavior: 'smooth' })
     } else {
-      // Look from the start
-      const anyUnsubmittedIndex = products.findIndex((p, idx) => idx !== cardIndex && !p.isSubmitted)
-      if (anyUnsubmittedIndex !== -1) {
-        setCurrentIndex(anyUnsubmittedIndex)
-        window.scrollTo({ top: 120, behavior: 'smooth' })
-      } else {
-        // All cards in current batch are completed
-        toast.success(`اكتملت جميع المنتجات (${products.length} من ${products.length}) بنجاح! يمكنك إضافة دفعة أخرى متى شئت. ✨`, { duration: 6000 })
-      }
+      updateCard(cardIndex, { isSubmitted: true })
+      // All cards in current batch are completed
+      toast.success(`اكتملت جميع المنتجات (${products.length} من ${products.length}) بنجاح! يمكنك إضافة دفعة أخرى متى شئت. ✨`, { duration: 6000 })
     }
   }
 
@@ -538,6 +609,29 @@ export default function BulkUploadClient() {
               </button>
             ))}
           </div>
+
+          {/* Smart Auto-fill Settings Switch */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoPrefillFromPrevious}
+                onChange={(e) => setAutoPrefillFromPrevious(e.target.checked)}
+                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-gray-300"
+              />
+              <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>ملء النموذج التالي تلقائياً ببيانات السابق (الاسم، السعر، المجموعة، الخيارات)</span>
+              </span>
+            </label>
+
+            {autoPrefillFromPrevious && (
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                <Zap className="w-3 h-3 fill-emerald-600 text-emerald-600" />
+                <span>مفعّل: ينسخ البيانات ويقبل الإضافة المباشرة</span>
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -561,6 +655,18 @@ export default function BulkUploadClient() {
             </div>
 
             <div className="flex items-center gap-2">
+              {currentIndex > 0 && !currentCard.isSubmitted && (
+                <button
+                  type="button"
+                  onClick={() => copyFromPrevious(currentIndex)}
+                  className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                  title="نسخ الاسم والسعر والمجموعة والمقاسات من المنتج السابق"
+                >
+                  <Copy className="w-3.5 h-3.5 text-amber-600" />
+                  <span>نسخ بيانات السابق</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setConfirmDeleteIndex(currentIndex)}
@@ -574,6 +680,16 @@ export default function BulkUploadClient() {
           </div>
 
           <div className="p-6 space-y-6">
+
+            {/* Auto-filled helpful banner */}
+            {autoPrefillFromPrevious && currentIndex > 0 && !currentCard.isSubmitted && Boolean(currentCard.name) && (
+              <div className="flex items-center justify-between bg-amber-50/80 border border-amber-200 text-amber-900 text-xs px-3.5 py-2.5 rounded-xl shadow-xs animate-in fade-in">
+                <div className="flex items-center gap-2 font-bold">
+                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>تم ملء البيانات تلقائياً من المنتج السابق لتسريع عملك! يمكنك اعتمادها فوراً بالنقر على «إضافة» أو تعديل ما تشاء.</span>
+                </div>
+              </div>
+            )}
 
             {/* 1. الصورة في أول حقل دائماً بوضوح تام */}
             <div className="space-y-3">

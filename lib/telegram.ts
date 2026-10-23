@@ -105,9 +105,9 @@ export async function sendTelegramMessage(text: string): Promise<{ success: bool
 
     if (!res.ok || !data.ok) {
       console.error('[Telegram] API Error:', data)
-      return { 
-        success: false, 
-        error: data.description || `HTTP ${res.status}: خطأ أثناء الإرسال لتليجرام` 
+      return {
+        success: false,
+        error: data.description || `HTTP ${res.status}: خطأ أثناء الإرسال لتليجرام`
       }
     }
 
@@ -146,7 +146,10 @@ export async function sendTelegramNewOrder(data: TelegramOrderNotificationData):
 
   // رابط واتساب مباشر لمحادثة العميل بضغطة زر
   const formattedPhone = formatCustomerWhatsAppPhone(data.customerPhone)
-  const waPreText = encodeURIComponent(`مرحباً ${data.customerName}، معك متجر شهرزاد بخصوص طلبك رقم #${data.orderNumber} 🛍️`)
+  const totalPieces = (data.items || []).reduce((sum, it) => sum + (Number(it.quantity) || 1), 0)
+  const piecesText = totalPieces > 0 ? ` (عدد القطع: ${totalPieces})` : ''
+  const customerName = (data.customerName || '').trim() || 'عزيزي العميل'
+  const waPreText = encodeURIComponent(`مرحباً ${customerName}، معك متجر شهرزاد بخصوص طلبك رقم #${data.orderNumber}${piecesText}`)
   const customerWhatsAppLink = `https://wa.me/${formattedPhone}?text=${waPreText}`
 
   // قائمة المنتجات مع المقاس والكمية ورابط كل منتج
@@ -155,7 +158,7 @@ export async function sendTelegramNewOrder(data: TelegramOrderNotificationData):
     itemsSection = '\n📦 <b>المنتجات المطلوبة:</b>\n' + data.items.map((it, idx) => {
       const sizeStr = it.size ? ` (مقاس: ${it.size})` : ''
       const productUrl = it.slug ? `${baseUrl}/products/${it.slug}` : null
-      const productLinkTag = productUrl 
+      const productLinkTag = productUrl
         ? ` <a href="${productUrl}">[رابط المنتج 🔗]</a>`
         : ''
       return `   ${idx + 1}. <b>${escapeHtml(it.name)}</b>${sizeStr} × ${it.quantity}${productLinkTag}`
