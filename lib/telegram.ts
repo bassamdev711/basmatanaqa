@@ -144,12 +144,12 @@ export async function sendTelegramNewOrder(data: TelegramOrderNotificationData):
 
   const paymentText = paymentLabels[data.paymentMethod] || data.paymentMethod || 'غير محدد'
 
-  // رابط واتساب مباشر لمحادثة العميل بضغطة زر
+  // رابط واتساب مباشر لمحادثة العميل بضغطة زر (بدون رمز # لتجنب قص الرابط في المتصفح وتيليجرام)
   const formattedPhone = formatCustomerWhatsAppPhone(data.customerPhone)
   const totalPieces = (data.items || []).reduce((sum, it) => sum + (Number(it.quantity) || 1), 0)
   const piecesText = totalPieces > 0 ? ` (عدد القطع: ${totalPieces})` : ''
   const customerName = (data.customerName || '').trim() || 'عزيزي العميل'
-  const waPreText = encodeURIComponent(`مرحباً ${customerName}، معك متجر شهرزاد بخصوص طلبك رقم #${data.orderNumber}${piecesText}`)
+  const waPreText = encodeURIComponent(`مرحباً ${customerName}، معك متجر شهرزاد بخصوص طلبك رقم ${data.orderNumber}${piecesText}`)
   const customerWhatsAppLink = `https://wa.me/${formattedPhone}?text=${waPreText}`
 
   // قائمة المنتجات مع المقاس والكمية ورابط كل منتج

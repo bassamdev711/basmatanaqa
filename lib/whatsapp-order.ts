@@ -135,7 +135,7 @@ export function getCheckoutWhatsAppLink({
 
   let message = `مرحباً، أود تأكيد الطلب التالي من متجركم:\n`
   if (orderNumber) {
-    message += `• رقم الطلب: #${orderNumber}\n`
+    message += `• رقم الطلب: ${orderNumber}\n`
   }
   message += `• اسم العميل: ${customerName}\n`
   message += `• الهاتف: ${customerPhone}\n`
