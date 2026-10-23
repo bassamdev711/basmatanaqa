@@ -159,8 +159,8 @@ export async function createOrder(
         itemPrice = Number(dbProduct.offers[0].offerPrice)
       }
 
-      if (!Number.isFinite(itemPrice) || itemPrice < 0 || stockToCheck < item.quantity) {
-        return { success: false, error: `الكمية المطلوبة من "${dbProduct.name}" غير متوفرة.` }
+      if (!Number.isFinite(itemPrice) || itemPrice < 0) {
+        return { success: false, error: `سعر المنتج "${dbProduct.name}" غير صالح.` }
       }
 
       if (Math.abs(item.clientPrice - itemPrice) > 0.01) {
@@ -378,18 +378,16 @@ export async function createOrder(
       }
 
       for (const item of orderItemsData) {
-        const updateResult = item.variantId
-          ? await tx.productVariant.updateMany({
-              where: { id: item.variantId, stock: { gte: item.quantity } },
-              data: { stock: { decrement: item.quantity } },
-            })
-          : await tx.product.updateMany({
-              where: { id: item.productId, isActive: true, stock: { gte: item.quantity } },
-              data: { stock: { decrement: item.quantity } },
-            })
-
-        if (updateResult.count !== 1) {
-          throw new Error('STOCK_UNAVAILABLE')
+        if (item.variantId) {
+          await tx.productVariant.updateMany({
+            where: { id: item.variantId, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          })
+        } else {
+          await tx.product.updateMany({
+            where: { id: item.productId, isActive: true, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          })
         }
       }
 

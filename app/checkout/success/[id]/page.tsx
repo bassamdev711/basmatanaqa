@@ -38,32 +38,42 @@ export default async function SuccessPage({
       <Navbar />
 
       <div className="flex-grow pt-40 pb-24 px-6 max-w-7xl mx-auto w-full flex justify-center items-start">
-        <div className="w-full max-w-[640px] bg-white shadow-sm p-12 text-center border border-black/5">
-          <CheckCircle2 className="w-20 h-20 text-brand mx-auto mb-6" />
-          <h1 className="text-4xl font-black text-foreground mb-4">تم استلام طلبك بنجاح!</h1>
+        <div className="w-full max-w-[640px] bg-white shadow-sm p-6 md:p-12 text-center border border-black/5 rounded-2xl">
+          <CheckCircle2 className="w-16 h-16 md:w-20 md:h-20 text-brand mx-auto mb-5" />
+          <h1 className="text-2xl md:text-4xl font-black text-foreground mb-3">تم تسجيل طلبك بنجاح!</h1>
 
-          <div className="bg-surface-alt p-6 mb-8 mt-6">
-            <p className="text-lg mb-2">رقم الطلب الخاص بك هو:</p>
-            <p className="font-bold text-xl text-brand tracking-widest">{orderReference}</p>
+          <div className="bg-surface-alt p-5 mb-6 mt-4 rounded-xl border border-black/5">
+            <p className="text-sm md:text-base mb-1 text-foreground/70">رقم الطلب الخاص بك هو:</p>
+            <p className="font-bold text-2xl text-brand tracking-widest" dir="ltr">#{orderReference}</p>
           </div>
 
-          <p className="text-foreground/70 mb-10 leading-relaxed text-lg">
-            سنقوم بمراجعة طلبك وتجهيزه بأسرع وقت ممكن. يمكنك تتبع حالة طلبك في أي وقت من خلال صفحة تتبع الطلبات. شكرًا لثقتك بنا!
-          </p>
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-5 mb-8 text-right">
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0 mt-0.5">📞</span>
+              <div>
+                <p className="font-bold text-base md:text-lg mb-1 text-amber-950">
+                  بمجرد إتمام الطلب سنتواصل معك لتأكيد توفره والدفع
+                </p>
+                <p className="text-xs md:text-sm text-amber-800 leading-relaxed">
+                  تم استلام طلبك في نظامنا بنجاح. سيقوم فريق خدمة العملاء بالتواصل معك مباشرة عبر الهاتف أو واتساب لتأكيد توفر المنتجات والمقاسات المطلوبة في المخزن وترتيب طريقة الدفع والتوصيل المناسبة لك.
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href={trackingHref}
-              className="btn btn-outline btn-lg"
+              className="btn btn-outline btn-lg font-bold"
             >
-              تتبع طلبك الآن
+              تتبع حالة طلبك
             </Link>
 
             <Link
               href="/"
-              className="btn btn-primary btn-lg"
+              className="btn btn-primary btn-lg font-bold"
             >
-              العودة للرئيسية
+              متابعة التسوق
             </Link>
           </div>
         </div>

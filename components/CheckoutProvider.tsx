@@ -24,11 +24,11 @@ const defaultData: CheckoutData = {
   governorate: '',
   city: '',
   address: '',
-  paymentMethod: 'bank_transfer',
+  paymentMethod: 'customer_service',
   shippingFee: 0,
 }
 
-const PAYMENT_METHODS = new Set(['cod', 'bank_transfer', 'wallets'])
+const PAYMENT_METHODS = new Set(['customer_service', 'cod', 'bank_transfer', 'wallets', 'points'])
 
 function sanitizeCheckoutData(value: unknown): CheckoutData {
   if (!value || typeof value !== 'object') return defaultData

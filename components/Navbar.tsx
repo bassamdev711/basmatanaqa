@@ -9,6 +9,7 @@ import { useCart } from "./CartProvider";
 import SearchModal from "./SearchModal";
 import { useCartAnimation } from "./CartAnimationProvider";
 import NotificationBadge from "./NotificationBadge";
+import AccountDropdown from "./AccountDropdown";
 
 export default function Navbar({
   storeName = 'شهرزاد',
@@ -118,14 +119,9 @@ export default function Navbar({
           >
             <Package className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={1.5} />
           </Link>
-          <Link 
-            href="/account" 
-            className="text-accent hover:text-surface transition-colors hidden sm:block relative" 
-            aria-label="حسابي"
-          >
-            <UserCircle2 className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={1.5} />
-            <NotificationBadge />
-          </Link>
+          <div className="hidden sm:block">
+            <AccountDropdown />
+          </div>
           <Link 
             href="/favorites" 
             className="text-accent hover:text-surface transition-colors relative hidden md:block" 
