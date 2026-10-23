@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useCallback, ReactNode, useRef } f
 interface CartAnimationContextType {
   flyToCart: (buttonEl: HTMLElement) => void
   cartIconRef: React.RefObject<HTMLDivElement | null>
+  mobileCartIconRef: React.RefObject<HTMLDivElement | null>
   triggerBounce: boolean
   onBounceComplete: () => void
 }
@@ -20,13 +21,16 @@ export function useCartAnimation() {
 export function CartAnimationProvider({ children }: { children: ReactNode }) {
   const [triggerBounce, setTriggerBounce] = useState(false)
   const cartIconRef = useRef<HTMLDivElement | null>(null)
+  const mobileCartIconRef = useRef<HTMLDivElement | null>(null)
 
   const flyToCart = useCallback((buttonEl: HTMLElement) => {
-    const cartIcon = cartIconRef.current
-    if (!cartIcon) return
+    // Determine the right target: mobile bottom nav on mobile screens, or desktop navbar
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768 && !!mobileCartIconRef.current
+    const targetEl = isMobile ? mobileCartIconRef.current : (cartIconRef.current || mobileCartIconRef.current)
+    if (!targetEl) return
 
     const btnRect = buttonEl.getBoundingClientRect()
-    const cartRect = cartIcon.getBoundingClientRect()
+    const cartRect = targetEl.getBoundingClientRect()
 
     const startX = btnRect.left + btnRect.width / 2
     const startY = btnRect.top + btnRect.height / 2
@@ -50,15 +54,19 @@ export function CartAnimationProvider({ children }: { children: ReactNode }) {
     `
     document.body.appendChild(el)
 
-    // Animate with Web Animations API for maximum smoothness
+    // Calculate distance and trajectory
     const dx = endX - startX
     const dy = endY - startY
     const dist = Math.sqrt(dx * dx + dy * dy)
-    const duration = Math.min(700, Math.max(450, dist * 0.8))
+    const duration = Math.min(650, Math.max(400, dist * 0.7))
 
-    // Parabolic arc: midpoint lifted up
-    const midX = startX + dx / 2
-    const midY = startY + dy / 2 - Math.min(120, dist * 0.3)
+    // Parabolic arc:
+    // If target is below start (e.g. mobile bottom nav), curve gently toward it
+    // If target is above start (desktop top nav), arc upwards
+    const midX = startX + dx * 0.5
+    const midY = dy > 0
+      ? startY + dy * 0.45 + Math.min(30, dist * 0.08)
+      : startY + dy * 0.5 - Math.min(110, dist * 0.25)
 
     el.animate([
       { transform: 'translate(0,0) scale(1)', opacity: 1 },
@@ -80,7 +88,7 @@ export function CartAnimationProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <CartAnimationContext.Provider value={{ flyToCart, cartIconRef, triggerBounce, onBounceComplete }}>
+    <CartAnimationContext.Provider value={{ flyToCart, cartIconRef, mobileCartIconRef, triggerBounce, onBounceComplete }}>
       {children}
     </CartAnimationContext.Provider>
   )

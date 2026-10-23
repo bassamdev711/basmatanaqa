@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Home, LayoutGrid, Heart, ShoppingCart, UserCircle2 } from "lucide-react";
@@ -11,7 +12,14 @@ import NotificationBadge from "./NotificationBadge";
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { cartCount } = useCart();
-  const { triggerBounce, onBounceComplete } = useCartAnimation();
+  const { mobileCartIconRef, triggerBounce, onBounceComplete } = useCartAnimation();
+  const localCartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (localCartRef.current && mobileCartIconRef) {
+      mobileCartIconRef.current = localCartRef.current;
+    }
+  }, [mobileCartIconRef]);
 
   const navItems = [
     {
@@ -50,7 +58,7 @@ export default function MobileBottomNav() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[90] bg-surface/95 backdrop-blur-md border-t border-black/10 shadow-[0_-5px_20px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom)]">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[90] bg-surface/95 backdrop-blur-md border-t border-black/10 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom)]">
       <div className="flex justify-around items-center h-16 px-1 relative" dir="rtl">
         {navItems.map((item) => {
           const isActive = 
@@ -63,11 +71,11 @@ export default function MobileBottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative flex flex-col items-center justify-center flex-1 h-full -top-4 group"
+                className="relative flex items-center justify-center flex-1 h-full group"
                 aria-label="سلة المشتريات"
               >
-                <div className="relative">
-                  {/* Floating Luxury Action Circle */}
+                <div ref={localCartRef} className="relative">
+                  {/* Distinct Integrated Luxury Action Circle */}
                   <motion.div
                     whileTap={{ scale: 0.92 }}
                     animate={
@@ -77,17 +85,17 @@ export default function MobileBottomNav() {
                     }
                     transition={{ duration: 0.5, ease: "easeOut" }}
                     onAnimationComplete={onBounceComplete}
-                    className={`relative w-14 h-14 rounded-full flex items-center justify-center border-4 border-surface shadow-[0_8px_20px_rgba(0,0,0,0.22)] transition-all duration-300 ${
+                    className={`relative w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
                       isActive
-                        ? "bg-brand text-accent ring-2 ring-accent ring-offset-2 ring-offset-surface shadow-brand/40 scale-105"
-                        : "bg-brand text-accent hover:brightness-110"
+                        ? "bg-brand text-accent ring-2 ring-accent ring-offset-2 ring-offset-surface shadow-md shadow-brand/30 scale-105"
+                        : "bg-brand text-accent hover:brightness-110 shadow-sm shadow-brand/20 border border-brand/20"
                     }`}
                   >
                     {/* Subtle Luxury Gradient Glow */}
                     <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-accent/20 to-transparent pointer-events-none" />
 
                     <Icon
-                      size={23}
+                      size={21}
                       strokeWidth={2.3}
                       className="text-accent transition-transform duration-200 group-hover:scale-110 relative z-10"
                     />
@@ -105,21 +113,13 @@ export default function MobileBottomNav() {
                         initial={{ scale: 0.4, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.4, opacity: 0 }}
-                        className="absolute -top-1 -right-1 z-20 min-w-5 h-5 px-1 bg-accent text-brand text-[10px] font-black rounded-full flex items-center justify-center border-2 border-surface shadow-md"
+                        className="absolute -top-1 -right-1 z-20 min-w-[18px] h-[18px] px-1 bg-accent text-brand text-[9px] font-black rounded-full flex items-center justify-center border-2 border-surface shadow-sm leading-none"
                       >
                         {item.badge}
                       </motion.span>
                     ) : null}
                   </AnimatePresence>
                 </div>
-
-                <span
-                  className={`text-[10px] font-bold transition-colors duration-200 mt-1 leading-none ${
-                    isActive ? "text-brand font-extrabold" : "text-foreground/60"
-                  }`}
-                >
-                  {item.name}
-                </span>
               </Link>
             );
           }
