@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingBag, Share2 } from 'lucide-react';
 import FavoriteButton from './FavoriteButton';
 import { useCart } from './CartProvider';
+import { useCartAnimation } from './CartAnimationProvider';
 import { useToast } from './ToastProvider';
 import { getImageSizes } from '@/lib/image-utils';
 import WhatsAppIcon from './icons/WhatsAppIcon';
@@ -36,6 +37,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, currency, priority = false }: ProductCardProps) {
   const router = useRouter();
   const { addToCart } = useCart();
+  const { flyToCart } = useCartAnimation();
   const { showToast } = useToast();
 
   const handleShare = async (e: React.MouseEvent) => {
@@ -84,7 +86,9 @@ export default function ProductCard({ product, currency, priority = false }: Pro
       quantity: 1,
       maxStock: 99, // default max stock if not provided
     });
-    showToast('success', 'تمت الإضافة إلى السلة بنجاح');
+    if (e.currentTarget) {
+      flyToCart(e.currentTarget as HTMLElement);
+    }
   };
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
