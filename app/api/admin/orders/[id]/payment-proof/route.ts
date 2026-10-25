@@ -41,9 +41,8 @@ export async function GET(
       responseHeaders.set('Cache-Control', 'private, no-store, max-age=0')
       responseHeaders.set('X-Content-Type-Options', 'nosniff')
 
-      // @ts-expect-error Body has transformToWebStream in Node AWS SDK
-      const webStream = typeof r2Obj.Body.transformToWebStream === 'function' ? r2Obj.Body.transformToWebStream() : r2Obj.Body
-      return new NextResponse(webStream, { status: 200, headers: responseHeaders })
+      const byteArray = await r2Obj.Body.transformToByteArray()
+      return new NextResponse(Buffer.from(byteArray) as unknown as BodyInit, { status: 200, headers: responseHeaders })
     }
 
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN

@@ -12,9 +12,9 @@ const nextConfig: NextConfig = {
       // Fonts: Google Fonts CDN
       "font-src 'self' https://fonts.gstatic.com data:",
       // Images: self + Vercel Blob + Cloudflare R2 + Google (avatars) + data URIs
-      "img-src 'self' https://*.r2.dev https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com https://images.unsplash.com data: blob:",
+      "img-src 'self' https://pub-2ac71011e37a428ea18877ef55d536b1.r2.dev https://*.r2.dev https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com https://images.unsplash.com data: blob:",
       // Connect: self + Vercel Blob + Cloudflare R2
-      "connect-src 'self' https://*.r2.dev https://*.vercel-storage.com",
+      "connect-src 'self' https://pub-2ac71011e37a428ea18877ef55d536b1.r2.dev https://*.r2.dev https://*.vercel-storage.com",
       // Media: self only
       "media-src 'self'",
       // Objects: none
@@ -68,6 +68,12 @@ const nextConfig: NextConfig = {
 
     // مصادر الصور المسموح بها
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'pub-2ac71011e37a428ea18877ef55d536b1.r2.dev',
+        port: '',
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: '*.r2.dev',
