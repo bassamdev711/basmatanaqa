@@ -253,34 +253,42 @@ export default function NewProductPage() {
               
               {/* كلمات مساعدة سريعة لاسم المنتج */}
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                <span className="text-[10px] text-gray-400 font-bold ml-1">مساعد الاسم:</span>
+                <span className="text-[10px] text-gray-400 font-bold ml-1">اقتراحات سريعة:</span>
                 {[
-                  'فستان',
-                  'نسائي',
-                  'بنطلون',
-                  'جينز',
-                  'طقم',
-                  'قطعتين',
-                  'ولادي',
-                  'بناتي',
-                  'اطفال',
-                  'بيبي',
-                  'روب',
-                  'سهره',
-                ].map((word) => (
-                  <button
-                    key={word}
-                    type="button"
-                    onClick={() => {
-                      const updated = name.trim() ? `${name.trim()} ${word}` : word
-                      setName(updated)
-                      setSlug(generateSlug(updated))
-                    }}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200 active:bg-amber-100 text-gray-800 border border-gray-200 transition-all hover:scale-105 select-none"
-                  >
-                    + {word}
-                  </button>
-                ))}
+                  'فستان نسائي',
+                  'فستان بناتي',
+                  'طقم ولادي',
+                  'بجامة ولادي',
+                  'بجامة بناتي',
+                  'طقم بناتي',
+                  'طقم نسائي',
+                  'بنطال نسائي',
+                  'بنطال بناتي',
+                  'بنطال ولادي',
+                  'طقم مواليد',
+                  'توب نسائي',
+                  'قطعة نسائي',
+                ].map((phrase) => {
+                  const isSelected = name.trim() === phrase
+                  return (
+                    <button
+                      key={phrase}
+                      type="button"
+                      onClick={() => {
+                        // استبدال فوري وحذف أي أثر للمنتج السابق
+                        setName(phrase)
+                        setSlug(generateSlug(phrase))
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border select-none ${
+                        isSelected
+                          ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
+                          : 'bg-gray-100 hover:bg-gray-200 active:bg-amber-100 text-gray-800 border-gray-200 hover:scale-105'
+                      }`}
+                    >
+                      {phrase}
+                    </button>
+                  )
+                })}
                 {name && (
                   <button
                     type="button"
@@ -299,9 +307,13 @@ export default function NewProductPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">السعر (ر.ي) *</label>
               <input type="number" name="price" value={price} onChange={e => setPrice(e.target.value)} step="0.01" min="0" required dir="ltr"
                 className="w-full rounded-md border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" />
-              {/* أزرار مساعدة سريعة للأسعار الشائعة */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {['1000', '2000', '2200', '2500', '2700', '3000', '3200', '4000'].map((presetPrice) => (
+              {/* أزرار مساعدة سريعة للأسعار من 500 إلى 5000 بزيادة 250 */}
+              <div className="flex flex-wrap gap-1.5 mt-2 max-h-36 overflow-y-auto p-1.5 bg-gray-50/80 rounded-xl border border-gray-200">
+                {[
+                  '500', '750', '1000', '1250', '1500', '1750', '2000', '2250',
+                  '2500', '2750', '3000', '3250', '3500', '3750', '4000', '4250',
+                  '4500', '4750', '5000'
+                ].map((presetPrice) => (
                   <button
                     key={presetPrice}
                     type="button"
@@ -309,7 +321,7 @@ export default function NewProductPage() {
                     className={`px-2 py-1 rounded-lg text-xs font-black transition-all border ${
                       price === presetPrice
                         ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200 hover:border-gray-300'
+                        : 'bg-white hover:bg-gray-100 text-gray-800 border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     {presetPrice}
