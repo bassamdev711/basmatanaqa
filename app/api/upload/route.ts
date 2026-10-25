@@ -5,6 +5,7 @@ import { verifyOrderUploadToken } from '@/lib/order-upload-token'
 import prisma from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { UsageLimitError, markBlobDeleted, putTrackedBlob } from '@/lib/usage'
+import { isR2Configured, uploadToR2, deleteFromR2 } from '@/lib/r2'
 import crypto from 'crypto'
 
 export const runtime = 'nodejs'
@@ -155,9 +156,10 @@ export async function POST(request: NextRequest) {
     detectedType = { ext, mime }
   }
 
+  const useR2 = isR2Configured()
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN
-  if (!blobToken) {
-    console.error('BLOB_READ_WRITE_TOKEN is not configured')
+  if (!useR2 && !blobToken) {
+    console.error('Neither Cloudflare R2 nor BLOB_READ_WRITE_TOKEN is configured')
     return NextResponse.json({ error: 'خدمة التخزين غير مهيأة' }, { status: 503 })
   }
 
@@ -165,14 +167,53 @@ export async function POST(request: NextRequest) {
   const filename = `${folder}/${Date.now()}-${crypto.randomBytes(16).toString('hex')}.${detectedType.ext}`
   let uploadedUrl: string | undefined
 
+  const cleanupUploadedFile = async (url: string) => {
+    try {
+      if (url.includes('.r2.dev') || url.includes('.cloudflarestorage.com')) {
+        await deleteFromR2(url)
+      } else if (blobToken) {
+        await del(url, { token: blobToken })
+      }
+      await markBlobDeleted(url)
+    } catch (cleanupError) {
+      console.error('File cleanup failed:', cleanupError)
+    }
+  }
+
   try {
-    const blob = await putTrackedBlob(filename, buffer, {
-      access: 'public',
-      token: blobToken,
-      contentType: detectedType.mime,
-      cacheControlMaxAge: !isReceiptUpload ? 31536000 : 0,
-    }, !isReceiptUpload ? 'product' : 'receipt', buffer.length)
-    uploadedUrl = blob.url
+    if (useR2) {
+      const r2Result = await uploadToR2(filename, buffer, detectedType.mime, {
+        cacheControl: !isReceiptUpload ? 'public, max-age=31536000, immutable' : 'private, no-cache',
+      })
+      uploadedUrl = r2Result.url
+
+      try {
+        await prisma.storageObject.upsert({
+          where: { url: uploadedUrl },
+          create: {
+            url: uploadedUrl,
+            storageKey: r2Result.pathname,
+            sizeBytes: BigInt(buffer.length),
+            kind: !isReceiptUpload ? 'product' : 'receipt',
+          },
+          update: {
+            isDeleted: false,
+            deletedAt: null,
+            sizeBytes: BigInt(buffer.length),
+          },
+        })
+      } catch (dbErr) {
+        console.warn('Could not record StorageObject for R2 upload:', dbErr)
+      }
+    } else {
+      const blob = await putTrackedBlob(filename, buffer, {
+        access: 'public',
+        token: blobToken!,
+        contentType: detectedType.mime,
+        cacheControlMaxAge: !isReceiptUpload ? 31536000 : 0,
+      }, !isReceiptUpload ? 'product' : 'receipt', buffer.length)
+      uploadedUrl = blob.url
+    }
 
     if (isReceiptUpload) {
       const updated = await prisma.order.updateMany({
@@ -188,8 +229,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (updated.count !== 1) {
-        await del(uploadedUrl, { token: blobToken })
-        await markBlobDeleted(uploadedUrl)
+        await cleanupUploadedFile(uploadedUrl)
         return NextResponse.json({ error: 'لم يعد الطلب متاحاً لإرفاق الإيصال' }, { status: 409 })
       }
     }
@@ -201,12 +241,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: uploadedUrl, warning })
   } catch (error) {
     if (uploadedUrl && isReceiptUpload) {
-      try {
-        await del(uploadedUrl, { token: blobToken })
-        await markBlobDeleted(uploadedUrl)
-      } catch (cleanupError) {
-        console.error('Blob cleanup failed:', cleanupError)
-      }
+      await cleanupUploadedFile(uploadedUrl)
     }
     if (error instanceof UsageLimitError) {
       return NextResponse.json({
@@ -215,7 +250,7 @@ export async function POST(request: NextRequest) {
         resource: error.resource,
       }, { status: 413 })
     }
-    console.error('Blob upload error:', error)
+    console.error('File upload error:', error)
     return NextResponse.json({ error: 'فشل رفع الملف. يرجى المحاولة لاحقاً.' }, { status: 500 })
   }
 }
