@@ -328,6 +328,74 @@ export async function createProductAsync(payload: {
   }
 }
 
+export async function updateProductAsync(payload: {
+  id: string;
+  name?: string;
+  price?: number;
+  stock?: number;
+  costPrice?: number | null;
+  collectionId?: string | null;
+  subCategoryId?: string | null;
+  subCategoryIds?: string[];
+  supplierId?: string | null;
+  description?: string | null;
+  hasSizes?: boolean;
+  availableSizes?: string[];
+  imageUrl?: string | null;
+  images?: string[];
+}) {
+  await verifyAdmin();
+
+  try {
+    const existing = await prisma.product.findUnique({
+      where: { id: payload.id },
+      select: { id: true, name: true, slug: true },
+    });
+    if (!existing) {
+      return { success: false, error: 'المنتج غير موجود' };
+    }
+
+    let slug = existing.slug;
+    if (payload.name && payload.name.trim() !== existing.name) {
+      slug = await getUniqueProductSlug(payload.name.trim(), payload.id);
+    }
+
+    const data: any = {
+      updatedAt: new Date(),
+    };
+    if (payload.name) data.name = payload.name.trim();
+    if (slug) data.slug = slug;
+    if (typeof payload.price === 'number') data.price = payload.price;
+    if (typeof payload.stock === 'number') data.stock = payload.stock;
+    if (payload.costPrice !== undefined) data.costPrice = payload.costPrice;
+    if (payload.collectionId !== undefined) data.collectionId = payload.collectionId;
+    if (payload.subCategoryId !== undefined) data.subCategoryId = payload.subCategoryId;
+    if (payload.subCategoryIds !== undefined) data.subCategoryIds = payload.subCategoryIds;
+    if (payload.supplierId !== undefined) data.supplierId = payload.supplierId;
+    if (payload.description !== undefined) data.description = payload.description;
+    if (payload.hasSizes !== undefined) data.hasSizes = payload.hasSizes;
+    if (payload.availableSizes !== undefined) data.availableSizes = payload.availableSizes;
+    if (payload.imageUrl !== undefined) data.imageUrl = payload.imageUrl;
+    if (payload.images !== undefined) data.images = payload.images;
+
+    const updated = await prisma.product.update({
+      where: { id: payload.id },
+      data,
+    });
+
+    revalidatePath('/admin/products');
+    revalidatePath(`/products/${updated.slug}`);
+    revalidatePath('/');
+    revalidatePath('/products');
+    revalidateTag('products', 'max');
+
+    return { success: true, product: { id: updated.id, name: updated.name, slug: updated.slug } };
+  } catch (err: any) {
+    console.error('Error in updateProductAsync:', err);
+    return { success: false, error: err.message || 'فشل تعديل المنتج' };
+  }
+}
+
 export async function deleteProduct(productId: string) {
   await verifyAdmin();
   try {

@@ -8,22 +8,18 @@ import {
   Plus, 
   Trash2, 
   Check, 
-  ChevronRight, 
-  ChevronLeft, 
   Zap, 
-  Layers, 
   Upload, 
   ArrowRight,
-  Sparkles,
   Camera,
   Crop,
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  AlertTriangle,
-  Copy
+  CheckCircle2,
+  Edit3,
+  Loader2
 } from 'lucide-react'
-import { useProductQueue } from '../ProductQueueContext'
 import { getCollections, getSubCategories } from '../../collections/actions'
 import { getSuppliers } from '../../suppliers/actions'
 import SizeSelector from '../SizeSelector'
@@ -51,6 +47,7 @@ type BulkProductCard = {
   id: string
   mainImageBlobUrl: string
   mainImageFile?: File
+  uploadedMainUrl?: string
   extraImagesBlobUrls: string[]
   extraImageFiles?: File[]
   name: string
@@ -63,26 +60,45 @@ type BulkProductCard = {
   hasSizes: boolean
   availableSizes: string[]
   description: string
-  isSubmitted: boolean
+  isSaved: boolean
+  savedProductId?: string
+  isSaving?: boolean
 }
 
+const NAME_SUGGESTIONS = [
+  'فستان نسائي',
+  'فستان بناتي',
+  'طقم ولادي',
+  'بجامة ولادي',
+  'بجامة بناتي',
+  'طقم بناتي',
+  'طقم نسائي',
+  'بنطال نسائي',
+  'بنطال بناتي',
+  'بنطال ولادي',
+  'طقم مواليد',
+  'توب نسائي',
+  'قطعة نسائي',
+]
+
+const PRICE_PRESETS = [
+  '500', '750', '1000', '1250', '1500', '1750', '2000', '2250',
+  '2500', '2750', '3000', '3250', '3500', '3750', '4000', '4250',
+  '4500', '4750', '5000'
+]
+
 export default function BulkUploadClient() {
-  const { addToQueue } = useProductQueue()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
-  const extraImgInputRef = useRef<HTMLInputElement>(null)
-  const replaceMainInputRef = useRef<HTMLInputElement>(null)
-  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const [collections, setCollections] = useState<CollectionItem[]>([])
   const [suppliers, setSuppliers] = useState<SupplierItem[]>([])
   const [subCategoriesMap, setSubCategoriesMap] = useState<Record<string, SubCategoryItem[]>>({})
   const [defaultCollectionId, setDefaultCollectionId] = useState('')
   const [products, setProducts] = useState<BulkProductCard[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
   const [showStockSupplier, setShowStockSupplier] = useState(false)
   const [autoPrefillFromPrevious, setAutoPrefillFromPrevious] = useState(true)
-  
+
   // Safe delete confirmation modal state
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null)
 
@@ -100,24 +116,173 @@ export default function BulkUploadClient() {
     imageUrl: '',
   })
 
-  // Handle replacing the main image of a card with a new chosen photo
-  const handleReplaceMainImage = (files: FileList | null) => {
-    if (!files || files.length === 0 || !products[currentIndex]) return
+  // Load collections and suppliers on mount
+  useEffect(() => {
+    getCollections().then(async (cols) => {
+      if (Array.isArray(cols)) {
+        const formatted = cols.map(c => ({ id: c.id, name: c.name }))
+        setCollections(formatted)
+        
+        const clothesCol = formatted.find(c => c.name.includes('ملابس')) || formatted[0]
+        if (clothesCol) {
+          setDefaultCollectionId(clothesCol.id)
+          const subCats = await getSubCategories(clothesCol.id)
+          if (Array.isArray(subCats)) {
+            setSubCategoriesMap(prev => ({
+              ...prev,
+              [clothesCol.id]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: clothesCol.id }))
+            }))
+          }
+        }
+      }
+    }).catch(console.error)
+
+    getSuppliers().then(data => {
+      if (Array.isArray(data)) {
+        setSuppliers(data.filter(s => s.isActive).map(s => ({ id: s.id, name: s.name })))
+      }
+    }).catch(console.error)
+  }, [])
+
+  // Handle files selected (either from gallery or camera)
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files || files.length === 0) return
+
+    const fileArray = Array.from(files)
+    const newCards: BulkProductCard[] = []
+
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i]
+      try {
+        const blobUrl = URL.createObjectURL(file)
+        newCards.push({
+          id: `bulk-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+          mainImageBlobUrl: blobUrl,
+          mainImageFile: file,
+          extraImagesBlobUrls: [],
+          extraImageFiles: [],
+          name: '',
+          price: '',
+          stock: '10',
+          costPrice: '',
+          collectionId: defaultCollectionId,
+          subCategoryIds: [],
+          hasSizes: false,
+          availableSizes: [],
+          description: '',
+          isSaved: false,
+        })
+      } catch (err) {
+        console.error('Failed to process image file:', err)
+      }
+    }
+
+    if (newCards.length > 0) {
+      setProducts(prev => [...prev, ...newCards])
+      toast.success(`تمت إضافة ${newCards.length} منتج إلى القائمة المتسلسلة!`)
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    if (cameraInputRef.current) cameraInputRef.current.value = ''
+  }
+
+  const updateCard = (index: number, updates: Partial<BulkProductCard>) => {
+    setProducts(prev => {
+      const copy = [...prev]
+      if (copy[index]) {
+        copy[index] = { ...copy[index], ...updates }
+      }
+      return copy
+    })
+  }
+
+  const handleCollectionChange = async (cardIndex: number, colId: string) => {
+    updateCard(cardIndex, { collectionId: colId, subCategoryIds: [] })
+    if (colId && !subCategoriesMap[colId]) {
+      try {
+        const subCats = await getSubCategories(colId)
+        if (Array.isArray(subCats)) {
+          setSubCategoriesMap(prev => ({
+            ...prev,
+            [colId]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: colId }))
+          }))
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
+
+  const toggleSubCategory = (cardIndex: number, subCatId: string) => {
+    const card = products[cardIndex]
+    if (!card) return
+    const exists = card.subCategoryIds.includes(subCatId)
+    const updated = exists 
+      ? card.subCategoryIds.filter(id => id !== subCatId)
+      : [...card.subCategoryIds, subCatId]
+    updateCard(cardIndex, { subCategoryIds: updated })
+  }
+
+  const handleDeleteCard = (cardIndex: number) => {
+    setProducts(prev => prev.filter((_, idx) => idx !== cardIndex))
+    setConfirmDeleteIndex(null)
+    toast.success('تم حذف بطاقة المنتج من القائمة')
+  }
+
+  const handleReplaceMainImage = (cardIndex: number, files: FileList | null) => {
+    if (!files || files.length === 0 || !products[cardIndex]) return
     const file = files[0]
     try {
       const blobUrl = URL.createObjectURL(file)
-      updateCard(currentIndex, {
+      updateCard(cardIndex, {
         mainImageBlobUrl: blobUrl,
         mainImageFile: file,
+        uploadedMainUrl: undefined, // reset so it uploads new image
       })
       toast.success('تم استبدال الصورة بنجاح!')
     } catch {
       toast.error('فشل استبدال الصورة')
-    } finally {
-      if (replaceMainInputRef.current) {
-        replaceMainInputRef.current.value = ''
+    }
+  }
+
+  const handleAddExtraImage = (cardIndex: number, files: FileList | null) => {
+    if (!files || files.length === 0 || !products[cardIndex]) return
+    const card = products[cardIndex]
+    const fileArray = Array.from(files)
+    const availableSlots = 10 - card.extraImagesBlobUrls.length
+    if (availableSlots <= 0) {
+      toast.error('الحد الأقصى هو 10 صور إضافية')
+      return
+    }
+
+    const filesToProcess = fileArray.slice(0, availableSlots)
+    const newBlobUrls: string[] = []
+    const newFiles: File[] = []
+
+    for (const f of filesToProcess) {
+      try {
+        newBlobUrls.push(URL.createObjectURL(f))
+        newFiles.push(f)
+      } catch (err) {
+        console.error(err)
       }
     }
+
+    updateCard(cardIndex, {
+      extraImagesBlobUrls: [...card.extraImagesBlobUrls, ...newBlobUrls],
+      extraImageFiles: [...(card.extraImageFiles || []), ...newFiles],
+    })
+    toast.success(`تمت إضافة ${newFiles.length} صورة إضافية`)
+  }
+
+  const handleDeleteExtraImage = (cardIndex: number, extraIndex: number) => {
+    const card = products[cardIndex]
+    if (!card) return
+    updateCard(cardIndex, {
+      extraImagesBlobUrls: card.extraImagesBlobUrls.filter((_, idx) => idx !== extraIndex),
+      extraImageFiles: (card.extraImageFiles || []).filter((_, idx) => idx !== extraIndex),
+    })
+    toast.success('تم حذف الصورة الإضافية')
   }
 
   const handleOpenEditor = (type: 'main' | 'extra', cardIndex: number, extraIndex?: number) => {
@@ -143,6 +308,7 @@ export default function BulkUploadClient() {
       updateCard(cardIndex, {
         mainImageBlobUrl: newBlobUrl,
         mainImageFile: newFile,
+        uploadedMainUrl: undefined,
       })
       toast.success('تم تحديث الصورة الرئيسية')
     } else if (type === 'extra' && typeof extraIndex === 'number') {
@@ -158,1106 +324,707 @@ export default function BulkUploadClient() {
     }
   }
 
-  // Auto focus name input on current card change (both desktop and mobile)
-  useEffect(() => {
-    if (products.length > 0 && products[currentIndex]) {
-      const timer = setTimeout(() => {
-        nameInputRef.current?.focus()
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [currentIndex, products.length])
-
-  // Fetch collections and their subcategories on mount
-  useEffect(() => {
-    getCollections().then(async (cols) => {
-      if (Array.isArray(cols)) {
-        const formatted = cols.map(c => ({ id: c.id, name: c.name }))
-        setCollections(formatted)
-        
-        // Find "الملابس" or default to first
-        const clothesCol = formatted.find(c => c.name.includes('ملابس')) || formatted[0]
-        if (clothesCol) {
-          setDefaultCollectionId(clothesCol.id)
-          // Load subcategories for this collection
-          const subCats = await getSubCategories(clothesCol.id)
-          if (Array.isArray(subCats)) {
-            setSubCategoriesMap(prev => ({
-              ...prev,
-              [clothesCol.id]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: clothesCol.id }))
-            }))
-          }
-        }
-      }
-    }).catch(console.error)
-
-    getSuppliers().then(data => {
-      if (Array.isArray(data)) {
-        setSuppliers(data.filter(s => s.isActive).map(s => ({ id: s.id, name: s.name })))
-      }
-    }).catch(console.error)
-  }, [])
-
-  // When collection changes for an item, lazy load its subcategories if not cached
-  const handleCollectionChange = async (cardIndex: number, colId: string) => {
-    updateCard(cardIndex, { collectionId: colId, subCategoryIds: [] })
-    if (colId && !subCategoriesMap[colId]) {
-      try {
-        const subCats = await getSubCategories(colId)
-        if (Array.isArray(subCats)) {
-          setSubCategoriesMap(prev => ({
-            ...prev,
-            [colId]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: colId }))
-          }))
-        }
-      } catch (e) {
-        console.error(e)
-      }
-    }
-  }
-
-  // Handle Bulk Image Selection
-  const handleFilesSelected = (files: FileList | null) => {
-    if (!files || files.length === 0) return
-
-    const fileArray = Array.from(files)
-    const newCards: BulkProductCard[] = []
-
-    for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i]
-      try {
-        const blobUrl = URL.createObjectURL(file)
-
-        newCards.push({
-          id: `bulk-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
-          mainImageBlobUrl: blobUrl,
-          mainImageFile: file,
-          extraImagesBlobUrls: [],
-          extraImageFiles: [],
-          name: '',
-          price: '',
-          stock: '10',
-          costPrice: '',
-          collectionId: defaultCollectionId,
-          subCategoryIds: [],
-          hasSizes: false,
-          availableSizes: [],
-          description: '',
-          isSubmitted: false,
-        })
-      } catch (err) {
-        console.error('Failed to process image file:', err)
-      }
-    }
-
-    if (newCards.length > 0) {
-      setProducts(prev => {
-        const updated = [...prev, ...newCards]
-        // If first batch, set current index to 0
-        if (prev.length === 0) setCurrentIndex(0)
-        return updated
-      })
-      toast.success(`تم فتح ${newCards.length} منتج بنجاح وبكامل جودة الصور!`)
-    }
-
-    // Reset file input so selecting files again will trigger onChange reliably
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  const updateCard = (index: number, updates: Partial<BulkProductCard>) => {
-    setProducts(prev => {
-      const copy = [...prev]
-      if (copy[index]) {
-        copy[index] = { ...copy[index], ...updates }
-      }
-      return copy
-    })
-  }
-
-  const toggleSubCategory = (cardIndex: number, subCatId: string) => {
+  // SAVE OR UPDATE PRODUCT HANDLER (No Page Reload)
+  const handleSaveOrUpdateCard = async (cardIndex: number) => {
     const card = products[cardIndex]
     if (!card) return
-    const exists = card.subCategoryIds.includes(subCatId)
-    const updated = exists 
-      ? card.subCategoryIds.filter(id => id !== subCatId)
-      : [...card.subCategoryIds, subCatId]
-    updateCard(cardIndex, { subCategoryIds: updated })
-  }
-
-  // Add extra images to current card with multiple support and auto-reset
-  const handleAddExtraImage = (files: FileList | null) => {
-    if (!files || files.length === 0 || !products[currentIndex]) return
-    const fileArray = Array.from(files)
-    
-    // Reset file input value immediately so selecting the same file later works reliably
-    if (extraImgInputRef.current) {
-      extraImgInputRef.current.value = ''
-    }
-
-    const currentExtras = products[currentIndex].extraImagesBlobUrls || []
-    const currentExtraFiles = products[currentIndex].extraImageFiles || []
-    const availableSlots = 10 - currentExtras.length
-
-    if (availableSlots <= 0) {
-      toast.error('الحد الأقصى هو 10 صور إضافية للمنتج')
-      return
-    }
-
-    const filesToProcess = fileArray.slice(0, availableSlots)
-    const newBlobUrls: string[] = []
-    const newFiles: File[] = []
-
-    for (const file of filesToProcess) {
-      try {
-        const blobUrl = URL.createObjectURL(file)
-        newBlobUrls.push(blobUrl)
-        newFiles.push(file)
-      } catch (err) {
-        console.error('Error reading extra image:', err)
-      }
-    }
-
-    updateCard(currentIndex, { 
-      extraImagesBlobUrls: [...currentExtras, ...newBlobUrls],
-      extraImageFiles: [...currentExtraFiles, ...newFiles],
-    })
-
-    toast.success(newFiles.length > 1 ? `تمت إضافة ${newFiles.length} صور إضافية بنجاح` : 'تمت إضافة الصورة الإضافية بنجاح')
-  }
-
-  const removeExtraImage = (cardIndex: number, imgIndex: number) => {
-    const card = products[cardIndex]
-    if (!card) return
-    const updated = card.extraImagesBlobUrls.filter((_, i) => i !== imgIndex)
-    const updatedFiles = (card.extraImageFiles || []).filter((_, i) => i !== imgIndex)
-    updateCard(cardIndex, { extraImagesBlobUrls: updated, extraImageFiles: updatedFiles })
-  }
-
-  const removeCard = (index: number) => {
-    setProducts(prev => prev.filter((_, i) => i !== index))
-    if (currentIndex >= products.length - 1 && currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1)
-    }
-  }
-
-  // Copy all details (name, price, collection, subcategories, sizes, etc.) from previous card
-  const copyFromPrevious = (targetIndex: number) => {
-    if (targetIndex <= 0) return
-    const prevCard = products[targetIndex - 1]
-    if (!prevCard) return
-
-    updateCard(targetIndex, {
-      name: prevCard.name,
-      price: prevCard.price,
-      costPrice: prevCard.costPrice,
-      stock: prevCard.stock,
-      collectionId: prevCard.collectionId,
-      subCategoryIds: [...prevCard.subCategoryIds],
-      hasSizes: prevCard.hasSizes,
-      availableSizes: [...prevCard.availableSizes],
-      supplierId: prevCard.supplierId,
-      description: prevCard.description,
-    })
-
-    if (prevCard.collectionId && !subCategoriesMap[prevCard.collectionId]) {
-      getSubCategories(prevCard.collectionId).then(subCats => {
-        if (Array.isArray(subCats)) {
-          setSubCategoriesMap(prevMap => ({
-            ...prevMap,
-            [prevCard.collectionId]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: prevCard.collectionId }))
-          }))
-        }
-      }).catch(console.error)
-    }
-
-    toast.success('تم نسخ كافة بيانات المنتج السابق بنجاح ✨')
-  }
-
-  // Submit single card to the fast background queue and auto-slide
-  const handleSubmitCard = (cardIndex: number) => {
-    const card = products[cardIndex]
-    if (!card) return
-
-    // Prevent duplicate submission if already queued
-    if (card.isSubmitted) {
-      toast('هذا المنتج تمت إضافته بالفعل إلى طابور الحفظ مسبقاً', { icon: 'ℹ️' })
-      // If there are other unsubmitted items, advance to them
-      const nextUnsubmittedIndex = products.findIndex((p, idx) => idx > cardIndex && !p.isSubmitted)
-      if (nextUnsubmittedIndex !== -1) {
-        setCurrentIndex(nextUnsubmittedIndex)
-      } else {
-        const anyUnsubmittedIndex = products.findIndex(p => !p.isSubmitted)
-        if (anyUnsubmittedIndex !== -1) {
-          setCurrentIndex(anyUnsubmittedIndex)
-        }
-      }
-      return
-    }
 
     if (!card.name.trim()) {
-      toast.error('يرجى إدخال اسم المنتج')
-      nameInputRef.current?.focus()
+      toast.error('يرجى تحديد أو إدخال اسم المنتج')
       return
     }
+
     const numPrice = Number(card.price)
-    if (!card.price || isNaN(numPrice) || numPrice < 0) {
-      toast.error('يرجى إدخال سعر صحيح للمنتج')
+    if (!card.price || isNaN(numPrice) || numPrice <= 0) {
+      toast.error('يرجى تحديد أو إدخال سعر صحيح للمنتج')
       return
     }
 
-    // Add to persistent background queue
-    addToQueue({
-      name: card.name.trim(),
-      price: numPrice,
-      stock: card.stock ? Number(card.stock) : 10,
-      costPrice: card.costPrice ? Number(card.costPrice) : null,
-      collectionId: card.collectionId || null,
-      subCategoryId: card.subCategoryIds[0] || null,
-      subCategoryIds: card.subCategoryIds,
-      supplierId: card.supplierId || null,
-      description: card.description || null,
-      mainImageFile: card.mainImageFile,
-      mainImageFileUrl: card.mainImageBlobUrl,
-      extraImageFiles: card.extraImageFiles && card.extraImageFiles.length > 0 ? card.extraImageFiles : undefined,
-      extraImageFileUrls: card.extraImagesBlobUrls.length > 0 ? card.extraImagesBlobUrls : undefined,
-      hasSizes: card.hasSizes,
-      availableSizes: card.availableSizes,
-    })
+    updateCard(cardIndex, { isSaving: true })
 
-    toast.success(`تمت إضافة "${card.name}" إلى طابور المعالجة بالخلفية 🚀`)
-
-    // Check if there are remaining unsubmitted cards in the batch
-    const nextUnsubmittedIndex = products.findIndex((p, idx) => idx > cardIndex && !p.isSubmitted)
-    const targetIdx = nextUnsubmittedIndex !== -1 
-      ? nextUnsubmittedIndex 
-      : products.findIndex((p, idx) => idx !== cardIndex && !p.isSubmitted)
-
-    if (targetIdx !== -1) {
-      if (autoPrefillFromPrevious) {
-        setProducts(prev => {
-          const copy = [...prev]
-          if (copy[cardIndex]) {
-            copy[cardIndex] = { ...copy[cardIndex], isSubmitted: true }
-          }
-          const target = copy[targetIdx]
-          if (target && !target.isSubmitted) {
-            copy[targetIdx] = {
-              ...target,
-              // Pre-fill fields from submitted card if target hasn't been specifically filled
-              name: target.name.trim() ? target.name : card.name,
-              price: target.price.trim() ? target.price : card.price,
-              costPrice: target.costPrice || card.costPrice,
-              stock: target.stock || card.stock,
-              collectionId: card.collectionId || target.collectionId,
-              subCategoryIds: (target.subCategoryIds && target.subCategoryIds.length > 0) ? target.subCategoryIds : [...card.subCategoryIds],
-              hasSizes: target.hasSizes || card.hasSizes,
-              availableSizes: (target.availableSizes && target.availableSizes.length > 0) ? target.availableSizes : [...card.availableSizes],
-              supplierId: target.supplierId || card.supplierId,
-              description: target.description || card.description,
-            }
-          }
-          return copy
+    try {
+      // 1. If product is already saved in DB, execute UPDATE (تعديل)
+      if (card.isSaved && card.savedProductId) {
+        const updateRes = await fetch('/api/admin/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            id: card.savedProductId,
+            name: card.name.trim(),
+            price: numPrice,
+            stock: card.stock ? Number(card.stock) : 10,
+            costPrice: card.costPrice ? Number(card.costPrice) : null,
+            collectionId: card.collectionId || null,
+            subCategoryId: card.subCategoryIds[0] || null,
+            subCategoryIds: card.subCategoryIds,
+            supplierId: card.supplierId || null,
+            description: card.description || null,
+            hasSizes: card.hasSizes,
+            availableSizes: card.availableSizes,
+          }),
         })
 
-        if (card.collectionId && !subCategoriesMap[card.collectionId]) {
-          getSubCategories(card.collectionId).then(subCats => {
-            if (Array.isArray(subCats)) {
-              setSubCategoriesMap(prevMap => ({
-                ...prevMap,
-                [card.collectionId]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: card.collectionId }))
-              }))
-            }
-          }).catch(console.error)
+        const updateJson = await updateRes.json().catch(() => ({ success: false, error: 'خطأ في استجابة الخادم' }))
+        if (!updateJson.success) {
+          throw new Error(updateJson.error || 'فشل تعديل المنتج')
         }
-      } else {
-        updateCard(cardIndex, { isSubmitted: true })
+
+        updateCard(cardIndex, { isSaving: false })
+        toast.success(`تم تعديل بيانات "${card.name}" بنجاح! ✏️`)
+        return
       }
 
-      setCurrentIndex(targetIdx)
-      window.scrollTo({ top: 120, behavior: 'smooth' })
-    } else {
-      updateCard(cardIndex, { isSubmitted: true })
-      // All cards in current batch are completed
-      toast.success(`اكتملت جميع المنتجات (${products.length} من ${products.length}) بنجاح! يمكنك إضافة دفعة أخرى متى شئت. ✨`, { duration: 6000 })
+      // 2. Otherwise, this is a NEW PRODUCT (إضافة جديدة)
+      // Upload main image to Cloudflare R2
+      let uploadedMainUrl = card.uploadedMainUrl
+      if (!uploadedMainUrl) {
+        let fileToUpload: File
+        if (card.mainImageFile) {
+          fileToUpload = card.mainImageFile
+        } else {
+          const fetchBlob = await fetch(card.mainImageBlobUrl)
+          const blob = await fetchBlob.blob()
+          fileToUpload = new File([blob], `product-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
+        }
+
+        try {
+          const compressed = await compressImageClientSide(fileToUpload)
+          if (compressed && compressed.size > 0) fileToUpload = compressed
+        } catch (cErr) {
+          console.warn('Compression error:', cErr)
+        }
+
+        const fd = new FormData()
+        fd.append('file', fileToUpload, fileToUpload.name || 'product.webp')
+        const upRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: fd,
+          credentials: 'include',
+        })
+
+        if (!upRes.ok) {
+          const errJson = await upRes.json().catch(() => ({}))
+          throw new Error(errJson.error || 'فشل رفع صورة المنتج إلى التخزين')
+        }
+        const upData = await upRes.json()
+        uploadedMainUrl = upData.url
+      }
+
+      // Upload extra images if any
+      const uploadedExtras: string[] = []
+      if (card.extraImagesBlobUrls.length > 0) {
+        for (let i = 0; i < card.extraImagesBlobUrls.length; i++) {
+          let extraFile = card.extraImageFiles?.[i]
+          if (!extraFile) {
+            const fetchBlob = await fetch(card.extraImagesBlobUrls[i])
+            const blob = await fetchBlob.blob()
+            extraFile = new File([blob], `extra-${i}-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
+          }
+          const fd = new FormData()
+          fd.append('file', extraFile)
+          const upRes = await fetch('/api/upload', { method: 'POST', body: fd, credentials: 'include' })
+          if (upRes.ok) {
+            const upData = await upRes.json()
+            if (upData.url) uploadedExtras.push(upData.url)
+          }
+        }
+      }
+
+      // Create product in database
+      const saveRes = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: card.name.trim(),
+          price: numPrice,
+          stock: card.stock ? Number(card.stock) : 10,
+          costPrice: card.costPrice ? Number(card.costPrice) : null,
+          collectionId: card.collectionId || null,
+          subCategoryId: card.subCategoryIds[0] || null,
+          subCategoryIds: card.subCategoryIds,
+          supplierId: card.supplierId || null,
+          description: card.description || null,
+          imageUrl: uploadedMainUrl,
+          images: uploadedExtras,
+          hasSizes: card.hasSizes,
+          availableSizes: card.availableSizes,
+          isActive: true,
+        }),
+      })
+
+      const saveJson = await saveRes.json().catch(() => ({ success: false, error: 'خطأ في استجابة الخادم' }))
+      if (!saveJson.success) {
+        throw new Error(saveJson.error || 'فشل حفظ المنتج في قاعدة البيانات')
+      }
+
+      const createdId = saveJson.product?.id || `saved-${Date.now()}`
+
+      updateCard(cardIndex, {
+        isSaved: true,
+        savedProductId: createdId,
+        uploadedMainUrl,
+        isSaving: false,
+      })
+
+      toast.success(`تمت إضافة "${card.name}" بنجاح! 🚀`)
+
+      // Auto pre-fill next card with this card's collection and subcategories to save time
+      if (autoPrefillFromPrevious && cardIndex + 1 < products.length) {
+        const nextCard = products[cardIndex + 1]
+        if (nextCard && !nextCard.isSaved) {
+          updateCard(cardIndex + 1, {
+            collectionId: nextCard.collectionId || card.collectionId,
+            subCategoryIds: nextCard.subCategoryIds.length > 0 ? nextCard.subCategoryIds : [...card.subCategoryIds],
+            supplierId: nextCard.supplierId || card.supplierId,
+            hasSizes: nextCard.hasSizes || card.hasSizes,
+            availableSizes: nextCard.availableSizes.length > 0 ? nextCard.availableSizes : [...card.availableSizes],
+          })
+        }
+      }
+    } catch (err: any) {
+      console.error('Save error:', err)
+      updateCard(cardIndex, { isSaving: false })
+      toast.error(err.message || 'حدث خطأ أثناء حفظ المنتج')
     }
   }
 
-  const currentCard = products[currentIndex]
-  const currentSubCats = currentCard ? (subCategoriesMap[currentCard.collectionId] || []) : []
-  const completedCount = products.filter(p => p.isSubmitted).length
-  const allCompleted = products.length > 0 && completedCount === products.length
-
-  const handleStartNewBatch = () => {
-    setProducts([])
-    setCurrentIndex(0)
-    fileInputRef.current?.click()
-  }
+  const savedCount = products.filter(p => p.isSaved).length
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20" dir="rtl">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-black/5 shadow-sm">
+    <div className="max-w-4xl mx-auto space-y-6 pb-24">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-brand font-bold text-xs mb-1">
-            <Layers className="w-4 h-4 text-brand" />
-            <span>نظام الإدخال المتعدد</span>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl md:text-2xl font-black text-gray-900">الإضافة المتعددة للمنتجات</h2>
+            <span className="bg-amber-100 text-amber-900 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-300">
+              قائمة متسلسلة فلاش ⚡
+            </span>
           </div>
-          <h1 className="text-2xl font-black text-gray-900">إضافة متعددة للمنتجات</h1>
           <p className="text-xs text-gray-500 mt-1">
-            تحديد صور المنتجات دفعة واحدة مع نماذج إدخال متسلسلة وسريعة.
+            اختر صوراً متعددة، ثم مرر للأسفل واملأ بيانات كل منتج واضغط إضافة دون أي تحديث للصفحة!
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Link 
             href="/admin/products"
-            className="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all"
+            className="flex-1 sm:flex-none text-center px-4 py-2 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
           >
             العودة للمنتجات
           </Link>
-        </div>
-      </div>
-
-      {/* Upload Zone / Action Bar */}
-      <div className="bg-gradient-to-r from-gray-900 to-black text-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-1 text-center md:text-right">
-          <h3 className="text-lg font-bold flex items-center justify-center md:justify-start gap-2">
-            <Images className="w-5 h-5 text-amber-400" />
-            <span>اختر صور المنتجات دفعة واحدة</span>
-          </h3>
-          <p className="text-xs text-gray-300">
-            يمكنك تحديد 10 أو 20 أو أي عدد من الصور من هاتفك أو جهازك دفعة واحدة
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* Multiple File Input */}
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            multiple 
-            accept="image/*"
-            className="hidden" 
-            onChange={(e) => handleFilesSelected(e.target.files)}
-          />
-          <button 
+          <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 bg-amber-400 hover:bg-amber-300 text-gray-950 font-black text-sm rounded-xl shadow-md transition-all active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95"
           >
-            <Upload className="w-4 h-4" />
-            <span>فتح الاستوديو واختيار الصور</span>
+            <Plus className="w-4 h-4 text-amber-400" />
+            <span>إضافة صور</span>
           </button>
         </div>
       </div>
 
-      {/* Progress & Navigation Bar (If items exist) */}
-      {products.length > 0 && (
-        <div className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm space-y-3">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-700">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-brand" />
-              <span>النماذج المنشأة: {products.length}</span>
-              <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                تمت إضافة: {completedCount} من {products.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 text-gray-500">
-              <span>النموذج الحالي: </span>
-              <span className="text-black font-black text-sm">#{currentIndex + 1}</span>
-            </div>
+      {/* Hidden file inputs for batch upload */}
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        multiple
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFilesSelected(e.target.files)}
+      />
+      <input 
+        type="file" 
+        ref={cameraInputRef}
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFilesSelected(e.target.files)}
+      />
+
+      {/* Upload Dropzone if no products yet */}
+      {products.length === 0 && (
+        <div className="bg-white rounded-3xl border-2 border-dashed border-gray-300 p-10 md:p-14 text-center space-y-4 shadow-sm hover:border-black transition-all">
+          <div className="w-20 h-20 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+            <Upload className="w-10 h-10" />
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-gray-900">اختر صور المنتجات للبدء</h3>
+            <p className="text-xs text-gray-500 max-w-md mx-auto mt-1.5 leading-relaxed">
+              يمكنك اختيار حتى 50 صورة دفعة واحدة من ألبوم الهاتف أو جهاز الكمبيوتر. ستظهر المنتجات متسلسلة تحت بعضها لإدخالها فوراً.
+            </p>
           </div>
 
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-emerald-500 h-full transition-all duration-300"
-              style={{ width: `${(completedCount / products.length) * 100}%` }}
-            />
-          </div>
-
-          {/* Horizontal Thumbnails Carousel for Quick Navigation */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
-            {products.map((p, idx) => (
-              <button
-                key={p.id}
-                onClick={() => setCurrentIndex(idx)}
-                className={`relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all flex items-center justify-center ${
-                  currentIndex === idx 
-                    ? 'border-black ring-2 ring-black/20 scale-105' 
-                    : p.isSubmitted 
-                      ? 'border-emerald-500 opacity-60' 
-                      : 'border-transparent opacity-80 hover:opacity-100'
-                }`}
-              >
-                <img 
-                  src={p.mainImageBlobUrl} 
-                  alt="" 
-                  className="w-full h-full object-cover"
-                />
-                {p.isSubmitted && (
-                  <div className="absolute inset-0 bg-emerald-600/60 backdrop-blur-[1px] flex items-center justify-center">
-                    <Check className="w-5 h-5 text-white stroke-[3]" />
-                  </div>
-                )}
-                <span className="absolute bottom-0.5 right-1 text-[9px] font-black text-white bg-black/60 px-1 rounded">
-                  {idx + 1}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Smart Auto-fill Settings Switch */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={autoPrefillFromPrevious}
-                onChange={(e) => setAutoPrefillFromPrevious(e.target.checked)}
-                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-gray-300"
-              />
-              <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>ملء النموذج التالي تلقائياً ببيانات السابق (الاسم، السعر، المجموعة، الخيارات)</span>
-              </span>
-            </label>
-
-            {autoPrefillFromPrevious && (
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                <Zap className="w-3 h-3 fill-emerald-600 text-emerald-600" />
-                <span>مفعّل: ينسخ البيانات ويقبل الإضافة المباشرة</span>
-              </span>
-            )}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-black hover:bg-gray-800 text-white font-bold text-sm rounded-xl shadow-md transition-all active:scale-95"
+            >
+              <Images className="w-4 h-4 text-amber-400" />
+              <span>اختيار صور من الألبوم</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="inline-flex items-center gap-2 px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-xl transition-all active:scale-95"
+            >
+              <Camera className="w-4 h-4 text-gray-600" />
+              <span>التقاط بالكاميرا</span>
+            </button>
           </div>
         </div>
       )}
 
-      {/* Active Product Form Card */}
-      {currentCard && (
-        <div className={`bg-white rounded-2xl border transition-all shadow-sm overflow-hidden ${
-          currentCard.isSubmitted ? 'border-emerald-300 bg-emerald-50/10' : 'border-black/10'
-        }`}>
-          
-          {/* Top Form Status Bar */}
-          <div className="flex items-center justify-between p-4 border-b border-black/5 bg-gray-50">
-            <div className="flex items-center gap-2">
-              <span className="font-black text-gray-900 text-sm">
-                المنتج رقم #{currentIndex + 1} من أصل {products.length}
-              </span>
-              {currentCard.isSubmitted && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                  <Check className="w-3.5 h-3.5" /> تمت الإضافة للطابور
-                </span>
-              )}
+      {/* Sticky Progress & Actions Bar when products exist */}
+      {products.length > 0 && (
+        <div className="sticky top-3 z-30 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-gray-200 shadow-md flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-black text-sm">
+              {savedCount}/{products.length}
             </div>
-
-            <div className="flex items-center gap-2">
-              {currentIndex > 0 && !currentCard.isSubmitted && (
-                <button
-                  type="button"
-                  onClick={() => copyFromPrevious(currentIndex)}
-                  className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
-                  title="نسخ الاسم والسعر والمجموعة والمقاسات من المنتج السابق"
-                >
-                  <Copy className="w-3.5 h-3.5 text-amber-600" />
-                  <span>نسخ بيانات السابق</span>
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteIndex(currentIndex)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-red-200/60"
-                title="حذف هذا النموذج وعدم إضافته"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>حذف النموذج</span>
-              </button>
+            <div>
+              <div className="text-xs font-black text-gray-900">
+                {savedCount === products.length 
+                  ? '🎉 تم حفظ جميع المنتجات بنجاح!' 
+                  : `تم حفظ ${savedCount} من أصل ${products.length} منتج`}
+              </div>
+              <div className="w-32 md:w-48 bg-gray-100 h-2 rounded-full overflow-hidden mt-1 border border-gray-200">
+                <div 
+                  className="bg-emerald-500 h-full transition-all duration-300 rounded-full" 
+                  style={{ width: `${(savedCount / products.length) * 100}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-lg transition-all"
+            >
+              + إضافة صور
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowStockSupplier(!showStockSupplier)}
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-lg transition-all"
+            >
+              {showStockSupplier ? 'إخفاء المخزون' : 'إظهار المخزون'}
+            </button>
+          </div>
+        </div>
+      )}
 
-            {/* Auto-filled helpful banner */}
-            {autoPrefillFromPrevious && currentIndex > 0 && !currentCard.isSubmitted && Boolean(currentCard.name) && (
-              <div className="flex items-center justify-between bg-amber-50/80 border border-amber-200 text-amber-900 text-xs px-3.5 py-2.5 rounded-xl shadow-xs animate-in fade-in">
-                <div className="flex items-center gap-2 font-bold">
-                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>تم ملء البيانات تلقائياً من المنتج السابق لتسريع عملك! يمكنك اعتمادها فوراً بالنقر على «إضافة» أو تعديل ما تشاء.</span>
+      {/* THE VERTICAL STACK OF PRODUCT FORMS */}
+      <div className="space-y-6">
+        {products.map((card, idx) => {
+          const subCatsForCollection = card.collectionId ? (subCategoriesMap[card.collectionId] || []) : []
+
+          return (
+            <div 
+              key={card.id}
+              className={`bg-white rounded-3xl border transition-all duration-300 p-5 md:p-6 shadow-sm ${
+                card.isSaved 
+                  ? 'border-emerald-300 ring-2 ring-emerald-500/10' 
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {/* Card Header: Product Number, Status Badge & Delete Button */}
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100 gap-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-gray-900 text-white text-xs font-black flex items-center justify-center">
+                    #{idx + 1}
+                  </span>
+                  {card.isSaved ? (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      تم الحفظ بنجاح
+                    </span>
+                  ) : card.isSaving ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                      جاري الحفظ...
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
+                      بانتظار الإضافة
+                    </span>
+                  )}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteIndex(idx)}
+                  className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  title="حذف هذا المنتج من القائمة"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-            )}
 
-            {/* 1. الصورة في أول حقل دائماً بوضوح تام */}
-            <div className="space-y-3">
-              <label className="block text-sm font-black text-gray-900">
-                صورة المنتج الأساسية والصور الإضافية *
-              </label>
+              {/* Card Body */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-5">
+                {/* 1. Main Image & Extra Images (Cols 1-4 on md) */}
+                <div className="md:col-span-4 space-y-3">
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner group">
+                    <Image
+                      src={card.mainImageBlobUrl}
+                      alt={`منتج ${idx + 1}`}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      unoptimized
+                    />
 
-              <div className="flex flex-col sm:flex-row items-start gap-4">
-                {/* Main Image Stage */}
-                <div className="relative w-44 h-44 sm:w-52 sm:h-52 bg-gray-50 rounded-2xl border border-black/10 overflow-hidden shrink-0 flex items-center justify-center shadow-inner group">
-                  <img 
-                    src={currentCard.mainImageBlobUrl} 
-                    alt="الصورة الرئيسية"
-                    className="w-full h-full object-contain p-2"
-                  />
-                  <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full pointer-events-none">
-                    الصورة الأساسية
-                  </div>
-
-                  {/* Hidden file input for replacing main image */}
-                  <input
-                    type="file"
-                    ref={replaceMainInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleReplaceMainImage(e.target.files)}
-                  />
-
-                  {/* Action Buttons on Main Image */}
-                  <div className="absolute bottom-2 inset-x-2 flex items-center justify-between gap-1.5">
-                    {/* Replace Image Button */}
-                    <button
-                      type="button"
-                      onClick={() => replaceMainInputRef.current?.click()}
-                      className="flex-1 bg-white/90 hover:bg-white text-gray-900 px-2 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95 border border-black/10"
-                      title="استبدال هذه الصورة بصورة أخرى جديدة من الاستوديو"
-                    >
-                      <RefreshCw className="w-3 h-3 text-brand" />
-                      <span>استبدال</span>
-                    </button>
-
-                    {/* Edit / Crop / Blur Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEditor('main', currentIndex)}
-                      className="flex-1 bg-black/85 hover:bg-black text-white px-2 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95"
-                      title="قص وتعديل وطمس الأسعار بالإصبع"
-                    >
-                      <Crop className="w-3 h-3 text-amber-400" />
-                      <span>تعديل</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Additional Images Section */}
-                <div className="flex-1 space-y-2 w-full">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-700">
-                      صور إضافية لنفس المنتج:
-                    </span>
-                    <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                      {currentCard.extraImagesBlobUrls.length} من 10
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-1">
-                    {currentCard.extraImagesBlobUrls.map((extraImg, imgIdx) => (
-                      <div 
-                        key={imgIdx} 
-                        className="relative w-full aspect-square bg-gray-50 rounded-2xl border border-black/10 overflow-hidden shadow-sm group flex items-center justify-center"
-                      >
-                        <img 
-                          src={extraImg} 
-                          alt={`صورة إضافية ${imgIdx + 1}`} 
-                          className="w-full h-full object-contain p-2" 
-                        />
-                        
-                        {/* Badge */}
-                        <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full pointer-events-none z-10">
-                          صورة {imgIdx + 1}
-                        </div>
-
-                        {/* Delete button (Top Left) */}
-                        <button
-                          type="button"
-                          onClick={() => removeExtraImage(currentIndex, imgIdx)}
-                          className="absolute top-2 left-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-xl shadow-lg z-20 transition-all flex items-center gap-1 active:scale-90"
-                          title="إزالة هذه الصورة"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-bold px-0.5">حذف</span>
-                        </button>
-
-                        {/* Action Buttons on Image Bottom (Replace & Edit) */}
-                        <div className="absolute bottom-2 inset-x-2 flex items-center justify-between gap-1.5 z-10">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const input = document.createElement('input')
-                              input.type = 'file'
-                              input.accept = 'image/*'
-                              input.onchange = async (e: any) => {
-                                const file = e.target?.files?.[0]
-                                if (!file) return
-                                try {
-                                  let compressed = file
-                                  try {
-                                    compressed = await compressImageClientSide(file)
-                                  } catch (compErr) {
-                                    console.warn('Compression error:', compErr)
-                                  }
-                                  const validFile = (compressed && compressed.size > 0) ? compressed : file
-                                  const newBlobUrl = URL.createObjectURL(validFile)
-                                  const copyBlobUrls = [...currentCard.extraImagesBlobUrls]
-                                  const copyFiles = [...(currentCard.extraImageFiles || [])]
-                                  copyBlobUrls[imgIdx] = newBlobUrl
-                                  copyFiles[imgIdx] = validFile
-                                  updateCard(currentIndex, {
-                                    extraImagesBlobUrls: copyBlobUrls,
-                                    extraImageFiles: copyFiles,
-                                  })
-                                  toast.success('تم استبدال الصورة الإضافية بنجاح')
-                                } catch (err: any) {
-                                  toast.error('فشل استبدال الصورة الإضافية')
-                                }
-                              }
-                              input.click()
-                            }}
-                            className="flex-1 bg-white/95 hover:bg-white text-gray-900 px-1.5 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95 border border-black/10"
-                            title="استبدال هذه الصورة"
-                          >
-                            <RefreshCw className="w-3 h-3 text-amber-600" />
-                            <span>استبدال</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditor('extra', currentIndex, imgIdx)}
-                            className="flex-1 bg-black/85 hover:bg-black text-white px-1.5 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-md backdrop-blur-sm transition-all active:scale-95"
-                            title="تعديل وقص الصورة"
-                          >
-                            <Crop className="w-3 h-3 text-amber-400" />
-                            <span>تعديل</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {currentCard.extraImagesBlobUrls.length < 10 && (
-                      <>
-                        <input 
-                          type="file" 
-                          ref={extraImgInputRef}
-                          multiple
+                    {/* Action buttons on image */}
+                    <div className="absolute bottom-2 inset-x-2 flex items-center gap-1.5">
+                      <label className="flex-1 bg-white/95 hover:bg-white text-gray-900 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-md cursor-pointer transition-all active:scale-95 border border-black/10">
+                        <RefreshCw className="w-3 h-3 text-amber-600" />
+                        <span>تغيير</span>
+                        <input
+                          type="file"
                           accept="image/*"
                           className="hidden"
-                          onChange={(e) => handleAddExtraImage(e.target.files)}
+                          onChange={(e) => handleReplaceMainImage(idx, e.target.files)}
                         />
-                        <button
-                          type="button"
-                          onClick={() => extraImgInputRef.current?.click()}
-                          className="w-full aspect-square rounded-2xl border-2 border-dashed border-gray-300 hover:border-black flex flex-col items-center justify-center text-gray-400 hover:text-black transition-all bg-gray-50/50 hover:bg-gray-50 active:scale-95 min-h-[140px]"
-                          title="إضافة صور إضافية"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center mb-1.5">
-                            <Plus className="w-5 h-5 text-gray-700" />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditor('main', idx)}
+                        className="flex-1 bg-black/85 hover:bg-black text-white py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-md transition-all active:scale-95"
+                      >
+                        <Crop className="w-3 h-3 text-amber-400" />
+                        <span>قص/تعديل</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Extra Images Thumbnails */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-gray-600">صور إضافية ({card.extraImagesBlobUrls.length})</span>
+                      {card.extraImagesBlobUrls.length < 10 && (
+                        <label className="text-[11px] text-amber-700 hover:underline font-bold cursor-pointer">
+                          + إضافة صورة
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleAddExtraImage(idx, e.target.files)}
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {card.extraImagesBlobUrls.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {card.extraImagesBlobUrls.map((extraUrl, eIdx) => (
+                          <div key={eIdx} className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-200 group/extra">
+                            <Image src={extraUrl} alt="" fill className="object-cover" unoptimized />
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExtraImage(idx, eIdx)}
+                              className="absolute top-0.5 right-0.5 bg-red-600 text-white rounded p-0.5 opacity-0 group-hover/extra:opacity-100 transition-opacity"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
                           </div>
-                          <span className="text-xs font-bold text-gray-700">إضافة صورة</span>
-                          <span className="text-[10px] text-gray-400 mt-0.5">أو أكثر من ألبومك</span>
-                        </button>
-                      </>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* 2. اسم المنتج والسعر والكمية */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-black/5">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-black text-gray-800 mb-1">اسم المنتج *</label>
-                <input 
-                  ref={nameInputRef}
-                  type="text"
-                  placeholder="مثال: فستان بناتي أنيق مورد"
-                  value={currentCard.name}
-                  onChange={(e) => updateCard(currentIndex, { name: e.target.value })}
-                  className="w-full rounded-xl border-gray-300 border p-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                />
-                
-                {/* كلمات مساعدة سريعة لاسم المنتج */}
-                <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                  <span className="text-[10px] text-gray-400 font-bold ml-1">اقتراحات سريعة:</span>
-                  {[
-                    'فستان نسائي',
-                    'فستان بناتي',
-                    'طقم ولادي',
-                    'بجامة ولادي',
-                    'بجامة بناتي',
-                    'طقم بناتي',
-                    'طقم نسائي',
-                    'بنطال نسائي',
-                    'بنطال بناتي',
-                    'بنطال ولادي',
-                    'طقم مواليد',
-                    'توب نسائي',
-                    'قطعة نسائي',
-                  ].map((phrase) => {
-                    const isSelected = currentCard.name.trim() === phrase
-                    return (
-                      <button
-                        key={phrase}
-                        type="button"
-                        onClick={() => {
-                          updateCard(currentIndex, { name: phrase })
-                          nameInputRef.current?.focus()
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border select-none ${
-                          isSelected
-                            ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
-                            : 'bg-gray-100 hover:bg-gray-200 active:bg-amber-100 text-gray-800 border-gray-200 hover:scale-105'
-                        }`}
-                      >
-                        {phrase}
-                      </button>
-                    )
-                  })}
-                  {currentCard.name && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateCard(currentIndex, { name: '' })
-                        nameInputRef.current?.focus()
-                      }}
-                      className="text-[11px] text-red-500 hover:underline px-1.5 font-bold mr-auto"
-                    >
-                      مسح
-                    </button>
-                  )}
-                </div>
-              </div>
+                {/* 2. Product Details Inputs (Cols 5-12 on md) */}
+                <div className="md:col-span-8 space-y-4">
+                  {/* Product Name */}
+                  <div>
+                    <label className="block text-xs font-black text-gray-800 mb-1">اسم المنتج *</label>
+                    <input
+                      type="text"
+                      placeholder="مثال: فستان نسائي ميدي أنيق"
+                      value={card.name}
+                      onChange={(e) => updateCard(idx, { name: e.target.value })}
+                      className="w-full rounded-xl border-gray-300 border p-2.5 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                    />
 
-              <div>
-                <label className="block text-xs font-black text-gray-800 mb-1">السعر (ر.ي) *</label>
-                <input 
-                  type="number"
-                  placeholder="مثال: 2500"
-                  value={currentCard.price}
-                  onChange={(e) => updateCard(currentIndex, { price: e.target.value })}
-                  step="0.01"
-                  min="0"
-                  dir="ltr"
-                  className="w-full rounded-xl border-gray-300 border p-3 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                />
-                {/* أزرار مساعدة سريعة للأسعار من 500 إلى 5000 بزيادة 250 */}
-                <div className="flex flex-wrap gap-1.5 mt-2 max-h-36 overflow-y-auto p-1.5 bg-gray-50/80 rounded-xl border border-gray-200">
-                  {[
-                    '500', '750', '1000', '1250', '1500', '1750', '2000', '2250',
-                    '2500', '2750', '3000', '3250', '3500', '3750', '4000', '4250',
-                    '4500', '4750', '5000'
-                  ].map((presetPrice) => (
-                    <button
-                      key={presetPrice}
-                      type="button"
-                      onClick={() => updateCard(currentIndex, { price: presetPrice })}
-                      className={`px-2 py-1 rounded-lg text-xs font-black transition-all border ${
-                        currentCard.price === presetPrice
-                          ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
-                          : 'bg-white hover:bg-gray-100 text-gray-800 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {presetPrice}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 3. المجموعة والمجموعات الفرعية (افتراضياً: الملابس) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-black text-gray-800 mb-1">
-                  المجموعة الرئيسية (افتراضياً: الملابس)
-                </label>
-                <select
-                  value={currentCard.collectionId}
-                  onChange={(e) => handleCollectionChange(currentIndex, e.target.value)}
-                  className="w-full rounded-xl border-gray-300 border p-3 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                >
-                  <option value="">بدون مجموعة</option>
-                  {collections.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* زر القائمة المنسدلة لإظهار/إخفاء الكمية المتوفرة والمورد معاً في نفس السطر على الهاتف */}
-              <div className="md:col-span-2">
-                <button
-                  type="button"
-                  onClick={() => setShowStockSupplier(!showStockSupplier)}
-                  className="w-full flex items-center justify-between p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-bold transition-all border border-gray-200"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>الكمية المتوفرة والمورد</span>
-                    <span className="text-[11px] font-normal text-gray-500">
-                      (الكمية: {currentCard.stock || 10} {currentCard.supplierId ? `• المورد: ${suppliers.find(s => s.id === currentCard.supplierId)?.name || ''}` : ''})
-                    </span>
-                  </span>
-                  {showStockSupplier ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-                </button>
-
-                {showStockSupplier && (
-                  <div className="grid grid-cols-2 gap-3 mt-3 p-3 bg-gray-50/50 rounded-xl border border-gray-200 animate-in fade-in duration-200">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1">الكمية المتوفرة</label>
-                      <input 
-                        type="number" 
-                        value={currentCard.stock} 
-                        onChange={(e) => updateCard(currentIndex, { stock: e.target.value })} 
-                        min="0" 
-                        dir="ltr"
-                        className="w-full rounded-lg border-gray-300 border p-2.5 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black" 
-                      />
-                      <p className="text-[10px] text-gray-500 mt-1">افتراضياً: 10</p>
+                    {/* Quick Name Suggestions - Instant Replace */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[10px] text-gray-400 font-bold ml-1">اقتراحات سريعة:</span>
+                      {NAME_SUGGESTIONS.map((phrase) => {
+                        const isSelected = card.name.trim() === phrase
+                        return (
+                          <button
+                            key={phrase}
+                            type="button"
+                            onClick={() => updateCard(idx, { name: phrase })}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border select-none ${
+                              isSelected
+                                ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200 hover:scale-105 active:scale-95'
+                            }`}
+                          >
+                            {phrase}
+                          </button>
+                        )
+                      })}
+                      {card.name && (
+                        <button
+                          type="button"
+                          onClick={() => updateCard(idx, { name: '' })}
+                          className="text-[11px] text-red-500 hover:underline px-1.5 font-bold mr-auto"
+                        >
+                          مسح
+                        </button>
+                      )}
                     </div>
+                  </div>
 
+                  {/* Price */}
+                  <div>
+                    <label className="block text-xs font-black text-gray-800 mb-1">السعر (ر.ي) *</label>
+                    <input
+                      type="number"
+                      placeholder="مثال: 2500"
+                      value={card.price}
+                      onChange={(e) => updateCard(idx, { price: e.target.value })}
+                      step="0.01"
+                      min="0"
+                      dir="ltr"
+                      className="w-full rounded-xl border-gray-300 border p-2.5 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                    />
+
+                    {/* Quick Price Buttons: 500 to 5000 by 250 */}
+                    <div className="flex flex-wrap gap-1.5 mt-2 max-h-32 overflow-y-auto p-1.5 bg-gray-50/80 rounded-xl border border-gray-200">
+                      {PRICE_PRESETS.map((presetPrice) => (
+                        <button
+                          key={presetPrice}
+                          type="button"
+                          onClick={() => updateCard(idx, { price: presetPrice })}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all border ${
+                            card.price === presetPrice
+                              ? 'bg-amber-400 text-black border-amber-500 shadow-sm scale-105'
+                              : 'bg-white hover:bg-gray-100 text-gray-800 border-gray-200 hover:border-gray-300 active:scale-95'
+                          }`}
+                        >
+                          {presetPrice}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Collections and SubCategories */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1">المورد</label>
-                      <select 
-                        value={currentCard.supplierId || ''} 
-                        onChange={(e) => updateCard(currentIndex, { supplierId: e.target.value })} 
-                        className="w-full rounded-lg border-gray-300 border p-2.5 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                      <label className="block text-xs font-bold text-gray-700 mb-1">المجموعة الرئيسية</label>
+                      <select
+                        value={card.collectionId}
+                        onChange={(e) => handleCollectionChange(idx, e.target.value)}
+                        className="w-full rounded-xl border-gray-300 border p-2 text-xs text-gray-900 bg-white focus:border-black focus:outline-none"
                       >
-                        <option value="">بدون مورد</option>
-                        {suppliers.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
+                        <option value="">بدون مجموعة</option>
+                        {collections.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
                     </div>
-                  </div>
-                )}
-              </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-black text-gray-800 mb-1.5">
-                  المجموعات الفرعية (انقر للاختيار - يمكن اختيار أكثر من فرع)
-                </label>
-                {currentSubCats.length === 0 ? (
-                  <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-dashed border-gray-200">
-                    لا توجد فروع فرعية مضافة لهذه المجموعة حتى الآن
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                    {currentSubCats.map(subCat => {
-                      const isSelected = currentCard.subCategoryIds.includes(subCat.id)
-                      return (
-                        <button
-                          key={subCat.id}
-                          type="button"
-                          onClick={() => toggleSubCategory(currentIndex, subCat.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                            isSelected
-                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm scale-105'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-100'
-                          }`}
+                    {showStockSupplier && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">المورد</label>
+                        <select
+                          value={card.supplierId || ''}
+                          onChange={(e) => updateCard(idx, { supplierId: e.target.value })}
+                          className="w-full rounded-xl border-gray-300 border p-2 text-xs text-gray-900 bg-white focus:border-black focus:outline-none"
                         >
-                          {isSelected && <Check className="w-3.5 h-3.5" />}
-                          <span>{subCat.name}</span>
-                        </button>
-                      )
-                    })}
+                          <option value="">بدون مورد</option>
+                          {suppliers.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* 4. المقاسات */}
-            <div className="pt-2">
-              <SizeSelector
-                hasSizes={currentCard.hasSizes}
-                onHasSizesChange={(val) => updateCard(currentIndex, { hasSizes: val })}
-                availableSizes={currentCard.availableSizes}
-                onChangeSizes={(sizes) => updateCard(currentIndex, { availableSizes: sizes })}
-              />
-            </div>
-
-            {/* Action Buttons: الإضافة والانتقال الفوري للتالي */}
-            <div className="pt-4 border-t border-black/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  disabled={currentIndex === 0}
-                  onClick={() => setCurrentIndex(currentIndex - 1)}
-                  className="flex items-center justify-center gap-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                  <span>السابق</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={currentIndex >= products.length - 1}
-                  onClick={() => setCurrentIndex(currentIndex + 1)}
-                  className="flex items-center justify-center gap-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span>التالي</span>
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                {currentCard.isSubmitted ? (
-                  <>
-                    <div className="flex items-center gap-1.5 px-4 py-3 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs rounded-xl">
-                      <Check className="w-4 h-4 stroke-[3] text-emerald-600" />
-                      <span>تمت إضافة هذا المنتج للطابور</span>
+                  {/* SubCategory Chips */}
+                  {subCatsForCollection.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-bold text-gray-600">الفروع والمجموعات الفرعية:</span>
+                      <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-xl border border-gray-200">
+                        {subCatsForCollection.map(subCat => {
+                          const isSelected = card.subCategoryIds.includes(subCat.id)
+                          return (
+                            <button
+                              key={subCat.id}
+                              type="button"
+                              onClick={() => toggleSubCategory(idx, subCat.id)}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
+                                isSelected
+                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm scale-105'
+                                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-100'
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3 h-3" />}
+                              <span>{subCat.name}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
+                  )}
 
-                    {products.some(p => !p.isSubmitted) && (
+                  {/* Sizes */}
+                  <div className="pt-1">
+                    <SizeSelector
+                      hasSizes={card.hasSizes}
+                      onHasSizesChange={(val) => updateCard(idx, { hasSizes: val })}
+                      availableSizes={card.availableSizes}
+                      onChangeSizes={(sizes) => updateCard(idx, { availableSizes: sizes })}
+                    />
+                  </div>
+
+                  {/* Optional Stock & Cost Price */}
+                  {showStockSupplier && (
+                    <div className="grid grid-cols-2 gap-3 pt-1 border-t border-gray-100">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">الكمية المتوفرة</label>
+                        <input
+                          type="number"
+                          value={card.stock}
+                          onChange={(e) => updateCard(idx, { stock: e.target.value })}
+                          className="w-full rounded-xl border-gray-300 border p-2 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">سعر التكلفة (ر.ي)</label>
+                        <input
+                          type="number"
+                          value={card.costPrice}
+                          onChange={(e) => updateCard(idx, { costPrice: e.target.value })}
+                          className="w-full rounded-xl border-gray-300 border p-2 text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Big Action Button for this specific card */}
+                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
+                    <span className="text-xs text-gray-400">
+                      {card.isSaved ? 'المنتج مضاف في المتجر، يمكنك تعديله في أي وقت' : 'انقر إضافة وواصل التمرير للمنتج التالي'}
+                    </span>
+
+                    {card.isSaved ? (
                       <button
                         type="button"
-                        onClick={() => {
-                          const nextIdx = products.findIndex((p, idx) => idx > currentIndex && !p.isSubmitted)
-                          if (nextIdx !== -1) {
-                            setCurrentIndex(nextIdx)
-                            window.scrollTo({ top: 120, behavior: 'smooth' })
-                          } else {
-                            const anyIdx = products.findIndex(p => !p.isSubmitted)
-                            if (anyIdx !== -1) {
-                              setCurrentIndex(anyIdx)
-                              window.scrollTo({ top: 120, behavior: 'smooth' })
-                            }
-                          }
-                        }}
-                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-black hover:bg-gray-800 text-white font-bold text-xs rounded-xl shadow transition-all active:scale-95"
+                        disabled={card.isSaving}
+                        onClick={() => handleSaveOrUpdateCard(idx)}
+                        className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs md:text-sm rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50"
                       >
-                        <span>الانتقال للمنتج غير المكتمل</span>
-                        <ChevronLeft className="w-4 h-4" />
+                        {card.isSaving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>جاري التعديل...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Edit3 className="w-4 h-4" />
+                            <span>تعديل المنتج ✏️</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={card.isSaving}
+                        onClick={() => handleSaveOrUpdateCard(idx)}
+                        className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-black hover:bg-gray-800 text-white font-black text-xs md:text-sm rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {card.isSaving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                            <span>جاري الإضافة...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-4 h-4 fill-amber-400 text-amber-400" />
+                            <span>إضافة هذا المنتج 🚀</span>
+                          </>
+                        )}
                       </button>
                     )}
-
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center justify-center gap-1.5 px-4 py-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs rounded-xl shadow transition-all active:scale-95"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>إضافة صور أخرى</span>
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleSubmitCard(currentIndex)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-black hover:bg-gray-800 text-white font-black text-sm rounded-xl shadow-md transition-all active:scale-95"
-                  >
-                    <Zap className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    <span>إضافة هذا المنتج والتمرير للتالي</span>
-                  </button>
-                )}
+                  </div>
+                </div>
               </div>
             </div>
+          )
+        })}
+      </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* Completion Banner when all products in current batch are submitted */}
-      {allCompleted && (
-        <div className="bg-gradient-to-r from-emerald-900 to-teal-950 text-white p-6 rounded-2xl shadow-xl border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-5 animate-in fade-in duration-300">
-          <div className="flex items-center gap-4 text-center sm:text-right">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center shrink-0">
-              <Check className="w-6 h-6 text-emerald-300 stroke-[3]" />
-            </div>
-            <div>
-              <h3 className="text-base font-black text-white">
-                اكتملت إضافة جميع المنتجات ({completedCount} من {products.length})
-              </h3>
-              <p className="text-xs text-emerald-200 mt-1">
-                جميع المنتجات موجودة الآن في طابور الحفظ بالخلفية وتُحفظ تباعاً في قاعدة البيانات.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+      {/* Bottom Final Actions */}
+      {products.length > 0 && (
+        <div className="bg-white p-6 rounded-3xl border border-gray-200 text-center space-y-3 shadow-sm">
+          <p className="text-sm font-bold text-gray-800">
+            {savedCount === products.length 
+              ? '🎉 رائع جداً! لقد أكملت إضافة جميع المنتجات المعروضة في هذه الصفحة.'
+              : `أنجزت ${savedCount} من ${products.length} منتجاً حتى الآن.`}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
-              onClick={handleStartNewBatch}
-              className="flex-1 sm:flex-none px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs rounded-xl shadow transition-all active:scale-95"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs rounded-xl shadow transition-all active:scale-95"
             >
-              إضافة دفعة صور جديدة
+              + إضافة دفعة صور أخرى
             </button>
             <Link
               href="/admin/products"
-              className="flex-1 sm:flex-none px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all text-center"
+              className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white font-bold text-xs rounded-xl shadow transition-all"
             >
-              عرض المنتجات
+              الذهاب لقائمة المنتجات
             </Link>
           </div>
         </div>
       )}
 
-      {products.length === 0 && (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center space-y-3">
-          <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-            <Upload className="w-8 h-8" />
-          </div>
-          <p className="text-xs text-gray-500 max-w-md mx-auto">
-            انقر على زر &quot;فتح الاستوديو واختيار الصور&quot; بالأعلى واختر 20 أو 30 صورة معاً لتبدأ الإضافة بسرعة البرق!
-          </p>
-        </div>
-      )}
-
-      {/* Client-Side Image Editor Modal */}
-      <ImageEditorModal
-        isOpen={editingImage.isOpen}
-        imageUrl={editingImage.imageUrl}
-        onClose={() => setEditingImage(prev => ({ ...prev, isOpen: false }))}
-        onSave={handleSaveEditor}
-      />
-
-      {/* Safe Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {confirmDeleteIndex !== null && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-          dir="rtl"
-        >
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-gray-100">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-6 h-6 stroke-[2.5]" />
-            </div>
-
-            <div className="text-center space-y-1">
-              <h3 className="text-base font-black text-gray-900">
-                هل أنت متأكد من حذف هذا النموذج؟
-              </h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                لن يتم رفع هذا المنتج إلى المتجر وسيتم استبعاده فوراً من قائمة الإضافة الحالية.
-              </p>
-            </div>
-
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-xl">
+            <h4 className="text-base font-black text-gray-900">هل تريد بالتأكيد حذف هذا المنتج من القائمة؟</h4>
+            <p className="text-xs text-gray-500">سيتم إزالة الصورة والبيانات الخاصة بهذه البطاقة فقط من الشاشة.</p>
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setConfirmDeleteIndex(null)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all"
+                className="flex-1 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl"
               >
-                تراجع
+                إلغاء
               </button>
-
               <button
                 type="button"
-                onClick={() => {
-                  const idxToDelete = confirmDeleteIndex
-                  setConfirmDeleteIndex(null)
-                  removeCard(idxToDelete)
-                  toast.success('تم حذف النموذج واستبعاده بأمان')
-                }}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl shadow-md transition-all active:scale-95"
+                onClick={() => handleDeleteCard(confirmDeleteIndex)}
+                className="flex-1 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl"
               >
-                نعم، احذف النموذج
+                حذف
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Image Editor Modal (Cropping, blur prices, etc.) */}
+      {editingImage.isOpen && (
+        <ImageEditorModal
+          isOpen={editingImage.isOpen}
+          imageUrl={editingImage.imageUrl}
+          onClose={() => setEditingImage(prev => ({ ...prev, isOpen: false }))}
+          onSave={handleSaveEditor}
+        />
+      )}
     </div>
   )
 }
