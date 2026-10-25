@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Activity,
   AlertTriangle,
@@ -13,11 +14,12 @@ import {
   Info,
   MessageCircle,
   Phone,
+  RefreshCw,
   Server,
   ShoppingBag,
   Users,
 } from 'lucide-react'
-import { getAnalyticsData } from './actions'
+import { getAnalyticsData, triggerManualBlobSync } from './actions'
 
 type ResourceKey = 'database' | 'blob' | 'bandwidth'
 type ResourceData = {
@@ -58,8 +60,11 @@ const resourceMeta: Record<ResourceKey, { label: string; description: string; ic
 }
 
 export default function AnalyticsPage() {
+  const router = useRouter()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     getAnalyticsData().then((result) => {
@@ -71,6 +76,38 @@ export default function AnalyticsPage() {
     }).catch(() => setLoading(false))
   }, [])
 
+  const handleSyncBlob = async () => {
+    if (syncing) return
+    setSyncing(true)
+    setSyncStatus(null)
+
+    try {
+      const res = await triggerManualBlobSync()
+      if (res.success) {
+        setSyncStatus({
+          message: `تمت المزامنة بنجاح: تم فحص وتحديث ${res.syncedCount} ملفاً، وتنظيف ${res.cleanedReservations} حجزاً منتهياً.`,
+          type: 'success',
+        })
+        const refreshed = await getAnalyticsData()
+        if (refreshed.success) {
+          setData(refreshed as AnalyticsData)
+        }
+        router.refresh()
+      } else {
+        setSyncStatus({
+          message: res.error || 'فشلت المزامنة',
+          type: 'error',
+        })
+      }
+    } catch {
+      setSyncStatus({
+        message: 'حدث خطأ غير متوقع أثناء الاتصال بالخادم',
+        type: 'error',
+      })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" /></div>
@@ -117,10 +154,42 @@ export default function AnalyticsPage() {
       </section>
 
       <section>
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2"><Gauge className="w-5 h-5 text-brand" /> حدود الخطة الحالية</h2>
-          <span className="text-xs text-gray-500">تتجدد الخطة يدويًا من المالك</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2"><Gauge className="w-5 h-5 text-brand" /> حدود الخطة الحالية</h2>
+            <span className="text-xs text-gray-500">تتجدد الخطة يدويًا من المالك</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSyncBlob}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed w-fit"
+            title="مطابقة الملفات المسجلة محلياً مع Vercel Blob وتنظيف الحجوزات المنتهية"
+          >
+            <RefreshCw size={14} className={syncing ? 'animate-spin text-brand' : 'text-gray-500'} />
+            {syncing ? 'جاري مزامنة التخزين...' : 'مزامنة سجل الملفات'}
+          </button>
         </div>
+
+        {syncStatus && (
+          <div
+            className={`mb-4 p-3.5 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 ${
+              syncStatus.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-red-50 text-red-800 border-red-200'
+            }`}
+          >
+            <span>{syncStatus.message}</span>
+            <button
+              type="button"
+              onClick={() => setSyncStatus(null)}
+              className="text-gray-400 hover:text-gray-600 font-bold px-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {data.usage.resources.map((resource) => <ResourceCard key={resource.resource} resource={resource} />)}
         </div>

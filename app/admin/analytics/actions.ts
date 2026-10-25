@@ -2,7 +2,7 @@
 
 import prisma from '@/lib/prisma'
 import { verifyAdmin } from '@/lib/auth'
-import { getDatabaseBytes, getUsageSummary, bytesToJSON } from '@/lib/usage'
+import { getDatabaseBytes, getUsageSummary, bytesToJSON, reconcileBlobRegistry, cleanupExpiredReservations } from '@/lib/usage'
 
 const LEGACY_MB = 1024 * 1024
 const LEGACY_GB = 1024 * LEGACY_MB
@@ -252,5 +252,62 @@ export async function getAnalyticsData() {
   } catch (error) {
     console.error('Error fetching analytics:', error)
     return { success: false as const, error: 'فشل في جلب الإحصائيات' }
+  }
+}
+
+class BlobSyncError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BlobSyncError'
+  }
+}
+
+export async function triggerManualBlobSync() {
+  try {
+    await verifyAdmin()
+
+    return await prisma.$transaction(
+      async (tx) => {
+        const lockResult = await tx.$queryRaw<Array<{ acquired: boolean }>>`
+          SELECT pg_try_advisory_xact_lock(814730) as acquired
+        `
+        const isLocked = lockResult[0]?.acquired
+
+        if (!isLocked) {
+          return {
+            success: false as const,
+            error: 'عملية مزامنة أخرى قيد التنفيذ حالياً. يرجى الانتظار حتى اكتمالها.',
+          }
+        }
+
+        const syncResult = await reconcileBlobRegistry(tx)
+        if (!syncResult) {
+          throw new BlobSyncError('تعذر الاتصال بخدمة التخزين السحابي أو أن رمز الوصول غير مهيأ.')
+        }
+
+        const cleanedCount = await cleanupExpiredReservations(tx)
+
+        return {
+          success: true as const,
+          syncedCount: syncResult.blobs.length,
+          totalBytes: bytesToJSON(syncResult.totalBytes),
+          cleanedReservations: cleanedCount,
+          syncedAt: new Date().toISOString(),
+        }
+      },
+      { timeout: 120000, maxWait: 15000 },
+    )
+  } catch (error) {
+    if (error instanceof BlobSyncError) {
+      return {
+        success: false as const,
+        error: error.message,
+      }
+    }
+    console.error('[triggerManualBlobSync] Internal error:', error)
+    return {
+      success: false as const,
+      error: 'تعذر إتمام مزامنة الملفات حالياً. يرجى التحقق من اتصال الخادم والمحاولة لاحقاً.',
+    }
   }
 }

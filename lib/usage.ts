@@ -1,7 +1,10 @@
 import { list, type PutCommandOptions } from '@vercel/blob'
 import crypto from 'crypto'
 import prisma from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 import { createAdminNotification } from '@/lib/admin-notifications'
+
+type DbClient = typeof prisma | Prisma.TransactionClient
 
 const MB = BigInt(1024) * BigInt(1024)
 const GB = BigInt(1024) * MB
@@ -108,13 +111,13 @@ async function listAllBlobs() {
  * Reconciles the local registry with Vercel Blob when the token is available.
  * This makes legacy files count toward the quota instead of starting at zero.
  */
-export async function reconcileBlobRegistry() {
+export async function reconcileBlobRegistry(client: DbClient = prisma) {
   const blobs = await listAllBlobs()
   if (!blobs) return null
 
   const now = new Date()
   for (const blob of blobs) {
-    await prisma.storageObject.upsert({
+    await client.storageObject.upsert({
       where: { url: blob.url },
       update: {
         storageKey: blob.pathname,
@@ -134,7 +137,7 @@ export async function reconcileBlobRegistry() {
   }
 
   const urls = blobs.map((blob) => blob.url)
-  await prisma.storageObject.updateMany({
+  await client.storageObject.updateMany({
     where: {
       isDeleted: false,
       kind: { not: 'reservation' },
@@ -218,8 +221,7 @@ export async function ensureUsageDefaults() {
 export async function getUsageSummary() {
   const subscription = await ensureUsageDefaults()
   const plan = subscription.plan ?? await prisma.usagePlan.findUniqueOrThrow({ where: { slug: 'free' } })
-  const remoteBlobUsage = await reconcileBlobRegistry()
-  const blobBytes = remoteBlobUsage?.totalBytes ?? await getTrackedBlobBytes()
+  const blobBytes = await getTrackedBlobBytes()
   const database = await getDatabaseBytes()
   const today = new Date()
   const startOfMonth = getMonthStart(today)
@@ -228,8 +230,8 @@ export async function getUsageSummary() {
     _sum: { pageViews: true },
   })
   const estimatedBandwidthBytes = BigInt(Math.max(0, Math.round((monthStats._sum.pageViews || 0) * 0.002 * Number(GB))))
-  const blobSource = remoteBlobUsage ? 'vercel-blob.list' : 'local-storage-registry'
-  const blobConfidence = remoteBlobUsage ? 'measured' : 'tracked'
+  const blobSource = 'local-storage-registry'
+  const blobConfidence = 'tracked'
 
   const resources = [
     { resource: 'database', usedBytes: database.bytes, limitBytes: plan.databaseLimitBytes, source: database.source, confidence: database.confidence },
@@ -313,7 +315,6 @@ export async function reserveBlobSpace(bytes: number, kind: string) {
   const requestedBytes = toBytes(bytes)
   const subscription = await ensureUsageDefaults()
   const plan = subscription.plan ?? await prisma.usagePlan.findUniqueOrThrow({ where: { slug: 'free' } })
-  await reconcileBlobRegistry()
 
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(814729)`
@@ -361,6 +362,17 @@ export async function finalizeBlobReservation(reservationUrl: string, blob: { ur
 
 export async function releaseBlobReservation(reservationUrl: string) {
   await prisma.storageObject.deleteMany({ where: { url: reservationUrl } })
+}
+
+export async function cleanupExpiredReservations(client: DbClient = prisma): Promise<number> {
+  const safeThreshold = new Date(Date.now() - 15 * 60 * 1000)
+  const result = await client.storageObject.deleteMany({
+    where: {
+      kind: 'reservation',
+      reservedUntil: { lte: safeThreshold },
+    },
+  })
+  return result.count
 }
 
 export async function markBlobDeleted(url: string) {
