@@ -18,7 +18,11 @@ import {
   RefreshCw,
   CheckCircle2,
   Edit3,
-  Loader2
+  Loader2,
+  Sparkles,
+  Wand2,
+  Copy,
+  CheckCheck
 } from 'lucide-react'
 import { getCollections, getSubCategories } from '../../collections/actions'
 import { getSuppliers } from '../../suppliers/actions'
@@ -99,6 +103,33 @@ export default function BulkUploadClient() {
   const [showStockSupplier, setShowStockSupplier] = useState(false)
   const [autoPrefillFromPrevious, setAutoPrefillFromPrevious] = useState(true)
 
+  // Magic Quick-Fill & Bulk Save Template state
+  const [magicTemplate, setMagicTemplate] = useState<{
+    name: string
+    price: string
+    collectionId: string
+    subCategoryIds: string[]
+    hasSizes: boolean
+    availableSizes: string[]
+    supplierId?: string
+    stock?: string
+  }>({
+    name: '',
+    price: '',
+    collectionId: '',
+    subCategoryIds: [],
+    hasSizes: false,
+    availableSizes: [],
+    supplierId: '',
+    stock: '10',
+  })
+  const [isMagicPanelOpen, setIsMagicPanelOpen] = useState(true)
+  const [isBatchSaving, setIsBatchSaving] = useState(false)
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; currentName?: string }>({
+    current: 0,
+    total: 0,
+  })
+
   // Safe delete confirmation modal state
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null)
 
@@ -126,6 +157,7 @@ export default function BulkUploadClient() {
         const clothesCol = formatted.find(c => c.name.includes('ملابس')) || formatted[0]
         if (clothesCol) {
           setDefaultCollectionId(clothesCol.id)
+          setMagicTemplate(prev => ({ ...prev, collectionId: clothesCol.id }))
           const subCats = await getSubCategories(clothesCol.id)
           if (Array.isArray(subCats)) {
             setSubCategoriesMap(prev => ({
@@ -324,44 +356,144 @@ export default function BulkUploadClient() {
     }
   }
 
-  // SAVE OR UPDATE PRODUCT HANDLER (No Page Reload)
-  const handleSaveOrUpdateCard = async (cardIndex: number) => {
-    const card = products[cardIndex]
-    if (!card) return
+  // MAGIC TEMPLATE HANDLERS
+  const handleMagicCollectionChange = async (colId: string) => {
+    setMagicTemplate(prev => ({ ...prev, collectionId: colId, subCategoryIds: [] }))
+    if (colId && !subCategoriesMap[colId]) {
+      try {
+        const subCats = await getSubCategories(colId)
+        if (Array.isArray(subCats)) {
+          setSubCategoriesMap(prev => ({
+            ...prev,
+            [colId]: subCats.map(sc => ({ id: sc.id, name: sc.name, collectionId: colId }))
+          }))
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
 
-    if (!card.name.trim()) {
-      toast.error('يرجى تحديد أو إدخال اسم المنتج')
+  const toggleMagicSubCategory = (subCatId: string) => {
+    setMagicTemplate(prev => {
+      const exists = prev.subCategoryIds.includes(subCatId)
+      return {
+        ...prev,
+        subCategoryIds: exists 
+          ? prev.subCategoryIds.filter(id => id !== subCatId)
+          : [...prev.subCategoryIds, subCatId]
+      }
+    })
+  }
+
+  // COPY SPECIFIC CARD DATA TO ALL OTHER UNSAVED CARDS
+  const handleApplyCardToAllOthers = (cardIndex: number) => {
+    const sourceCard = products[cardIndex]
+    if (!sourceCard) return
+
+    if (!sourceCard.name && !sourceCard.price && !sourceCard.collectionId && sourceCard.subCategoryIds.length === 0) {
+      toast.error('املأ بعض البيانات في هذا المنتج أولاً لنسخها للبقية')
       return
     }
 
-    const numPrice = Number(card.price)
-    if (!card.price || isNaN(numPrice) || numPrice <= 0) {
-      toast.error('يرجى تحديد أو إدخال سعر صحيح للمنتج')
+    let copiedCount = 0
+    setProducts(prev => prev.map((card, idx) => {
+      if (idx === cardIndex || card.isSaved) return card
+      copiedCount++
+      return {
+        ...card,
+        name: sourceCard.name || card.name,
+        price: sourceCard.price || card.price,
+        collectionId: sourceCard.collectionId || card.collectionId,
+        subCategoryIds: sourceCard.subCategoryIds.length > 0 ? [...sourceCard.subCategoryIds] : card.subCategoryIds,
+        hasSizes: sourceCard.hasSizes,
+        availableSizes: [...sourceCard.availableSizes],
+        supplierId: sourceCard.supplierId || card.supplierId,
+        stock: sourceCard.stock || card.stock,
+      }
+    }))
+
+    // Also sync to magicTemplate so it reflects in the top panel
+    setMagicTemplate({
+      name: sourceCard.name,
+      price: sourceCard.price,
+      collectionId: sourceCard.collectionId,
+      subCategoryIds: [...sourceCard.subCategoryIds],
+      hasSizes: sourceCard.hasSizes,
+      availableSizes: [...sourceCard.availableSizes],
+      supplierId: sourceCard.supplierId,
+      stock: sourceCard.stock,
+    })
+
+    toast.success(`تم نسخ وتطبيق بيانات المنتج #${cardIndex + 1} على ${copiedCount} بطاقة! ✨`)
+  }
+
+  // APPLY MAGIC TEMPLATE TO ALL UNSAVED CARDS (PREVIEW ONLY)
+  const handleApplyMagicToAllCards = () => {
+    if (!magicTemplate.name && !magicTemplate.price && !magicTemplate.collectionId && magicTemplate.subCategoryIds.length === 0) {
+      toast.error('يرجى كتابة الاسم أو السعر أو تحديد المجموعة في لوحة التحكم السريع أولاً')
       return
     }
 
-    updateCard(cardIndex, { isSaving: true })
+    let modifiedCount = 0
+    setProducts(prev => prev.map(card => {
+      if (card.isSaved) return card
+      modifiedCount++
+      return {
+        ...card,
+        name: magicTemplate.name ? magicTemplate.name : card.name,
+        price: magicTemplate.price ? magicTemplate.price : card.price,
+        collectionId: magicTemplate.collectionId ? magicTemplate.collectionId : card.collectionId,
+        subCategoryIds: magicTemplate.subCategoryIds.length > 0 ? [...magicTemplate.subCategoryIds] : card.subCategoryIds,
+        hasSizes: magicTemplate.hasSizes !== undefined ? magicTemplate.hasSizes : card.hasSizes,
+        availableSizes: magicTemplate.availableSizes.length > 0 ? [...magicTemplate.availableSizes] : card.availableSizes,
+        supplierId: magicTemplate.supplierId !== undefined ? magicTemplate.supplierId : card.supplierId,
+        stock: magicTemplate.stock ? magicTemplate.stock : card.stock,
+      }
+    }))
+
+    toast.success(`تمت تعبئة بيانات ${modifiedCount} منتج بنجاح! يمكنك مراجعتها أو حفظها فوراً ✨`)
+  }
+
+  // CORE SINGLE PRODUCT SAVE HELPER (Used by both single save & batch save)
+  const executeSaveProduct = async (
+    card: BulkProductCard,
+    cardIndex: number,
+    overrides?: Partial<BulkProductCard>
+  ): Promise<{ success: boolean; error?: string }> => {
+    const finalCard = { ...card, ...overrides }
+    const name = finalCard.name.trim()
+    const numPrice = Number(finalCard.price)
+
+    if (!name) {
+      return { success: false, error: 'اسم المنتج مطلوب' }
+    }
+    if (!finalCard.price || isNaN(numPrice) || numPrice <= 0) {
+      return { success: false, error: 'السعر غير صحيح' }
+    }
+
+    updateCard(cardIndex, { isSaving: true, ...overrides })
 
     try {
       // 1. If product is already saved in DB, execute UPDATE (تعديل)
-      if (card.isSaved && card.savedProductId) {
+      if (finalCard.isSaved && finalCard.savedProductId) {
         const updateRes = await fetch('/api/admin/products', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            id: card.savedProductId,
-            name: card.name.trim(),
+            id: finalCard.savedProductId,
+            name,
             price: numPrice,
-            stock: card.stock ? Number(card.stock) : 10,
-            costPrice: card.costPrice ? Number(card.costPrice) : null,
-            collectionId: card.collectionId || null,
-            subCategoryId: card.subCategoryIds[0] || null,
-            subCategoryIds: card.subCategoryIds,
-            supplierId: card.supplierId || null,
-            description: card.description || null,
-            hasSizes: card.hasSizes,
-            availableSizes: card.availableSizes,
+            stock: finalCard.stock ? Number(finalCard.stock) : 10,
+            costPrice: finalCard.costPrice ? Number(finalCard.costPrice) : null,
+            collectionId: finalCard.collectionId || null,
+            subCategoryId: finalCard.subCategoryIds[0] || null,
+            subCategoryIds: finalCard.subCategoryIds,
+            supplierId: finalCard.supplierId || null,
+            description: finalCard.description || null,
+            hasSizes: finalCard.hasSizes,
+            availableSizes: finalCard.availableSizes,
           }),
         })
 
@@ -371,19 +503,17 @@ export default function BulkUploadClient() {
         }
 
         updateCard(cardIndex, { isSaving: false })
-        toast.success(`تم تعديل بيانات "${card.name}" بنجاح! ✏️`)
-        return
+        return { success: true }
       }
 
-      // 2. Otherwise, this is a NEW PRODUCT (إضافة جديدة)
-      // Upload main image to Cloudflare R2
-      let uploadedMainUrl = card.uploadedMainUrl
+      // 2. Otherwise, NEW PRODUCT (إضافة جديدة)
+      let uploadedMainUrl = finalCard.uploadedMainUrl
       if (!uploadedMainUrl) {
         let fileToUpload: File
-        if (card.mainImageFile) {
-          fileToUpload = card.mainImageFile
+        if (finalCard.mainImageFile) {
+          fileToUpload = finalCard.mainImageFile
         } else {
-          const fetchBlob = await fetch(card.mainImageBlobUrl)
+          const fetchBlob = await fetch(finalCard.mainImageBlobUrl)
           const blob = await fetchBlob.blob()
           fileToUpload = new File([blob], `product-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
         }
@@ -413,11 +543,11 @@ export default function BulkUploadClient() {
 
       // Upload extra images if any
       const uploadedExtras: string[] = []
-      if (card.extraImagesBlobUrls.length > 0) {
-        for (let i = 0; i < card.extraImagesBlobUrls.length; i++) {
-          let extraFile = card.extraImageFiles?.[i]
+      if (finalCard.extraImagesBlobUrls.length > 0) {
+        for (let i = 0; i < finalCard.extraImagesBlobUrls.length; i++) {
+          let extraFile = finalCard.extraImageFiles?.[i]
           if (!extraFile) {
-            const fetchBlob = await fetch(card.extraImagesBlobUrls[i])
+            const fetchBlob = await fetch(finalCard.extraImagesBlobUrls[i])
             const blob = await fetchBlob.blob()
             extraFile = new File([blob], `extra-${i}-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
           }
@@ -437,19 +567,19 @@ export default function BulkUploadClient() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          name: card.name.trim(),
+          name,
           price: numPrice,
-          stock: card.stock ? Number(card.stock) : 10,
-          costPrice: card.costPrice ? Number(card.costPrice) : null,
-          collectionId: card.collectionId || null,
-          subCategoryId: card.subCategoryIds[0] || null,
-          subCategoryIds: card.subCategoryIds,
-          supplierId: card.supplierId || null,
-          description: card.description || null,
+          stock: finalCard.stock ? Number(finalCard.stock) : 10,
+          costPrice: finalCard.costPrice ? Number(finalCard.costPrice) : null,
+          collectionId: finalCard.collectionId || null,
+          subCategoryId: finalCard.subCategoryIds[0] || null,
+          subCategoryIds: finalCard.subCategoryIds,
+          supplierId: finalCard.supplierId || null,
+          description: finalCard.description || null,
           imageUrl: uploadedMainUrl,
           images: uploadedExtras,
-          hasSizes: card.hasSizes,
-          availableSizes: card.availableSizes,
+          hasSizes: finalCard.hasSizes,
+          availableSizes: finalCard.availableSizes,
           isActive: true,
         }),
       })
@@ -468,6 +598,28 @@ export default function BulkUploadClient() {
         isSaving: false,
       })
 
+      return { success: true }
+    } catch (err: any) {
+      console.error('Save error for card', cardIndex, err)
+      updateCard(cardIndex, { isSaving: false })
+      return { success: false, error: err.message || 'حدث خطأ أثناء حفظ المنتج' }
+    }
+  }
+
+  // SAVE OR UPDATE PRODUCT HANDLER (No Page Reload)
+  const handleSaveOrUpdateCard = async (cardIndex: number) => {
+    const card = products[cardIndex]
+    if (!card) return
+
+    const res = await executeSaveProduct(card, cardIndex)
+    if (!res.success) {
+      toast.error(res.error || 'فشل حفظ المنتج')
+      return
+    }
+
+    if (card.isSaved) {
+      toast.success(`تم تعديل بيانات "${card.name}" بنجاح! ✏️`)
+    } else {
       toast.success(`تمت إضافة "${card.name}" بنجاح! 🚀`)
 
       // Auto pre-fill next card with this card's collection and subcategories to save time
@@ -483,10 +635,77 @@ export default function BulkUploadClient() {
           })
         }
       }
-    } catch (err: any) {
-      console.error('Save error:', err)
-      updateCard(cardIndex, { isSaving: false })
-      toast.error(err.message || 'حدث خطأ أثناء حفظ المنتج')
+    }
+  }
+
+  // MAGIC BUTTON: APPLY TO ALL AND SAVE/UPLOAD EVERYTHING TO DB
+  const handleMagicApplyAndSaveAll = async () => {
+    const unsavedCards = products.map((p, idx) => ({ card: p, index: idx })).filter(item => !item.card.isSaved)
+    
+    if (unsavedCards.length === 0) {
+      toast.success('جميع المنتجات في القائمة محفوظة ومضافة بالفعل! 🎉')
+      return
+    }
+
+    const effectiveName = magicTemplate.name.trim()
+    const effectivePrice = magicTemplate.price.trim()
+
+    // Validation
+    const missingName = unsavedCards.find(item => !item.card.name.trim() && !effectiveName)
+    if (missingName) {
+      toast.error('يرجى تحديد أو كتابة اسم المنتج في لوحة الاعتماد السريع أو في البطاقة')
+      return
+    }
+
+    const missingPrice = unsavedCards.find(item => {
+      const p = item.card.price || effectivePrice
+      return !p || isNaN(Number(p)) || Number(p) <= 0
+    })
+    if (missingPrice) {
+      toast.error('يرجى تحديد سعر صالح للمنتجات (مثل 2500)')
+      return
+    }
+
+    setIsBatchSaving(true)
+    let savedCount = 0
+    let failedCount = 0
+
+    for (let i = 0; i < unsavedCards.length; i++) {
+      const { card, index } = unsavedCards[i]
+      
+      const overrides: Partial<BulkProductCard> = {
+        name: card.name.trim() || effectiveName,
+        price: card.price || effectivePrice,
+        collectionId: card.collectionId || magicTemplate.collectionId,
+        subCategoryIds: card.subCategoryIds.length > 0 ? card.subCategoryIds : magicTemplate.subCategoryIds,
+        hasSizes: card.hasSizes || magicTemplate.hasSizes,
+        availableSizes: card.availableSizes.length > 0 ? card.availableSizes : magicTemplate.availableSizes,
+        supplierId: card.supplierId || magicTemplate.supplierId,
+        stock: card.stock || magicTemplate.stock || '10',
+      }
+
+      setBatchProgress({
+        current: i + 1,
+        total: unsavedCards.length,
+        currentName: overrides.name || 'منتج',
+      })
+
+      const res = await executeSaveProduct(card, index, overrides)
+      if (res.success) {
+        savedCount++
+      } else {
+        failedCount++
+        toast.error(`تعذر إضافة منتج #${index + 1}: ${res.error}`)
+      }
+    }
+
+    setIsBatchSaving(false)
+    setBatchProgress({ current: 0, total: 0 })
+
+    if (savedCount > 0) {
+      toast.success(`🎉 تم بنجاح اعتماد ورفع ${savedCount} منتج للمتجر دفعة واحدة!`, {
+        duration: 6000
+      })
     }
   }
 
@@ -619,6 +838,237 @@ export default function BulkUploadClient() {
         </div>
       )}
 
+      {/* Floating Batch Saving Progress Indicator */}
+      {isBatchSaving && (
+        <div className="fixed top-4 inset-x-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 z-50 bg-black/90 text-white backdrop-blur-md px-6 py-4 rounded-2xl shadow-2xl border border-amber-400/50 flex items-center gap-4 min-w-[320px] max-w-lg animate-in fade-in slide-in-from-top-4">
+          <Loader2 className="w-6 h-6 animate-spin text-amber-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between text-xs font-black">
+              <span className="text-amber-300">جاري الرفع والحفظ التلقائي في المتجر...</span>
+              <span className="text-white font-mono">{batchProgress.current} / {batchProgress.total}</span>
+            </div>
+            <p className="text-[11px] text-gray-300 truncate mt-0.5 font-medium">{batchProgress.currentName}</p>
+            <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden mt-2">
+              <div 
+                className="bg-amber-400 h-full transition-all duration-300 rounded-full"
+                style={{ width: `${(batchProgress.current / Math.max(batchProgress.total, 1)) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* THE MAGIC BUTTON & BULK CONTROL PANEL */}
+      {products.length > 0 && (
+        <div className="bg-gradient-to-br from-amber-500/10 via-amber-50/50 to-amber-500/5 rounded-3xl border-2 border-amber-300/80 p-5 md:p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-400 text-black flex items-center justify-center font-black shadow-sm">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base md:text-lg font-black text-gray-900">
+                    الزر السحري: الاعتماد السريع لجميع المنتجات دفعة واحدة
+                  </h3>
+                  <span className="hidden sm:inline-block bg-amber-200 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">
+                    وفر وقتك بنقرة واحدة
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  حدد الاسم والسعر والتصنيف هنا، واضغط على الزر السحري لتعبئة ورفع كل المنتجات غير المحفوظة فوراً للمتجر!
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsMagicPanelOpen(!isMagicPanelOpen)}
+              className="p-1.5 rounded-lg hover:bg-amber-100 text-gray-600 transition-colors"
+            >
+              {isMagicPanelOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
+          </div>
+
+          {isMagicPanelOpen && (
+            <div className="space-y-4 pt-2 border-t border-amber-200/60">
+              {/* Name & Price in Magic Panel */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Master Name */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-black text-gray-800">
+                    اسم المنتج الموحد لجميع الصور
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="مثال: فستان نسائي"
+                    value={magicTemplate.name}
+                    onChange={(e) => setMagicTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-xl border-amber-300 border p-2.5 text-sm text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black shadow-xs"
+                  />
+                  {/* Suggestions */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] text-gray-500 font-bold">اقتراحات:</span>
+                    {NAME_SUGGESTIONS.map((phrase) => {
+                      const isSelected = magicTemplate.name.trim() === phrase
+                      return (
+                        <button
+                          key={phrase}
+                          type="button"
+                          onClick={() => setMagicTemplate(prev => ({ ...prev, name: phrase }))}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all border ${
+                            isSelected
+                              ? 'bg-amber-400 text-black border-amber-500 shadow-xs scale-105'
+                              : 'bg-white hover:bg-amber-100 text-gray-800 border-amber-200'
+                          }`}
+                        >
+                          {phrase}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Master Price */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-black text-gray-800">
+                    السعر الموحد لجميع الصور (ر.ي)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="مثال: 2500"
+                    value={magicTemplate.price}
+                    onChange={(e) => setMagicTemplate(prev => ({ ...prev, price: e.target.value }))}
+                    step="0.01"
+                    min="0"
+                    dir="ltr"
+                    className="w-full rounded-xl border-amber-300 border p-2.5 text-sm font-bold text-gray-900 bg-white focus:border-black focus:outline-none focus:ring-1 focus:ring-black shadow-xs"
+                  />
+                  {/* Presets */}
+                  <div className="flex flex-wrap gap-1.5 pt-1 max-h-24 overflow-y-auto p-1 bg-white/70 rounded-xl border border-amber-200">
+                    {PRICE_PRESETS.map((presetPrice) => (
+                      <button
+                        key={presetPrice}
+                        type="button"
+                        onClick={() => setMagicTemplate(prev => ({ ...prev, price: presetPrice }))}
+                        className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all border ${
+                          magicTemplate.price === presetPrice
+                            ? 'bg-amber-400 text-black border-amber-500 shadow-xs scale-105'
+                            : 'bg-white hover:bg-gray-100 text-gray-800 border-gray-200'
+                        }`}
+                      >
+                        {presetPrice}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Master Collection & SubCategories */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">المجموعة الرئيسية الموحدة</label>
+                  <select
+                    value={magicTemplate.collectionId}
+                    onChange={(e) => handleMagicCollectionChange(e.target.value)}
+                    className="w-full rounded-xl border-amber-300 border p-2.5 text-xs text-gray-900 bg-white focus:border-black focus:outline-none shadow-xs"
+                  >
+                    <option value="">بدون مجموعة</option>
+                    {collections.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Subcategories for magic template */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">الفروع والمجموعات الفرعية</label>
+                  {magicTemplate.collectionId && (subCategoriesMap[magicTemplate.collectionId] || []).length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-white/70 rounded-xl border border-amber-200 min-h-[42px]">
+                      {(subCategoriesMap[magicTemplate.collectionId] || []).map(subCat => {
+                        const isSelected = magicTemplate.subCategoryIds.includes(subCat.id)
+                        return (
+                          <button
+                            key={subCat.id}
+                            type="button"
+                            onClick={() => toggleMagicSubCategory(subCat.id)}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs scale-105'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3 h-3" />}
+                            <span>{subCat.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-400 p-2.5 bg-white/50 rounded-xl border border-dashed border-gray-200">
+                      اختر المجموعة الرئيسية أولاً لعرض أقسامها الفرعية
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Master Sizes */}
+              <div className="pt-1">
+                <SizeSelector
+                  hasSizes={magicTemplate.hasSizes}
+                  onHasSizesChange={(val) => setMagicTemplate(prev => ({ ...prev, hasSizes: val }))}
+                  availableSizes={magicTemplate.availableSizes}
+                  onChangeSizes={(sizes) => setMagicTemplate(prev => ({ ...prev, availableSizes: sizes }))}
+                />
+              </div>
+
+              {/* ACTION BUTTONS OF THE MAGIC PANEL */}
+              <div className="pt-3 border-t border-amber-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span>
+                    يوجد <strong className="text-gray-900">{products.filter(p => !p.isSaved).length}</strong> منتج بانتظار الإضافة
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  {/* Fill cards only (preview) */}
+                  <button
+                    type="button"
+                    disabled={isBatchSaving || products.filter(p => !p.isSaved).length === 0}
+                    onClick={handleApplyMagicToAllCards}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-amber-100/70 text-gray-800 border border-amber-300 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    <Wand2 className="w-4 h-4 text-amber-600" />
+                    <span>تعبئة البطاقات فقط (للمعاينة)</span>
+                  </button>
+
+                  {/* MAGIC BUTTON: APPLY & SAVE ALL */}
+                  <button
+                    type="button"
+                    disabled={isBatchSaving || products.filter(p => !p.isSaved).length === 0}
+                    onClick={handleMagicApplyAndSaveAll}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-black hover:bg-gray-800 text-white rounded-xl text-xs md:text-sm font-black shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 ring-2 ring-amber-400/50"
+                  >
+                    {isBatchSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                        <span>جاري الحفظ ({batchProgress.current}/{batchProgress.total})...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />
+                        <span>✨ اعتماد ورفع الكل للمتجر دفعة واحدة 🚀</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* THE VERTICAL STACK OF PRODUCT FORMS */}
       <div className="space-y-6">
         {products.map((card, idx) => {
@@ -656,14 +1106,27 @@ export default function BulkUploadClient() {
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteIndex(idx)}
-                  className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                  title="حذف هذا المنتج من القائمة"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {!card.isSaved && (
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCardToAllOthers(idx)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-lg text-[11px] font-bold transition-all shadow-xs active:scale-95"
+                      title="نسخ وتطبيق بيانات هذا المنتج على كافة الصور الأخرى غير المحفوظة"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-600" />
+                      <span>تطبيق بياناته للبقية</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteIndex(idx)}
+                    className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                    title="حذف هذا المنتج من القائمة"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Card Body */}
