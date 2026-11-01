@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const collection = searchParams.get('collection') || undefined
   const subcategory = searchParams.get('subcategory') || undefined
   const page = parseInt(searchParams.get('page') || '1', 10)
-  const pageSize = parseInt(searchParams.get('pageSize') || '12', 10)
+  const pageSize = parseInt(searchParams.get('pageSize') || '48', 10)
   const sort = searchParams.get('sort') || 'newest'
   const minPriceParam = searchParams.get('minPrice')
   const maxPriceParam = searchParams.get('maxPrice')

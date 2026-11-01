@@ -24,7 +24,7 @@ export default async function SearchPage({
 
   const query = searchParamsResolved.q || ''
   const page = parseInt(searchParamsResolved.page || '1', 10);
-  const pageSize = 12;
+  const pageSize = 48;
   
   const sort = searchParamsResolved.sort || 'newest';
   const minPrice = searchParamsResolved.minPrice ? parseFloat(searchParamsResolved.minPrice) : undefined;

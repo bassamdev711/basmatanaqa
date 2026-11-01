@@ -42,7 +42,7 @@ export default async function ProductsPage({
   const subcategory = searchParamsResolved.subcategory;
   
   const page = parseInt(searchParamsResolved.page || '1', 10);
-  const pageSize = 12;
+  const pageSize = 48;
   
   const sort = searchParamsResolved.sort || 'newest';
   const minPrice = searchParamsResolved.minPrice ? parseFloat(searchParamsResolved.minPrice) : undefined;
@@ -144,7 +144,7 @@ export default async function ProductsPage({
         ]);
         return { productsResult, countResult }
       },
-      [`products-page-${collection}-${subcategory}-${minPrice}-${maxPrice}-${brands.join(',')}-${sort}-${page}`],
+      [`products-page-${collection}-${subcategory}-${minPrice}-${maxPrice}-${brands.join(',')}-${sort}-${page}-${pageSize}`],
       { revalidate: 1800, tags: ['products'] }
     )
 
