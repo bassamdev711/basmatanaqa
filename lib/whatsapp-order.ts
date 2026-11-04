@@ -14,7 +14,7 @@ export function formatWhatsAppPhone(rawPhone: string = STORE_WHATSAPP_NUMBER): s
   } else if (!cleaned.startsWith('967') && cleaned.length === 9) {
     cleaned = '967' + cleaned
   }
-  return cleaned || '967716761754'
+  return cleaned || '967780500363'
 }
 
 /**
