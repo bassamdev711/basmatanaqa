@@ -1,6 +1,6 @@
 // lib/whatsapp-order.ts
 
-export const STORE_WHATSAPP_NUMBER = '716761754'
+export const STORE_WHATSAPP_NUMBER = '780500363'
 
 /**
  * ينسق رقم الهاتف الدولي للواتساب (اليمن: 967)
