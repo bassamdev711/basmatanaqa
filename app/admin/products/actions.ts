@@ -285,12 +285,13 @@ export async function createProductAsync(payload: {
     } catch (createErr: any) {
       if (createErr.code === 'P2002') {
         const fallbackSlug = `${(slugify(rawSlug) || 'product').slice(0, 40)}-${Date.now().toString(36)}-${generateRandomSuffix(4)}`;
+        const freshCodes = await getNextProductNumberAndCode();
         product = await prisma.product.create({
           data: {
             name,
             slug: fallbackSlug,
-            itemNumber,
-            shortCode,
+            itemNumber: freshCodes.itemNumber,
+            shortCode: freshCodes.shortCode,
             collectionId: payload.collectionId || undefined,
             subCategoryId: subCategoryId || undefined,
             subCategoryIds: subCategoryIds.length > 0 ? subCategoryIds : (subCategoryId ? [subCategoryId] : []),

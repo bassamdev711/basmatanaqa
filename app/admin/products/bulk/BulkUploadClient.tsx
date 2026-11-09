@@ -475,38 +475,7 @@ export default function BulkUploadClient() {
     updateCard(cardIndex, { isSaving: true, ...overrides })
 
     try {
-      // 1. If product is already saved in DB, execute UPDATE (تعديل)
-      if (finalCard.isSaved && finalCard.savedProductId) {
-        const updateRes = await fetch('/api/admin/products', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            id: finalCard.savedProductId,
-            name,
-            price: numPrice,
-            stock: finalCard.stock ? Number(finalCard.stock) : 10,
-            costPrice: finalCard.costPrice ? Number(finalCard.costPrice) : null,
-            collectionId: finalCard.collectionId || null,
-            subCategoryId: finalCard.subCategoryIds[0] || null,
-            subCategoryIds: finalCard.subCategoryIds,
-            supplierId: finalCard.supplierId || null,
-            description: finalCard.description || null,
-            hasSizes: finalCard.hasSizes,
-            availableSizes: finalCard.availableSizes,
-          }),
-        })
-
-        const updateJson = await updateRes.json().catch(() => ({ success: false, error: 'خطأ في استجابة الخادم' }))
-        if (!updateJson.success) {
-          throw new Error(updateJson.error || 'فشل تعديل المنتج')
-        }
-
-        updateCard(cardIndex, { isSaving: false })
-        return { success: true }
-      }
-
-      // 2. Otherwise, NEW PRODUCT (إضافة جديدة)
+      // 1. Ensure Main Image is uploaded to storage
       let uploadedMainUrl = finalCard.uploadedMainUrl
       if (!uploadedMainUrl) {
         let fileToUpload: File
@@ -539,20 +508,33 @@ export default function BulkUploadClient() {
         }
         const upData = await upRes.json()
         uploadedMainUrl = upData.url
+        // Store uploadedMainUrl immediately so subsequent retries never re-upload
+        updateCard(cardIndex, { uploadedMainUrl })
       }
 
-      // Upload extra images if any
+      // 2. Upload extra images if any (with compression)
       const uploadedExtras: string[] = []
       if (finalCard.extraImagesBlobUrls.length > 0) {
         for (let i = 0; i < finalCard.extraImagesBlobUrls.length; i++) {
+          const existingUrl = finalCard.extraImagesBlobUrls[i]
+          if (existingUrl.startsWith('https://')) {
+            uploadedExtras.push(existingUrl)
+            continue
+          }
           let extraFile = finalCard.extraImageFiles?.[i]
           if (!extraFile) {
-            const fetchBlob = await fetch(finalCard.extraImagesBlobUrls[i])
+            const fetchBlob = await fetch(existingUrl)
             const blob = await fetchBlob.blob()
             extraFile = new File([blob], `extra-${i}-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
           }
+          try {
+            const compressed = await compressImageClientSide(extraFile)
+            if (compressed && compressed.size > 0) extraFile = compressed
+          } catch (cErr) {
+            console.warn('Extra image compression error:', cErr)
+          }
           const fd = new FormData()
-          fd.append('file', extraFile)
+          fd.append('file', extraFile, extraFile.name || `extra-${i}.webp`)
           const upRes = await fetch('/api/upload', { method: 'POST', body: fd, credentials: 'include' })
           if (upRes.ok) {
             const upData = await upRes.json()
@@ -561,7 +543,40 @@ export default function BulkUploadClient() {
         }
       }
 
-      // Create product in database
+      // 3. If product is already saved in DB, execute UPDATE (تعديل)
+      if (finalCard.isSaved && finalCard.savedProductId) {
+        const updateRes = await fetch('/api/admin/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            id: finalCard.savedProductId,
+            name,
+            price: numPrice,
+            stock: finalCard.stock ? Number(finalCard.stock) : 10,
+            costPrice: finalCard.costPrice ? Number(finalCard.costPrice) : null,
+            collectionId: finalCard.collectionId || null,
+            subCategoryId: finalCard.subCategoryIds[0] || null,
+            subCategoryIds: finalCard.subCategoryIds,
+            supplierId: finalCard.supplierId || null,
+            description: finalCard.description || null,
+            imageUrl: uploadedMainUrl,
+            images: uploadedExtras,
+            hasSizes: finalCard.hasSizes,
+            availableSizes: finalCard.availableSizes,
+          }),
+        })
+
+        const updateJson = await updateRes.json().catch(() => ({ success: false, error: 'خطأ في استجابة الخادم' }))
+        if (!updateJson.success) {
+          throw new Error(updateJson.error || 'فشل تعديل المنتج')
+        }
+
+        updateCard(cardIndex, { isSaving: false, uploadedMainUrl })
+        return { success: true }
+      }
+
+      // 4. Otherwise, Create new product in database
       const saveRes = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
