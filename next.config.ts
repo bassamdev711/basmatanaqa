@@ -54,6 +54,9 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    // إلغاء وسيط معالجة فيرسل نهائياً لمنع أي تكلفة أو تقييد — الصور تُحمّل مباشرة من Cloudflare R2
+    unoptimized: true,
+
     // تحويل تلقائي إلى AVIF أولاً ثم WebP — يُقلّل حجم الصورة بنسبة 30-50%
     formats: ['image/avif', 'image/webp'],
 
