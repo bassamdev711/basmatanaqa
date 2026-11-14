@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Plus, Edit, ExternalLink, Zap } from 'lucide-react'
+import { Plus, Edit, ExternalLink, Zap, Trash2 } from 'lucide-react'
 import prisma from '@/lib/prisma'
 import DeleteButton from './DeleteButton'
 import CollectionFilter from './CollectionFilter'
@@ -105,6 +105,14 @@ export default async function ProductsPage({
             selectedCollectionId={selectedCollectionId}
             selectedSubCategoryId={selectedSubCategoryId}
           />
+          <Link 
+            href="/admin/products/cleanup"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-sm font-bold rounded-md shrink-0 shadow-sm transition-all"
+            title="تنظيف المنتجات القديمة وحذفها بسرعة وبدون تحديث الصفحة"
+          >
+            <Trash2 className="w-4 h-4 text-rose-600" />
+            تنظيف 🧹
+          </Link>
           <Link 
             href="/admin/products/bulk"
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-gray-950 text-sm font-black rounded-md hover:bg-amber-400 shrink-0 shadow-sm transition-all"
